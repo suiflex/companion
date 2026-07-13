@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { DOC_META } from '@meetcc/ai'
 import {
+  loadDocProgress,
   loadDocs,
+  watchStorage,
+  type DocProgressRecord,
   type DocType,
   type Meeting,
   type MeetingDocs,
 } from '@meetcc/shared'
+import { lazyImport } from '../lib/lazy'
 import { useToast } from '../toast'
 
 const TYPES = Object.keys(DOC_META) as DocType[]
@@ -22,60 +26,59 @@ function downloadBlob(name: string, blob: Blob) {
 export function DocGen({ meeting }: { meeting: Meeting }) {
   const [type, setType] = useState<DocType>('brd')
   const [docs, setDocs] = useState<MeetingDocs>({})
-  // which type is generating — only THAT segment shows the skeleton; the
-  // others keep showing their own content (fixes "BRD loading = all loading")
-  const [busyType, setBusyType] = useState<DocType | null>(null)
+  const [prog, setProg] = useState<DocProgressRecord | null>(null)
   const [pdfBusy, setPdfBusy] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
   const toast = useToast()
 
-  useEffect(() => {
-    let alive = true
-    void loadDocs(meeting.id).then((d) => alive && setDocs(d))
-    return () => {
-      alive = false
-    }
+  const reload = useCallback(() => {
+    void loadDocs(meeting.id).then(setDocs)
+    void loadDocProgress(meeting.id).then(setProg)
   }, [meeting.id])
+
+  useEffect(() => {
+    reload()
+    return watchStorage(reload) // background writes progress/doc -> auto-refresh
+  }, [reload])
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 5000)
+    return () => clearInterval(t)
+  }, [])
 
   const current = docs[type]
   const meta = DOC_META[type]
-  const generating = busyType === type
+
+  // progress belongs to the type being generated; stale updatedAt = crashed run
+  const active = prog && prog.type === type ? prog : null
+  const stalled = active ? now - Date.parse(active.updatedAt) > 90_000 : false
+  const running = !!active && !stalled
+  const pct = active && active.total > 0 ? Math.round((active.step / active.total) * 100) : 0
+  // any type currently generating (blocks starting another to keep one at a time)
+  const anyRunning = prog ? now - Date.parse(prog.updatedAt) <= 90_000 : false
 
   const generate = async (docType: DocType) => {
-    setBusyType(docType)
     try {
       const res = await chrome.runtime.sendMessage({
         type: 'generate-doc',
         meetingId: meeting.id,
         docType,
       })
-      if (res?.ok) {
-        setDocs((d) => ({
-          ...d,
-          [docType]: {
-            content: res.content,
-            generatedAt: new Date().toISOString(),
-            provider: '',
-          },
-        }))
-        toast('success', `${DOC_META[docType].label} selesai dibuat.`)
-      } else {
-        toast('error', `Gagal: ${res?.error ?? 'unknown'}`)
-      }
+      if (res?.ok) toast('success', `${DOC_META[docType].label} selesai dibuat.`)
+      else toast('error', `Gagal: ${res?.error ?? 'unknown'}`)
     } catch (e) {
       toast('error', `Gagal: ${(e as Error).message}`)
-    } finally {
-      setBusyType(null)
     }
+    reload()
   }
 
   const exportPdf = async () => {
     if (!current) return
     setPdfBusy(true)
     try {
-      // jsPDF is heavy; load it (and the logo) only when actually exporting
       const [{ docToPdf }, { orgLogoPng }] = await Promise.all([
-        import('@meetcc/exporters/docpdf'),
-        import('../lib/logo'),
+        lazyImport(() => import('@meetcc/exporters/docpdf')),
+        lazyImport(() => import('../lib/logo')),
       ])
       const logo = await orgLogoPng()
       downloadBlob(
@@ -94,25 +97,28 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
     <div className="docgen">
       <div className="subbar">
         <div className="seg" role="tablist" aria-label="Jenis dokumen">
-          {TYPES.map((t) => (
-            <button
-              key={t}
-              role="tab"
-              aria-selected={type === t}
-              className={`seg-btn ${type === t ? 'active' : ''}`}
-              onClick={() => setType(t)}
-            >
-              {DOC_META[t].label}
-              {busyType === t ? (
-                <span className="seg-busy" aria-label="sedang dibuat" />
-              ) : (
-                docs[t] && <span className="seg-dot" aria-label="sudah dibuat" />
-              )}
-            </button>
-          ))}
+          {TYPES.map((t) => {
+            const busy = prog?.type === t && now - Date.parse(prog.updatedAt) <= 90_000
+            return (
+              <button
+                key={t}
+                role="tab"
+                aria-selected={type === t}
+                className={`seg-btn ${type === t ? 'active' : ''}`}
+                onClick={() => setType(t)}
+              >
+                {DOC_META[t].label}
+                {busy ? (
+                  <span className="seg-busy" aria-label="sedang dibuat" />
+                ) : (
+                  docs[t] && <span className="seg-dot" aria-label="sudah dibuat" />
+                )}
+              </button>
+            )
+          })}
         </div>
         <span className="spacer" />
-        {current && !generating && (
+        {current && !running && (
           <>
             <button
               className="ghost"
@@ -142,18 +148,24 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
         <button
           className="primary"
           onClick={() => void generate(type)}
-          disabled={busyType !== null}
+          disabled={running || (anyRunning && !active)}
         >
-          {generating
-            ? 'Membuat…'
-            : current
-              ? `↻ Regenerate ${meta.label}`
-              : `Generate ${meta.label}`}
+          {running
+            ? `⏳ ${active!.label} ${pct}%`
+            : stalled
+              ? `↻ Ulangi ${meta.label}`
+              : current
+                ? `↻ Regenerate ${meta.label}`
+                : `Generate ${meta.label}`}
         </button>
       </div>
 
-      {generating ? (
+      {running ? (
         <div className="summary-body">
+          <p className="transcript-note dim">
+            AI menyusun {meta.label} ({active!.label})… {pct}% · draft → periksa → revisi.
+            Hasil muncul otomatis.
+          </p>
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="skeleton skeleton-block" />
           ))}
@@ -161,8 +173,7 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
       ) : current ? (
         <div className="doc-view">
           <div className="doc-meta dim">
-            {meta.label} · dibuat{' '}
-            {new Date(current.generatedAt).toLocaleString('id-ID')}
+            {meta.label} · dibuat {new Date(current.generatedAt).toLocaleString('id-ID')}
           </div>
           <pre className="doc-sheet">{current.content}</pre>
         </div>
@@ -171,8 +182,9 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
           <div className="empty-glyph">¶</div>
           <p>Belum ada {meta.label}.</p>
           <p className="empty-hint">
-            Buat draft {meta.label} otomatis dari transcript rapat {meeting.id}.
-            Draft ini titik mulai — tinjau sebelum dipakai.
+            {stalled
+              ? `Proses ${meta.label} sebelumnya terhenti. Klik untuk mengulang.`
+              : `Buat draft ${meta.label} dari transcript rapat ${meeting.id} (draft → periksa → revisi). Draft ini titik mulai — tinjau sebelum dipakai.`}
           </p>
         </div>
       )}

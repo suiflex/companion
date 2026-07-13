@@ -1,17 +1,31 @@
 import type { Settings } from '@meetcc/shared';
 import { AIError, resolveConfig, type AIClient, type CompletionRequest } from './client';
 
-async function post(url: string, headers: Record<string, string>, body: unknown): Promise<any> {
-  let res: Response;
+// A hung provider (no response, no error) would leave the pipeline stuck on
+// "AI Processing" forever. Abort after this long so it fails as retryable.
+const REQUEST_TIMEOUT_MS = 120_000;
+
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
   try {
-    res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...headers },
-      body: JSON.stringify(body),
-    });
+    return await fetch(url, { ...init, signal: ctrl.signal });
   } catch (e) {
+    if ((e as Error).name === 'AbortError') {
+      throw new AIError(`Timeout: provider tidak merespons dalam ${REQUEST_TIMEOUT_MS / 1000}s`, true);
+    }
     throw new AIError(`Network error: ${(e as Error).message}`, true);
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+async function post(url: string, headers: Record<string, string>, body: unknown): Promise<any> {
+  const res = await fetchWithTimeout(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(body),
+  });
   if (!res.ok) {
     const text = (await res.text()).slice(0, 300);
     // 429/5xx are transient; 4xx config errors are not
@@ -48,16 +62,11 @@ async function chatCompletions(
   headers: Record<string, string>,
   body: unknown,
 ): Promise<string> {
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...headers },
-      body: JSON.stringify(body),
-    });
-  } catch (e) {
-    throw new AIError(`Network error: ${(e as Error).message}`, true);
-  }
+  const res = await fetchWithTimeout(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(body),
+  });
   const text = await res.text();
   if (!res.ok) {
     throw new AIError(

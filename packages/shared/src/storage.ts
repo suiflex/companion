@@ -5,6 +5,8 @@ import {
   type AnalysisRecord,
   type AuditEvent,
   type ChatMessage,
+  type CleanRecord,
+  type DocProgressRecord,
   type DocType,
   type Entry,
   type Meeting,
@@ -25,6 +27,8 @@ export const ANALYSIS_PREFIX = 'analysis:';
 export const CHAT_PREFIX = 'chat:';
 export const DOCS_PREFIX = 'docs:';
 export const RESOLVED_PREFIX = 'resolved:';
+export const CLEAN_PREFIX = 'clean:';
+export const DOCPROG_PREFIX = 'docprog:';
 const SETTINGS_KEY = 'settings';
 const AUDIT_KEY = 'audit';
 
@@ -106,8 +110,24 @@ export async function clearMeeting(id: string): Promise<void> {
     ANALYSIS_PREFIX + id,
     CHAT_PREFIX + id,
     DOCS_PREFIX + id,
+    DOCPROG_PREFIX + id,
     RESOLVED_PREFIX + id,
+    CLEAN_PREFIX + id,
   ]);
+}
+
+// -- cleaned transcript (AI-corrected ASR errors, kept alongside the raw one) --
+
+export async function loadClean(id: string): Promise<CleanRecord | null> {
+  return (await chrome.storage.local.get(CLEAN_PREFIX + id))[CLEAN_PREFIX + id] ?? null;
+}
+
+export async function saveClean(id: string, data: CleanRecord): Promise<void> {
+  await chrome.storage.local.set({ [CLEAN_PREFIX + id]: data });
+}
+
+export async function clearClean(id: string): Promise<void> {
+  await chrome.storage.local.remove(CLEAN_PREFIX + id);
 }
 
 // -- carry-over: which open questions have been marked resolved, per meeting --
@@ -161,6 +181,18 @@ export async function saveDoc(id: string, type: DocType, doc: StoredDoc): Promis
   const docs = await loadDocs(id);
   docs[type] = doc;
   await chrome.storage.local.set({ [DOCS_PREFIX + id]: docs });
+}
+
+export async function loadDocProgress(id: string): Promise<DocProgressRecord | null> {
+  return (await chrome.storage.local.get(DOCPROG_PREFIX + id))[DOCPROG_PREFIX + id] ?? null;
+}
+
+export async function saveDocProgress(id: string, p: DocProgressRecord): Promise<void> {
+  await chrome.storage.local.set({ [DOCPROG_PREFIX + id]: p });
+}
+
+export async function clearDocProgress(id: string): Promise<void> {
+  await chrome.storage.local.remove(DOCPROG_PREFIX + id);
 }
 
 export function watchStorage(onChange: () => void): () => void {

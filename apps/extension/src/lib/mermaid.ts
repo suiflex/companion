@@ -11,12 +11,14 @@ type MermaidApi = {
   render: (id: string, def: string) => Promise<{ svg: string }>;
 };
 
+import { lazyImport } from './lazy'
+
 let apiPromise: Promise<MermaidApi> | null = null;
 
 // theme 'neutral' + Helvetica match the PDF (black-on-white, jsPDF helvetica);
 // securityLevel 'strict' sanitizes AI-authored definitions.
 function loadMermaid(): Promise<MermaidApi> {
-  apiPromise ??= import('mermaid').then((m) => {
+  apiPromise ??= lazyImport(() => import('mermaid')).then((m) => {
     const api = m.default as unknown as MermaidApi;
     api.initialize({
       startOnLoad: false,
@@ -49,6 +51,6 @@ export type { RasterPng as DiagramPng } from './raster';
  * common cause of "Mermaid looks bad in PDF" is rasterizing at 1× screen res.
  */
 export async function renderPng(def: string, scale = 4) {
-  const { svgToPng } = await import('./raster');
+  const { svgToPng } = await lazyImport(() => import('./raster'));
   return svgToPng(await renderSvg(def), scale, '#ffffff');
 }

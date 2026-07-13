@@ -97,6 +97,20 @@ export interface AuditEvent {
   detail: string;
 }
 
+/** AI-corrected transcript, stored beside the raw one (never overwrites it).
+ *  A 'processing' marker persists across UI remounts / tab switches so the
+ *  "Merapikan…" state survives and the button can't be re-clicked mid-run. */
+export type CleanRecord =
+  | {
+      status: 'processing';
+      startedAt: string;
+      updatedAt: string; // bumped each batch — staleness = crashed run
+      done: number; // lines cleaned so far
+      total: number;
+      entries: Entry[]; // partial result, so a refresh resumes, not restarts
+    }
+  | { status: 'done'; entries: Entry[]; generatedAt: string; changed: number };
+
 /** One turn in a per-meeting "chat with transcript" conversation. */
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -114,3 +128,14 @@ export interface StoredDoc {
 }
 
 export type MeetingDocs = Partial<Record<DocType, StoredDoc>>;
+
+/** Live progress of a document being generated — persisted so "Membuat…"
+ *  survives a refresh and shows a real percentage. */
+export interface DocProgressRecord {
+  type: DocType;
+  step: number; // completed steps
+  total: number;
+  label: string;
+  startedAt: string;
+  updatedAt: string; // stale = crashed run
+}

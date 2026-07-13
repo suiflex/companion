@@ -65,24 +65,89 @@ function DiagramCard({ diagram, index }: { diagram: Diagram; index: number }) {
   );
 }
 
-export function DiagramView({ meeting, diagrams }: { meeting: Meeting; diagrams: Diagram[] }) {
+interface Props {
+  meeting: Meeting;
+  diagrams: Diagram[];
+  analysisReady: boolean;
+}
+
+export function DiagramView({ meeting, diagrams, analysisReady }: Props) {
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+
+  const generate = async () => {
+    setBusy(true);
+    try {
+      const res = await chrome.runtime.sendMessage({
+        type: 'generate-diagram',
+        meetingId: meeting.id,
+      });
+      if (res?.ok) {
+        toast(
+          res.count ? 'success' : 'info',
+          res.count
+            ? `${res.count} diagram dibuat.`
+            : 'Tidak ada alur/proses yang bisa didiagramkan.',
+        );
+      } else {
+        toast('error', `Gagal: ${res?.error ?? 'unknown'}`);
+      }
+    } catch (e) {
+      toast('error', `Gagal: ${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const genButton = (
+    <button
+      className="primary"
+      onClick={generate}
+      disabled={busy || !analysisReady}
+      title={analysisReady ? '' : 'Buat Summary dulu'}
+    >
+      {busy ? 'Membuat…' : diagrams.length ? '↻ Buat ulang diagram' : '✨ Buat diagram'}
+    </button>
+  );
+
+  if (busy && !diagrams.length) {
+    return (
+      <div className="summary-body">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="skeleton skeleton-block" />
+        ))}
+      </div>
+    );
+  }
+
   if (!diagrams.length) {
     return (
       <div className="empty-state">
         <div className="empty-glyph">◇</div>
         <p>Belum ada diagram.</p>
         <p className="empty-hint">
-          Diagram alur dibuat otomatis dari notulen bila rapat membahas proses
-          atau urutan langkah. Rapat {meeting.id} belum menghasilkan diagram.
+          {analysisReady
+            ? `Buat diagram alur dari rapat ${meeting.id} bila membahas proses atau urutan langkah. On-demand — pakai transcript rapi bila sudah dirapikan.`
+            : 'Buat ringkasan (Summary) dulu, lalu diagram bisa dibuat dari sini.'}
         </p>
+        {genButton}
       </div>
     );
   }
   return (
-    <div className="diagram-scroll">
-      {diagrams.map((d, i) => (
-        <DiagramCard key={`${i}-${d.title}`} diagram={d} index={i} />
-      ))}
-    </div>
+    <>
+      <div className="subbar">
+        <span className="dim" style={{ fontSize: 11 }}>
+          {diagrams.length} diagram
+        </span>
+        <span className="spacer" />
+        {genButton}
+      </div>
+      <div className="diagram-scroll">
+        {diagrams.map((d, i) => (
+          <DiagramCard key={`${i}-${d.title}`} diagram={d} index={i} />
+        ))}
+      </div>
+    </>
   );
 }

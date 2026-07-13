@@ -144,7 +144,11 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
                 onClear={handleClear}
               />
             ) : tab === 'diagram' ? (
-              <DiagramView meeting={selected} diagrams={analysis?.diagrams ?? []} />
+              <DiagramView
+                meeting={selected}
+                diagrams={analysis?.diagrams ?? []}
+                analysisReady={!!analysis}
+              />
             ) : tab === 'ask' ? (
               <AskView meeting={selected} live={isLive(selected, now)} />
             ) : tab === 'docs' ? (

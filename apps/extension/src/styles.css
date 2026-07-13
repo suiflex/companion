@@ -355,6 +355,15 @@ button:focus-visible, select:focus-visible, input:focus-visible, .meeting:focus-
   gap: 12px;
 }
 
+.transcript-note {
+  margin: 0 0 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--phosphor-dim);
+  border: 1px solid var(--hairline-2);
+  font-size: 11px;
+}
+
 .entry { display: flex; gap: 10px; animation: rise 200ms ease-out; }
 
 @keyframes rise {

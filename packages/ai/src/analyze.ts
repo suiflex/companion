@@ -2,27 +2,35 @@ import {
   normalizeDecisions,
   normalizeDiagrams,
   type Analysis,
+  type Entry,
   type Meeting,
 } from '@meetcc/shared';
 import { AIError, type AIClient } from './client';
 
 const MAX_TRANSCRIPT_CHARS = 60_000;
 
+/** `[jj:mm] Speaker: text` lines — the citable format grounding relies on. */
+export function formatEntries(entries: Entry[]): string {
+  return entries
+    .map((e) => {
+      const t = new Date(e.time).toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return `[${t}] ${e.speaker}: ${e.text}`;
+    })
+    .join('\n');
+}
+
 export function formatTranscript(m: Meeting): string {
-  const lines = m.entries.map((e) => {
-    const t = new Date(e.time).toLocaleTimeString('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    return `[${t}] ${e.speaker}: ${e.text}`;
-  });
-  let text = lines.join('\n');
+  const text = formatEntries(m.entries);
   if (text.length > MAX_TRANSCRIPT_CHARS) {
     const half = MAX_TRANSCRIPT_CHARS / 2;
-    text =
+    return (
       text.slice(0, half) +
       '\n[... transcript dipotong karena terlalu panjang ...]\n' +
-      text.slice(-half);
+      text.slice(-half)
+    );
   }
   return text;
 }
@@ -37,17 +45,11 @@ Balas HANYA dengan satu objek JSON valid (tanpa markdown fence, tanpa teks lain)
   "actionItems": [{"task": string, "owner": string, "due": string}],
   "risks": [string],
   "openQuestions": [string],
-  "nextSteps": [string],
-  "diagrams": [{"title": string, "type": "flowchart"|"sequenceDiagram", "mermaid": string}]
+  "nextSteps": [string]
 }
 Gunakan bahasa yang sama dengan transcript. Field yang tidak ada isinya = array kosong / string kosong. Jangan mengarang fakta.
 
-Aturan "decisions": tiap keputusan berisi "what" (keputusan yang diambil), "why" (alasan singkat), "rejected" (opsi yang ditolak beserta alasan, boleh kosong), dan "topic" (label topik/area pendek dalam kebab-case, mis. "arsitektur-order"). Kosongkan field yang tidak disebut.
-
-Aturan "diagrams": buat 0-3 diagram HANYA jika rapat membahas alur/proses/urutan langkah yang jelas. Jika tidak ada, "diagrams": [].
-- "mermaid" = sintaks Mermaid valid. Untuk flowchart mulai dengan "flowchart TB" (arah vertikal). Untuk urutan interaksi antar pihak gunakan "sequenceDiagram".
-- Maksimal ~15 node per diagram; pecah jadi beberapa diagram jika lebih.
-- Label node pakai bahasa transcript. Jangan mengarang alur yang tidak dibahas.`;
+Aturan "decisions": tiap keputusan berisi "what" (keputusan yang diambil), "why" (alasan singkat), "rejected" (opsi yang ditolak beserta alasan, boleh kosong), dan "topic" (label topik/area pendek dalam kebab-case, mis. "arsitektur-order"). Kosongkan field yang tidak disebut.`;
 
 export function buildUserPrompt(m: Meeting): string {
   return `Meeting: ${m.id}\nTranscript:\n${formatTranscript(m)}`;

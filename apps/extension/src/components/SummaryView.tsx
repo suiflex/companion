@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Analysis, AnalysisRecord, Meeting } from '@meetcc/shared';
 import { toMarkdown } from '@meetcc/exporters/markdown';
 import { datedCount, toChecklist, toIcs } from '@meetcc/exporters/tasks';
+import { lazyImport } from '../lib/lazy';
 import { useToast } from '../toast';
 
 function downloadBlob(name: string, blob: Blob) {
@@ -194,9 +195,9 @@ export function SummaryView({ meeting, record, live }: Props) {
           try {
             // jsPDF + mermaid are heavy; load them only when actually exporting
             const [{ toPdf }, { renderPng }, { orgLogoPng }] = await Promise.all([
-              import('@meetcc/exporters/pdf'),
-              import('../lib/mermaid'),
-              import('../lib/logo'),
+              lazyImport(() => import('@meetcc/exporters/pdf')),
+              lazyImport(() => import('../lib/mermaid')),
+              lazyImport(() => import('../lib/logo')),
             ]);
             // rasterize diagrams in the browser; a bad one is skipped, not fatal
             const rendered = await Promise.all(
@@ -244,6 +245,8 @@ export function SummaryView({ meeting, record, live }: Props) {
   if (record?.status === 'processing') {
     const steps = ['Transcript', 'AI Processing', 'Menyimpan'];
     const active = record.step === 'ai' ? 1 : 2;
+    // taking too long usually means a crashed/hung run — offer a manual restart
+    const slow = Date.now() - Date.parse(record.startedAt) > 45_000;
     return (
       <div className="summary-body">
         <div className="progress" role="progressbar" aria-label="AI processing">
@@ -254,6 +257,16 @@ export function SummaryView({ meeting, record, live }: Props) {
             </div>
           ))}
         </div>
+        {slow && (
+          <div className="subbar" style={{ border: 0, padding: '4px 0' }}>
+            <span className="dim" style={{ fontSize: 11 }}>
+              Lama? Proses mungkin terhenti.
+            </span>
+            <button onClick={regenerate} disabled={busy}>
+              {busy ? 'Memproses…' : '↻ Mulai ulang'}
+            </button>
+          </div>
+        )}
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="skeleton skeleton-block" />
         ))}

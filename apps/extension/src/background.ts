@@ -2,8 +2,10 @@
 // Business logic lives in @meetcc/meeting; this file only wires chrome.* in.
 import {
   askTranscript,
+  cleanTranscript,
   createClient,
   createRateLimiter,
+  generateDiagrams,
   generateDoc,
   validateSettings,
 } from '@meetcc/ai';
@@ -14,17 +16,23 @@ import {
 } from '@meetcc/meeting';
 import {
   appendAudit,
+  clearClean,
+  clearDocProgress,
   getAnalysis,
   loadAnalyses,
   loadChat,
+  loadClean,
   loadMeetings,
   loadSettings,
   saveChat,
+  saveClean,
   saveDoc,
+  saveDocProgress,
   setAnalysis,
   type Analysis,
   type ChatMessage,
   type DocType,
+  type Meeting,
 } from '@meetcc/shared';
 
 // 6 AI runs per 10 minutes: a meeting sweep can never stampede a provider
@@ -49,6 +57,22 @@ async function analysisOf(id: string): Promise<Analysis | null> {
   return rec?.status === 'done' ? rec.analysis : null;
 }
 
+// Every AI read of the transcript prefers the cleaned version when the user
+// has run "Rapikan" — so summaries, chat and docs use the corrected text.
+// Transcript is append-only, so when the same meeting link is reused later the
+// raw transcript grows past what was cleaned. Merge: cleaned lines for the part
+// that was cleaned + raw lines for anything appended since. This never loses
+// new content and still uses the corrections where they exist.
+async function loadMeetingForAI(id: string): Promise<Meeting | null> {
+  const meeting = (await loadMeetings()).find((m) => m.id === id);
+  if (!meeting) return null;
+  const clean = await loadClean(id);
+  if (clean?.status !== 'done' || !clean.entries.length) return meeting;
+  const appended = meeting.entries.slice(clean.entries.length);
+  const entries = appended.length ? clean.entries.concat(appended) : clean.entries;
+  return { ...meeting, entries };
+}
+
 function notify(title: string, message: string): void {
   chrome.notifications.create({
     type: 'basic',
@@ -59,7 +83,7 @@ function notify(title: string, message: string): void {
 }
 
 const deps: PipelineDeps = {
-  getMeeting: async (id) => (await loadMeetings()).find((m) => m.id === id) ?? null,
+  getMeeting: loadMeetingForAI,
   getRecord: getAnalysis,
   setRecord: setAnalysis,
   createClient: async () => {
@@ -134,7 +158,7 @@ async function handleAsk(
   id: string,
   question: string,
 ): Promise<{ ok: true; answer: string } | { ok: false; error: string }> {
-  const meeting = (await loadMeetings()).find((m) => m.id === id);
+  const meeting = await loadMeetingForAI(id);
   if (!meeting) return { ok: false, error: 'Meeting tidak ditemukan.' };
   if (!meeting.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
   const history = await loadChat(id);
@@ -156,18 +180,117 @@ async function handleGenerateDoc(
   id: string,
   docType: DocType,
 ): Promise<{ ok: true; content: string } | { ok: false; error: string }> {
+  const meeting = await loadMeetingForAI(id);
+  if (!meeting) return { ok: false, error: 'Meeting tidak ditemukan.' };
+  if (!meeting.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
+  const startedAt = new Date().toISOString();
+  const now = () => new Date().toISOString();
+  await saveDocProgress(id, {
+    type: docType,
+    step: 0,
+    total: 1,
+    label: 'Mulai',
+    startedAt,
+    updatedAt: now(),
+  });
+  try {
+    const client = await makeInteractiveClient();
+    const content = await generateDoc(
+      client,
+      meeting,
+      await analysisOf(id),
+      docType,
+      async (step, total, label) => {
+        await saveDocProgress(id, { type: docType, step, total, label, startedAt, updatedAt: now() });
+      },
+    );
+    await saveDoc(id, docType, { content, generatedAt: now(), provider: client.provider });
+    await clearDocProgress(id);
+    await appendAudit('docgen', `${id}: ${docType}`);
+    return { ok: true, content };
+  } catch (e) {
+    await clearDocProgress(id); // free the button on failure
+    throw e;
+  }
+}
+
+// F1: on-demand diagram generation. Runs on the cleaned transcript when
+// available and merges the diagrams into the existing (done) analysis record,
+// so exports and the Diagram tab pick them up. Requires summary to exist.
+async function handleGenerateDiagram(
+  id: string,
+): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  const rec = await getAnalysis(id);
+  if (rec?.status !== 'done') {
+    return { ok: false, error: 'Buat ringkasan (Summary) dulu sebelum diagram.' };
+  }
+  const meeting = await loadMeetingForAI(id);
+  if (!meeting?.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
+  const client = await makeInteractiveClient();
+  const diagrams = await generateDiagrams(client, meeting);
+  await setAnalysis(id, { ...rec, analysis: { ...rec.analysis, diagrams } });
+  await appendAudit('diagram', `${id}: ${diagrams.length}`);
+  return { ok: true, count: diagrams.length };
+}
+
+// AI transcript cleanup: correct ASR errors on the RAW transcript, store the
+// result under clean:<id> (raw stays untouched). One client reused across all
+// chunks, so a whole cleanup costs a single interactive-limiter token.
+async function handleCleanTranscript(
+  id: string,
+  fromScratch = false,
+): Promise<{ ok: true; changed: number } | { ok: false; error: string }> {
   const meeting = (await loadMeetings()).find((m) => m.id === id);
   if (!meeting) return { ok: false, error: 'Meeting tidak ditemukan.' };
   if (!meeting.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
-  const client = await makeInteractiveClient();
-  const content = await generateDoc(client, meeting, await analysisOf(id), docType);
-  await saveDoc(id, docType, {
-    content,
-    generatedAt: new Date().toISOString(),
-    provider: client.provider,
+
+  // resume an interrupted run: reuse partial entries + continue from `done`,
+  // unless the user asked to start over (fromScratch)
+  const prev = await loadClean(id);
+  const resumable =
+    !fromScratch &&
+    prev?.status === 'processing' &&
+    Array.isArray(prev.entries) &&
+    prev.entries.length === meeting.entries.length &&
+    Number.isFinite(prev.done);
+  const base = resumable ? prev.entries : meeting.entries;
+  const startLine = resumable ? prev.done : 0;
+  const startedAt =
+    resumable && prev.startedAt ? prev.startedAt : new Date().toISOString();
+  const now = () => new Date().toISOString();
+
+  await saveClean(id, {
+    status: 'processing',
+    startedAt,
+    updatedAt: now(),
+    done: startLine,
+    total: base.length,
+    entries: base,
   });
-  await appendAudit('docgen', `${id}: ${docType}`);
-  return { ok: true, content };
+  try {
+    const client = await makeInteractiveClient();
+    const { entries, changed } = await cleanTranscript(
+      client,
+      base,
+      async (done, total, partial) => {
+        await saveClean(id, {
+          status: 'processing',
+          startedAt,
+          updatedAt: now(),
+          done,
+          total,
+          entries: partial,
+        });
+      },
+      startLine,
+    );
+    await saveClean(id, { status: 'done', entries, generatedAt: now(), changed });
+    await appendAudit('clean', `${id}: ${changed} baris`);
+    return { ok: true, changed };
+  } catch (e) {
+    await clearClean(id); // drop the marker so the button is usable again
+    throw e;
+  }
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -193,6 +316,18 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg?.type === 'generate-doc' && msg.meetingId && msg.docType) {
     handleGenerateDoc(msg.meetingId, msg.docType as DocType)
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
+    return true; // async response
+  }
+  if (msg?.type === 'clean-transcript' && msg.meetingId) {
+    handleCleanTranscript(msg.meetingId, !!msg.fromScratch)
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
+    return true; // async response
+  }
+  if (msg?.type === 'generate-diagram' && msg.meetingId) {
+    handleGenerateDiagram(msg.meetingId)
       .then(sendResponse)
       .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
     return true; // async response
