@@ -66,7 +66,17 @@ export async function loadMeetings(): Promise<Meeting[]> {
       get(key.slice(META_PREFIX.length)).meta = value as MeetingMeta;
     }
   }
-  return [...byId.values()].sort((a, b) => lastActivity(b) - lastActivity(a));
+  // Sort by start time, NOT lastActivity: live heartbeats bump lastSeenAt
+  // every 5s, so concurrent meetings would leapfrog each other and the
+  // sidebar would keep reordering. startedAt is immutable for a meeting's
+  // whole life (kept across rejoins) -> stable order, newest first.
+  const sortKey = (m: Meeting): number => {
+    const s = startedAt(m);
+    return s ? Date.parse(s) : lastActivity(m);
+  };
+  return [...byId.values()].sort(
+    (a, b) => sortKey(b) - sortKey(a) || a.id.localeCompare(b.id),
+  );
 }
 
 export async function loadAnalyses(): Promise<Record<string, AnalysisRecord>> {

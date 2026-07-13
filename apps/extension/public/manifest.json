@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Meet Companion",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "AI meeting assistant: captures Google Meet & Microsoft Teams captions, generates summaries, action items and meeting notes",
   "permissions": ["storage", "tabs", "alarms", "notifications"],
   "host_permissions": [
