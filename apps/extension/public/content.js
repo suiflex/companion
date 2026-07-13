@@ -222,7 +222,17 @@ timers.push(
         dirty = true
       }
     }
-    if (dirty) store({ [storageKey]: entries })
+    if (dirty) {
+      store({ [storageKey]: entries })
+      if (!TOP) {
+        // mirror to this tab's top frame (badge + PiP live there)
+        try {
+          window.top.postMessage({ __meetcc: 'entries', entries }, '*')
+        } catch {
+          /* top frame gone / cross-origin refusal — badge just lags */
+        }
+      }
+    }
   }, 500),
 )
 
@@ -467,20 +477,15 @@ if (TOP) {
     }, 1000),
   )
 
-  // captions captured in a child frame land in storage, not in this frame's
-  // entries — mirror them so the badge counter and PiP stay live.
-  try {
-    chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== 'local' || lastVia) return // this frame captures: ignore echoes
-      for (const k of Object.keys(changes)) {
-        if (k.startsWith('transcript:') && Array.isArray(changes[k].newValue)) {
-          entries = changes[k].newValue
-        }
-      }
-    })
-  } catch {
-    /* context gone */
-  }
+  // captions captured in a child frame (Teams can iframe the call) are
+  // mirrored up via postMessage so the badge counter and PiP stay live.
+  // Same-tab by construction — chrome.storage.onChanged is global across
+  // tabs and merged two concurrent meetings into one transcript.
+  addEventListener('message', (e) => {
+    const d = e.data
+    if (!d || d.__meetcc !== 'entries' || lastVia) return // capturing here: ignore
+    if (Array.isArray(d.entries)) entries = d.entries
+  })
 }
 
 // tab closes / navigates away mid-meeting: nudge background to sweep soon
