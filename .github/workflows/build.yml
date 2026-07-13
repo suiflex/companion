@@ -1,0 +1,62 @@
+name: Build extension
+
+# Every push to main (and manual runs) produces a ready-to-load dist artifact.
+# Pushing a tag like v3.1.0 additionally publishes a GitHub Release with the
+# zip attached — download, extract, load-unpacked. No install/build needed.
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write # attach zip to the Release on tag builds
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npx vitest run
+
+      - name: Build
+        run: npm run build -w apps/extension
+
+      - name: Read version from manifest
+        id: meta
+        run: echo "version=$(node -p "require('./apps/extension/public/manifest.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Zip dist
+        run: |
+          cd apps/extension/dist
+          zip -qr "../../../meetcc-extension-v${{ steps.meta.outputs.version }}.zip" .
+
+      # per-run artifact: grab it from the Actions tab on any push/PR
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meetcc-extension-v${{ steps.meta.outputs.version }}
+          path: apps/extension/dist
+          if-no-files-found: error
+
+      # tag push (v*) -> public Release with the zip attached
+      - name: Publish Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: meetcc-extension-v*.zip
+          generate_release_notes: true

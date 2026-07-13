@@ -1,0 +1,11 @@
+{
+  "name": "@meetcc/exporters",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@meetcc/shared": "*",
+    "jspdf": "^2.5.2"
+  }
+}

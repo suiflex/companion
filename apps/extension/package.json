@@ -1,0 +1,19 @@
+{
+  "name": "@meetcc/extension",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@meetcc/ai": "*",
+    "@meetcc/exporters": "*",
+    "@meetcc/meeting": "*",
+    "@meetcc/shared": "*",
+    "mermaid": "^11.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
