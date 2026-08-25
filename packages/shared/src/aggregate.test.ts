@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Analysis, AnalysisRecord } from './types';
 import {
+  TITLE_MAX_CHARS,
   buildAgenda,
   collectDecisions,
   collectOpenQuestions,
   decisionTopics,
+  deriveTitle,
 } from './aggregate';
 
 const done = (
@@ -89,5 +91,39 @@ describe('buildAgenda', () => {
 
   it('says so when nothing is open', () => {
     expect(buildAgenda([])).toContain('Tidak ada pertanyaan terbuka');
+  });
+});
+
+describe('deriveTitle', () => {
+  const a = (executiveSummary: string): Analysis =>
+    ({ executiveSummary }) as Analysis;
+
+  it('takes the first sentence and drops its full stop', () => {
+    expect(deriveTitle(a('Bahas perbaikan PDF invoice. Logo masih geser di header.'))).toBe(
+      'Bahas perbaikan PDF invoice',
+    );
+  });
+
+  it('collapses whitespace and newlines', () => {
+    expect(deriveTitle(a('  Sprint\n  planning   Q3  '))).toBe('Sprint planning Q3');
+  });
+
+  it('truncates at a word boundary with an ellipsis', () => {
+    const long = 'Rapat membahas migrasi arsitektur order service ke event driven dengan Kafka';
+    const title = deriveTitle(a(long));
+    expect(title.length).toBeLessThanOrEqual(TITLE_MAX_CHARS + 1); // + the ellipsis
+    expect(title.endsWith('…')).toBe(true);
+    expect(long.startsWith(title.slice(0, -1))).toBe(true);
+  });
+
+  it('ignores a too-short leading fragment and uses the fuller text', () => {
+    expect(deriveTitle(a('Ok. Rapat sprint planning tim backend'))).toBe(
+      'Ok. Rapat sprint planning tim backend',
+    );
+  });
+
+  it('returns empty for an empty summary so the UI falls back to the id', () => {
+    expect(deriveTitle(a(''))).toBe('');
+    expect(deriveTitle(a('   '))).toBe('');
   });
 });

@@ -12,7 +12,8 @@ export interface PipelineDeps {
   setRecord(id: string, record: AnalysisRecord): Promise<void>;
   createClient(): Promise<AIClient>;
   audit(event: string, detail: string): Promise<void>;
-  notify(title: string, message: string): void;
+  /** `meetingId` lets the host make the notification open that meeting. */
+  notify(title: string, message: string, meetingId: string): void;
   now(): string; // ISO
 }
 
@@ -66,7 +67,7 @@ export async function runPipeline(
       provider: client.provider,
     });
     await deps.audit('pipeline.done', id);
-    deps.notify('Notulen siap ✓', `Meeting ${id} selesai dianalisis AI.`);
+    deps.notify('Notulen siap ✓', `Meeting ${id} selesai dianalisis AI.`, id);
     return { ok: true };
   } catch (e) {
     const error = (e as Error).message;
@@ -77,7 +78,7 @@ export async function runPipeline(
       provider: client.provider,
     });
     await deps.audit('pipeline.error', `${id}: ${error}`);
-    deps.notify('Analisis gagal', `Meeting ${id}: ${error}`);
+    deps.notify('Analisis gagal', `Meeting ${id}: ${error}`, id);
     return { ok: false, reason: 'ai-failed', error };
   }
 }

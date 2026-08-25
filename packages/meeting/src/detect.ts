@@ -1,4 +1,4 @@
-import { isLive, type AnalysisRecord, type Meeting } from '@meetcc/shared';
+import { isLive, lastActivity, type AnalysisRecord, type Meeting } from '@meetcc/shared';
 
 /** Don't burn AI calls on accidental joins / empty rooms. */
 export const MIN_ENTRIES = 5;
@@ -31,4 +31,27 @@ export function findFinishedMeetings(
   now: number,
 ): Meeting[] {
   return meetings.filter((m) => needsAnalysis(m, records[m.id], now));
+}
+
+const DAY_MS = 24 * 60 * 60_000;
+
+/**
+ * Meetings past the retention window, i.e. safe to delete.
+ * Deletion is irreversible, so this is deliberately conservative:
+ * `retentionDays <= 0` (the default) never expires anything, a live meeting
+ * is never expired, and a meeting with no timestamp at all is left alone
+ * rather than guessed to be old.
+ */
+export function findExpiredMeetings(
+  meetings: Meeting[],
+  retentionDays: number,
+  now: number,
+): Meeting[] {
+  if (!Number.isFinite(retentionDays) || retentionDays <= 0) return [];
+  const cutoff = now - retentionDays * DAY_MS;
+  return meetings.filter((m) => {
+    if (isLive(m, now)) return false;
+    const seen = lastActivity(m);
+    return seen > 0 && seen < cutoff;
+  });
 }

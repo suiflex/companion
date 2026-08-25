@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { DOC_META } from '@meetcc/ai'
 import {
+  DOCPROG_PREFIX,
+  DOCS_PREFIX,
   loadDocProgress,
   loadDocs,
   watchStorage,
@@ -10,6 +12,7 @@ import {
   type MeetingDocs,
 } from '@meetcc/shared'
 import { lazyImport } from '../lib/lazy'
+import { db } from '../lib/db'
 import { useToast } from '../toast'
 
 const TYPES = Object.keys(DOC_META) as DocType[]
@@ -31,6 +34,20 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
   const [now, setNow] = useState(() => Date.now())
   const toast = useToast()
 
+  // P2.1 — an optional user template steers the document's structure.
+  const [templates, setTemplates] = useState<{ id: string; name: string }[]>([])
+  const [templateId, setTemplateId] = useState('')
+
+  useEffect(() => {
+    let alive = true
+    void db<{ id: string; name: string }[]>('templates', { kind: 'doc' })
+      .then((t) => alive && setTemplates(t))
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [])
+
   const reload = useCallback(() => {
     void loadDocs(meeting.id).then(setDocs)
     void loadDocProgress(meeting.id).then(setProg)
@@ -38,7 +55,7 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
 
   useEffect(() => {
     reload()
-    return watchStorage(reload) // background writes progress/doc -> auto-refresh
+    return watchStorage(reload, [DOCS_PREFIX, DOCPROG_PREFIX]) // background writes progress/doc
   }, [reload])
 
   useEffect(() => {
@@ -63,6 +80,7 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
         type: 'generate-doc',
         meetingId: meeting.id,
         docType,
+        templateId: templateId || undefined,
       })
       if (res?.ok) toast('success', `${DOC_META[docType].label} selesai dibuat.`)
       else toast('error', `Gagal: ${res?.error ?? 'unknown'}`)
@@ -117,6 +135,24 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
             )
           })}
         </div>
+        {templates.length > 0 && (
+          <label className="doc-template">
+            Template
+            <select
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              disabled={anyRunning}
+              aria-label="Template dokumen"
+            >
+              <option value="">Standar</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <span className="spacer" />
         {current && !running && (
           <>

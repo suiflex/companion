@@ -1,7 +1,7 @@
 // MV3 service worker: detects finished meetings and runs the AI pipeline.
 // Business logic lives in @meetcc/meeting; this file only wires chrome.* in.
 import {
-  askTranscript,
+  askMeeting,
   cleanTranscript,
   createClient,
   createRateLimiter,
@@ -10,26 +10,39 @@ import {
   validateSettings,
 } from '@meetcc/ai';
 import {
+  askMeetings,
+  findExpiredMeetings,
   findFinishedMeetings,
   runPipeline,
   type PipelineDeps,
+  type PipelineResult,
 } from '@meetcc/meeting';
+import { getStore, handleDb, refreshHighlights, syncIndex } from './db';
 import {
   appendAudit,
   clearClean,
   clearDocProgress,
+  clearMeeting,
+  deriveTitle,
+  effectiveClean,
   getAnalysis,
+  getTitle,
   loadAnalyses,
   loadChat,
   loadClean,
+  isLive,
   loadMeetings,
   loadSettings,
+  resolveSession,
+  sanitizeRoomId,
   saveChat,
   saveClean,
   saveDoc,
   saveDocProgress,
+  saveTitle,
   setAnalysis,
   type Analysis,
+  type AskResult,
   type ChatMessage,
   type DocType,
   type Meeting,
@@ -68,13 +81,14 @@ async function loadMeetingForAI(id: string): Promise<Meeting | null> {
   if (!meeting) return null;
   const clean = await loadClean(id);
   if (clean?.status !== 'done' || !clean.entries.length) return meeting;
-  const appended = meeting.entries.slice(clean.entries.length);
-  const entries = appended.length ? clean.entries.concat(appended) : clean.entries;
-  return { ...meeting, entries };
+  // §26: lines the user rejected fall back to the raw capture, and lines
+  // captured after the cleanup ran are appended untouched
+  return { ...meeting, entries: effectiveClean(meeting.entries, clean) };
 }
 
-function notify(title: string, message: string): void {
-  chrome.notifications.create({
+// The notification id IS the meeting id, so onClicked can open that meeting.
+function notify(title: string, message: string, meetingId: string): void {
+  chrome.notifications.create(meetingId, {
     type: 'basic',
     iconUrl: chrome.runtime.getURL('icons/icon128.png'),
     title,
@@ -98,6 +112,32 @@ const deps: PipelineDeps = {
   now: () => new Date().toISOString(),
 };
 
+/** Run the pipeline and, on success, give the meeting a readable name if it
+ *  doesn't have one. A user-set title is never overwritten. */
+async function analyze(id: string, opts: { force?: boolean } = {}): Promise<PipelineResult> {
+  const result = await runPipeline(id, deps, opts);
+  if (!result.ok) return result;
+  if (await getTitle(id)) return result;
+  const analysis = await analysisOf(id);
+  const title = analysis ? deriveTitle(analysis) : '';
+  if (title) await saveTitle(id, title);
+  return result;
+}
+
+/** Delete meetings past the user's retention window. Opt-in: `retentionDays`
+ *  defaults to 0 (keep forever), and deletion here is irreversible. */
+async function enforceRetention(meetings: Meeting[]): Promise<void> {
+  const { retentionDays } = await loadSettings();
+  const expired = findExpiredMeetings(meetings, retentionDays, Date.now());
+  for (const m of expired) {
+    await clearMeeting(m.id);
+    await getStore()
+      .then((db) => db.deleteSession(m.id))
+      .catch(() => undefined);
+    await appendAudit('retention.delete', `${m.id}: > ${retentionDays} hari`);
+  }
+}
+
 let sweeping = false;
 
 async function sweep(): Promise<void> {
@@ -106,7 +146,16 @@ async function sweep(): Promise<void> {
   try {
     const [meetings, records] = await Promise.all([loadMeetings(), loadAnalyses()]);
     for (const m of findFinishedMeetings(meetings, records, Date.now())) {
-      await runPipeline(m.id, deps);
+      await analyze(m.id);
+    }
+    await enforceRetention(meetings);
+    // the index is derived data: rebuilding it from storage is cheap and keeps
+    // it correct even if a write was missed while the worker was suspended
+    await syncIndex().catch((e) => console.warn('[MeetCC] index sync failed:', e));
+    for (const m of meetings) {
+      if (isLive(m, Date.now())) {
+        await refreshHighlights(m.id, m.entries).catch(() => undefined);
+      }
     }
   } finally {
     sweeping = false;
@@ -152,33 +201,51 @@ async function openDashboard(marker?: string): Promise<void> {
 
 chrome.action.onClicked.addListener(() => void openDashboard());
 
+// The notification id is the meeting id (see `notify`) — open that meeting.
+chrome.notifications.onClicked.addListener((notificationId) => {
+  void openDashboard(`meeting=${encodeURIComponent(notificationId)}`);
+  chrome.notifications.clear(notificationId);
+});
+
 // F2: chat with transcript. Runs in the SW so the decrypted API key never
 // reaches the dashboard page and every call passes the interactive limiter.
 async function handleAsk(
   id: string,
   question: string,
-): Promise<{ ok: true; answer: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; answer: string; result: AskResult } | { ok: false; error: string }> {
   const meeting = await loadMeetingForAI(id);
   if (!meeting) return { ok: false, error: 'Meeting tidak ditemukan.' };
   if (!meeting.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
   const history = await loadChat(id);
   const client = await makeInteractiveClient();
-  const answer = await askTranscript(client, meeting, await analysisOf(id), history, question);
+  const result = await askMeeting(client, meeting, await analysisOf(id), history, question);
   const now = new Date().toISOString();
   const turns: ChatMessage[] = [
     ...history,
     { role: 'user', content: question, time: now },
-    { role: 'assistant', content: answer, time: new Date().toISOString() },
+    { role: 'assistant', content: result.answer, time: new Date().toISOString(), result },
   ];
   await saveChat(id, turns);
-  await appendAudit('ask', id);
-  return { ok: true, answer };
+  await appendAudit('ask', `${id} (${result.answerability})`);
+  return { ok: true, answer: result.answer, result };
+}
+
+// P1.8: Ask across every stored meeting. Retrieval is SQL + FTS5 over the
+// local index; only the resulting evidence windows go to the model.
+async function handleGlobalAsk(
+  question: string,
+): Promise<{ ok: true; result: Awaited<ReturnType<typeof askMeetings>> } | { ok: false; error: string }> {
+  const client = await makeInteractiveClient();
+  const result = await askMeetings(client, await getStore(), question);
+  await appendAudit('ask.global', `${question.slice(0, 60)} (${result.answerability})`);
+  return { ok: true, result };
 }
 
 // F4: on-demand document generation (BRD / PRD / notulen).
 async function handleGenerateDoc(
   id: string,
   docType: DocType,
+  templateId?: string,
 ): Promise<{ ok: true; content: string } | { ok: false; error: string }> {
   const meeting = await loadMeetingForAI(id);
   if (!meeting) return { ok: false, error: 'Meeting tidak ditemukan.' };
@@ -203,6 +270,7 @@ async function handleGenerateDoc(
       async (step, total, label) => {
         await saveDocProgress(id, { type: docType, step, total, label, startedAt, updatedAt: now() });
       },
+      templateId ? (await getStore()).templates().find((t) => t.id === templateId) : undefined,
     );
     await saveDoc(id, docType, { content, generatedAt: now(), provider: client.provider });
     await clearDocProgress(id);
@@ -293,7 +361,38 @@ async function handleCleanTranscript(
   }
 }
 
+// P0.1: the content script knows the *room* (the Meet/Teams link); which
+// *session* that is depends on what is already stored, so the decision is
+// made here — one implementation, shared with the tests, instead of a copy
+// of the rule inside content.js.
+async function handleResolveSession(raw: string): Promise<{ sessionId: string }> {
+  const roomId = sanitizeRoomId(raw);
+  if (!roomId) throw new Error('roomId tidak valid');
+  const { sessionId, resumed } = resolveSession(roomId, await loadMeetings(), Date.now());
+  if (!resumed) await appendAudit('session.start', `${roomId} -> ${sessionId}`);
+  return { sessionId };
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type === 'db' && typeof msg.op === 'string') {
+    handleDb({ op: msg.op, args: msg.args })
+      .then((data) => sendResponse({ ok: true, data }))
+      .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
+    return true; // async response
+  }
+  if (msg?.type === 'global-ask' && typeof msg.question === 'string') {
+    handleGlobalAsk(msg.question)
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
+    return true; // async response
+  }
+  if (msg?.type === 'resolve-session' && typeof msg.roomId === 'string' && msg.roomId) {
+    handleResolveSession(msg.roomId)
+      .then(sendResponse)
+      // a failed lookup must not lose the meeting: fall back to the room id
+      .catch(() => sendResponse({ sessionId: sanitizeRoomId(msg.roomId) }));
+    return true; // async response
+  }
   if (msg?.type === 'meeting-started' && msg.meetingId) {
     void openDashboard(`meeting=${encodeURIComponent(msg.meetingId)}`);
     return;
@@ -305,7 +404,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return;
   }
   if (msg?.type === 'regenerate' && msg.meetingId) {
-    runPipeline(msg.meetingId, deps, { force: true }).then(sendResponse);
+    analyze(msg.meetingId, { force: true }).then(sendResponse);
     return true; // async response
   }
   if (msg?.type === 'ask' && msg.meetingId && typeof msg.question === 'string') {
@@ -315,7 +414,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true; // async response
   }
   if (msg?.type === 'generate-doc' && msg.meetingId && msg.docType) {
-    handleGenerateDoc(msg.meetingId, msg.docType as DocType)
+    handleGenerateDoc(msg.meetingId, msg.docType as DocType, msg.templateId)
       .then(sendResponse)
       .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
     return true; // async response

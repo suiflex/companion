@@ -1,4 +1,7 @@
 export interface Entry {
+  /** Stable within a meeting: `E<n>` by position (see `withEntryIds`).
+   *  Derived on read rather than stored, so old transcripts get ids too. */
+  id?: string;
   speaker: string;
   avatar?: string;
   text: string;
@@ -77,11 +80,52 @@ export type ProviderId =
   | 'openrouter'
   | 'custom';
 
+/** Optional integrations. All of them are off until the user fills them in:
+ *  there is no default endpoint and no bundled credential anywhere. */
+export interface IntegrationSettings {
+  /** Issue tracker for action items (P2.9). */
+  tracker: {
+    provider: 'jira' | 'linear' | 'notion';
+    baseUrl: string;
+    token: string; // encrypted at rest
+    target: string;
+  };
+  /** Encrypted sync / team workspace (P2.6-P2.8). */
+  sync: {
+    enabled: boolean;
+    endpoint: string;
+    token: string; // encrypted at rest
+    workspaceId: string;
+    passphrase: string; // encrypted at rest; never leaves the machine
+  };
+  /** OpenAI-compatible speech-to-text for imported recordings (P2.10). */
+  transcription: {
+    endpoint: string;
+    apiKey: string; // encrypted at rest
+    model: string;
+  };
+  /** Google Calendar OAuth client id supplied by the user (P2.5). */
+  calendarClientId: string;
+}
+
+export const DEFAULT_INTEGRATIONS: IntegrationSettings = {
+  tracker: { provider: 'jira', baseUrl: '', token: '', target: '' },
+  sync: { enabled: false, endpoint: '', token: '', workspaceId: '', passphrase: '' },
+  transcription: { endpoint: '', apiKey: '', model: 'whisper-1' },
+  calendarClientId: '',
+};
+
 export interface Settings {
   provider: ProviderId;
   apiKey: string; // decrypted in memory; encrypted at rest
   baseUrl: string; // used by ollama / lmstudio / azure / custom
   model: string;
+  /** Auto-delete meetings older than this many days. 0 = keep forever.
+   *  Opt-in only: deletion is irreversible, so the default never removes data. */
+  retentionDays: number;
+  /** Detect decisions/actions/deadlines while the meeting is still running. */
+  liveHighlights: boolean;
+  integrations: IntegrationSettings;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -89,7 +133,13 @@ export const DEFAULT_SETTINGS: Settings = {
   apiKey: '',
   baseUrl: '',
   model: '',
+  retentionDays: 0,
+  liveHighlights: true,
+  integrations: DEFAULT_INTEGRATIONS,
 };
+
+/** Retention choices offered in Settings, in days (0 = off). */
+export const RETENTION_OPTIONS = [0, 30, 90, 365] as const;
 
 export interface AuditEvent {
   time: string;
@@ -109,13 +159,55 @@ export type CleanRecord =
       total: number;
       entries: Entry[]; // partial result, so a refresh resumes, not restarts
     }
-  | { status: 'done'; entries: Entry[]; generatedAt: string; changed: number };
+  | {
+      status: 'done';
+      entries: Entry[];
+      generatedAt: string;
+      changed: number;
+      /** §26 provenance: line indexes where the user rejected the AI's
+       *  correction and kept the raw capture. Downstream AI reads the
+       *  effective transcript, so a bad cleanup never silently propagates
+       *  into summaries, decisions, Ask answers and documents. */
+      kept?: number[];
+    };
 
-/** One turn in a per-meeting "chat with transcript" conversation. */
+/** How well the transcript actually supports the answer. "not_found" is a last
+ *  resort after retrieval, not the default for anything not stated verbatim. */
+export type Answerability = 'explicit' | 'partial' | 'inferred' | 'not_found';
+
+/** What the user is asking for. `advise` answers go beyond the transcript and
+ *  the UI must label them as Companion's own analysis, not meeting content. */
+export type AskIntent = 'recall' | 'explain' | 'analyze' | 'advise';
+
+/** A contiguous stretch of transcript that supports the answer. Every id here
+ *  has been checked against the real transcript — the model cannot invent one. */
+export interface EvidenceSpan {
+  entryIds: string[];
+  startTime: string; // ISO
+  endTime: string; // ISO
+  speakers: string[];
+  /** First line of the span, for a one-glance preview in the UI. */
+  preview: string;
+}
+
+export interface AskResult {
+  answer: string;
+  answerability: Answerability;
+  intent: AskIntent;
+  confidence: number; // 0..1
+  evidence: EvidenceSpan[];
+  /** What the meeting did NOT settle — shown so "partial" is actionable. */
+  missing: string[];
+  followUps: string[];
+}
+
+/** One turn in a per-meeting "chat with transcript" conversation.
+ *  `result` is present on assistant turns produced by Ask Engine v2. */
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   time: string; // ISO
+  result?: AskResult;
 }
 
 /** On-demand documents generated from a meeting. */

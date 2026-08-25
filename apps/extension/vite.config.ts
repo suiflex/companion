@@ -13,6 +13,7 @@ export default defineConfig({
       '@meetcc/shared': p('../../packages/shared/src'),
       '@meetcc/ai': p('../../packages/ai/src'),
       '@meetcc/meeting': p('../../packages/meeting/src'),
+      '@meetcc/store': p('../../packages/store/src'),
       '@meetcc/exporters': p('../../packages/exporters/src'),
     },
   },

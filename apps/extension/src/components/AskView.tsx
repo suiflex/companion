@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { clearChat, loadChat, type ChatMessage, type Meeting } from '@meetcc/shared';
+import {
+  clearChat,
+  displayMeetingId,
+  loadChat,
+  type Answerability,
+  type AskResult,
+  type ChatMessage,
+  type Meeting,
+} from '@meetcc/shared';
 import { useToast } from '../toast';
 
 const SUGGESTIONS = [
@@ -11,6 +19,72 @@ const SUGGESTIONS = [
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+}
+
+/** The four grades are the point of Ask v2: "partial" and "inferred" are real
+ *  answers, so they must not look like a failure in the UI. */
+const ANSWERABILITY_LABEL: Record<Answerability, string> = {
+  explicit: 'Disebut langsung',
+  partial: 'Belum tuntas dibahas',
+  inferred: 'Simpulan dari pembahasan',
+  not_found: 'Tidak dibahas',
+};
+
+function confidenceLabel(c: number): string {
+  return c >= 0.75 ? 'tinggi' : c >= 0.45 ? 'sedang' : 'rendah';
+}
+
+function ResultMeta({ result, onAsk }: { result: AskResult; onAsk: (q: string) => void }) {
+  return (
+    <div className="ask-meta">
+      <div className="ask-grades">
+        <span className={`ask-grade ask-grade-${result.answerability}`}>
+          {ANSWERABILITY_LABEL[result.answerability]}
+        </span>
+        {result.intent === 'advise' && (
+          <span className="ask-grade ask-grade-advise">Analisis Companion, di luar isi rapat</span>
+        )}
+        <span className="ask-conf dim">Keyakinan {confidenceLabel(result.confidence)}</span>
+      </div>
+
+      {result.missing.length > 0 && (
+        <div className="ask-missing">
+          <span className="ask-meta-label">Belum diputuskan</span>
+          <ul>
+            {result.missing.map((m, i) => (
+              <li key={i}>{m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result.evidence.length > 0 && (
+        <div className="ask-evidence">
+          <span className="ask-meta-label">Bukti dari transcript</span>
+          <ul>
+            {result.evidence.map((e, i) => (
+              <li key={i}>
+                <span className="ask-ev-who">
+                  {e.speakers.join(', ')} · {fmtTime(e.startTime)}
+                </span>
+                <span className="ask-ev-text">{e.preview}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result.followUps.length > 0 && (
+        <div className="ask-followups">
+          {result.followUps.map((q, i) => (
+            <button key={i} className="ask-chip" onClick={() => onAsk(q)}>
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) {
@@ -45,7 +119,12 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
       if (res?.ok) {
         setMessages((m) => [
           ...m,
-          { role: 'assistant', content: res.answer, time: new Date().toISOString() },
+          {
+            role: 'assistant',
+            content: res.answer,
+            time: new Date().toISOString(),
+            result: res.result as AskResult | undefined,
+          },
         ]);
       } else {
         toast('error', `Gagal: ${res?.error ?? 'unknown'}`);
@@ -81,7 +160,7 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
             <div className="empty-glyph">?</div>
             <p>Tanya ke transcript.</p>
             <p className="empty-hint">
-              Jawaban diambil dari isi rapat {meeting.id} dan disertai bukti (timestamp / pembicara).
+              Jawaban diambil dari isi rapat {displayMeetingId(meeting.id)} dan disertai bukti (timestamp / pembicara).
             </p>
             <div className="ask-suggest">
               {SUGGESTIONS.map((s) => (
@@ -96,6 +175,7 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
             {messages.map((m, i) => (
               <div key={i} className={`bubble bubble-${m.role}`}>
                 <div className="bubble-text">{m.content}</div>
+                {m.result && <ResultMeta result={m.result} onAsk={(q) => void send(q)} />}
                 <time className="bubble-time">{fmtTime(m.time)}</time>
               </div>
             ))}

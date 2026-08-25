@@ -1,6 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { loadClean, watchStorage, type CleanRecord, type Entry, type Meeting } from '@meetcc/shared'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  CLEAN_PREFIX,
+  cleanChanges,
+  effectiveClean,
+  loadClean,
+  saveClean,
+  watchStorage,
+  type CleanRecord,
+  type Entry,
+  type Meeting,
+} from '@meetcc/shared'
 import { useToast } from '../toast'
+import { listHighlights } from '../lib/db'
 
 // Teams avatar URLs need the Teams session cookies; from the extension page
 // they 401 into a broken image, so fall back to the initial on load error.
@@ -31,6 +42,13 @@ interface Props {
   onClear: () => void
 }
 
+const HIGHLIGHT_LABEL: Record<string, string> = {
+  decision: 'Keputusan',
+  action: 'Action',
+  deadline: 'Deadline',
+  risk: 'Risiko',
+}
+
 export function Transcript({ meeting, live, onClear }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const stick = useRef(true)
@@ -41,6 +59,10 @@ export function Transcript({ meeting, live, onClear }: Props) {
   const [record, setRecord] = useState<CleanRecord | null>(null)
   const [view, setView] = useState<'raw' | 'clean'>('raw')
   const [now, setNow] = useState(() => Date.now())
+  // P2.2 — moments the live pass flagged (decision / action / deadline / risk)
+  const [highlights, setHighlights] = useState<
+    { id: number; seq: number; kind: string; text: string }[]
+  >([])
 
   const reload = useCallback(() => {
     void loadClean(meeting.id).then((r) => {
@@ -51,14 +73,45 @@ export function Transcript({ meeting, live, onClear }: Props) {
 
   useEffect(() => {
     reload()
-    return watchStorage(reload) // background writes clean:<id> -> auto-refresh
+    return watchStorage(reload, [CLEAN_PREFIX]) // background writes clean:<id>
   }, [reload])
+
+  useEffect(() => {
+    let alive = true
+    void listHighlights(meeting.id)
+      .then((h) => alive && setHighlights(h))
+      .catch(() => undefined) // index not built yet: the transcript still shows
+    return () => {
+      alive = false
+    }
+  }, [meeting.id, meeting.entries.length])
 
   // tick so a crashed run (no storage updates) is detected as stalled
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 8000)
     return () => clearInterval(t)
   }, [])
+
+  const bySeq = useMemo(
+    () => new Map(highlights.map((h) => [h.seq, h.kind])),
+    [highlights],
+  )
+
+  // §26 provenance: what the AI changed, and whether the user kept the original
+  const changes = useMemo(() => cleanChanges(meeting.entries, record), [meeting.entries, record])
+  const changedAt = useMemo(() => new Map(changes.map((c) => [c.index, c])), [changes])
+
+  // toggling a correction rewrites the stored record, so every downstream
+  // reader (summary, Ask, docs, index) picks the decision up on its next read
+  const keepOriginal = async (index: number, keep: boolean) => {
+    if (record?.status !== 'done') return
+    const kept = new Set(record.kept ?? [])
+    if (keep) kept.add(index)
+    else kept.delete(index)
+    const next = { ...record, kept: [...kept].sort((a, b) => a - b) }
+    setRecord(next)
+    await saveClean(meeting.id, next)
+  }
 
   const cleaned = record?.status === 'done' ? record.entries : null
   const processing = record?.status === 'processing'
@@ -70,7 +123,8 @@ export function Transcript({ meeting, live, onClear }: Props) {
   const age = processing ? now - Date.parse(record.updatedAt) : 0
   const stalled = processing && !(age < 60_000)
   const running = processing && !stalled
-  const entries = view === 'clean' && cleaned ? cleaned : meeting.entries
+  const entries =
+    view === 'clean' && cleaned ? effectiveClean(meeting.entries, record) : meeting.entries
 
   useEffect(() => {
     const el = ref.current
@@ -171,6 +225,24 @@ export function Transcript({ meeting, live, onClear }: Props) {
         </button>
       </div>
 
+      {highlights.length > 0 && view === 'raw' && (
+        <div className='hl-strip'>
+          <span className='section-label'>Sorotan</span>
+          {highlights.slice(-8).map((h) => (
+            <button
+              key={h.id}
+              className={`hl-chip hl-${h.kind}`}
+              title={h.text}
+              onClick={() => {
+                const el = ref.current?.querySelectorAll('.entry')[h.seq]
+                el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }}>
+              {HIGHLIGHT_LABEL[h.kind] ?? h.kind}: {h.text.slice(0, 48)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {entries.length === 0 ? (
         <div className='empty-state'>
           <p className='empty-hint'>Menunggu ada yang bicara…</p>
@@ -201,18 +273,34 @@ export function Transcript({ meeting, live, onClear }: Props) {
           )}
           {entries.map((e, i) => {
             const isTail = live && view === 'raw' && i === entries.length - 1
+            const flag = view === 'raw' ? bySeq.get(i) : undefined
             return (
-              <article className='entry' key={`${e.time}-${i}`}>
+              <article
+                className={`entry ${flag ? 'entry-flagged' : ''}`}
+                key={`${e.time}-${i}`}>
                 <Avatar src={e.avatar} name={e.speaker} />
                 <div className='entry-body'>
                   <div className='entry-head'>
                     <span className='speaker'>{e.speaker}</span>
                     <time className='stamp'>{fmtTime(e.time)}</time>
+                    {flag && <span className={`hl-tag hl-${flag}`}>{HIGHLIGHT_LABEL[flag] ?? flag}</span>}
                   </div>
                   <p className='text'>
                     {e.text}
                     {isTail && <span className='caret' />}
                   </p>
+                  {view === 'clean' && changedAt.has(i) && (
+                    <div className='clean-diff'>
+                      <span className='clean-raw' title='Yang tertangkap caption'>
+                        {changedAt.get(i)!.raw}
+                      </span>
+                      <button
+                        className='clean-toggle'
+                        onClick={() => void keepOriginal(i, !changedAt.get(i)!.kept)}>
+                        {changedAt.get(i)!.kept ? '↺ Pakai versi AI' : 'Pakai versi asli'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </article>
             )

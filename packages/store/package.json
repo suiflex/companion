@@ -1,0 +1,11 @@
+{
+  "name": "@meetcc/store",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@sqlite.org/sqlite-wasm": "3.49.1-build3",
+    "@meetcc/shared": "*"
+  }
+}

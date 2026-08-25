@@ -61,7 +61,14 @@ function store(obj) {
   }
 }
 
-function initMeeting(id) {
+// A Meet/Teams link is a ROOM, not a meeting: the same link is reused every
+// week. The session id (room + start) is decided by the service worker, which
+// can see what is already stored — rejoining within a few minutes resumes the
+// running session, a new day starts a new one. Resolution is async, so until
+// it lands captured lines just buffer in `entries`.
+let initPending = false
+function adoptSession(id) {
+  initPending = false
   if (meetingId || dead) return
   meetingId = id
   storageKey = `transcript:${id}`
@@ -69,6 +76,25 @@ function initMeeting(id) {
   try {
     chrome.storage.local.get(storageKey, (r) => {
       if (Array.isArray(r[storageKey])) entries = r[storageKey].concat(entries)
+    })
+  } catch {
+    die()
+  }
+}
+
+function initMeeting(roomId) {
+  if (meetingId || dead || initPending) return
+  initPending = true
+  try {
+    chrome.runtime.sendMessage({ type: 'resolve-session', roomId }, (res) => {
+      if (chrome.runtime.lastError || !res || !res.sessionId) {
+        // SW unreachable — recording under the room id loses the session
+        // split, but losing the transcript would be worse.
+        console.warn(TAG, 'session resolve failed, using room id:', roomId)
+        adoptSession(roomId)
+        return
+      }
+      adoptSession(res.sessionId)
     })
   } catch {
     die()
@@ -223,7 +249,9 @@ timers.push(
       }
     }
     if (dirty) {
-      store({ [storageKey]: entries })
+      // storageKey is null until the session id comes back; the next dirty
+      // tick flushes the whole buffer, so nothing is lost meanwhile.
+      if (storageKey) store({ [storageKey]: entries })
       if (!TOP) {
         // mirror to this tab's top frame (badge + PiP live there)
         try {
@@ -302,7 +330,7 @@ timers.push(
     if (ccOn()) {
       ccClicks = 0 // CC is on; reset so a manual turn-off gets re-enabled
       if (!meetingId) initMeeting('tms-' + Date.now()) // Teams: in-call, CC on, no URL id
-      if (!announced) {
+      if (!announced && meetingId) {
         announced = true // in the call, CC live -> auto-open transcript window
         try {
           chrome.runtime.sendMessage(

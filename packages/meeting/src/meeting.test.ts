@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AnalysisRecord, Meeting } from '@meetcc/shared';
 import { AIError, type AIClient } from '@meetcc/ai';
-import { needsAnalysis, MIN_ENTRIES, STALE_PROCESSING_MS } from './detect';
+import { findExpiredMeetings, needsAnalysis, MIN_ENTRIES, STALE_PROCESSING_MS } from './detect';
 import { runPipeline, type PipelineDeps } from './pipeline';
 
 const NOW = Date.parse('2026-07-13T03:00:00Z');
@@ -49,6 +49,49 @@ describe('needsAnalysis', () => {
   });
 });
 
+describe('findExpiredMeetings', () => {
+  const DAY = 24 * 60 * 60_000;
+  const aged = (id: string, daysAgo: number): Meeting =>
+    meeting({
+      id,
+      meta: { id, startedAt: iso(daysAgo * DAY + 3_600_000), lastSeenAt: iso(daysAgo * DAY) },
+    });
+
+  it('returns nothing when retention is off (the default)', () => {
+    const old = [aged('a', 400), aged('b', 91)];
+    expect(findExpiredMeetings(old, 0, NOW)).toEqual([]);
+    expect(findExpiredMeetings(old, -1, NOW)).toEqual([]);
+    expect(findExpiredMeetings(old, Number.NaN, NOW)).toEqual([]);
+  });
+
+  it('expires only meetings past the window', () => {
+    const list = [aged('old', 91), aged('edge', 89), aged('fresh', 1)];
+    expect(findExpiredMeetings(list, 90, NOW).map((m) => m.id)).toEqual(['old']);
+  });
+
+  it('never expires a live meeting, however old its start', () => {
+    const live = meeting({
+      id: 'live',
+      meta: { id: 'live', startedAt: iso(400 * DAY), lastSeenAt: iso(2_000) },
+    });
+    expect(findExpiredMeetings([live], 30, NOW)).toEqual([]);
+  });
+
+  it('leaves meetings with no timestamp at all alone', () => {
+    const unknown: Meeting = { id: 'ghost', meta: null, entries: [] };
+    expect(findExpiredMeetings([unknown], 1, NOW)).toEqual([]);
+  });
+
+  it('falls back to the last transcript entry when there is no heartbeat', () => {
+    const noMeta: Meeting = {
+      id: 'nometa',
+      meta: null,
+      entries: [{ speaker: 'A', text: 'x', time: iso(200 * DAY) }],
+    };
+    expect(findExpiredMeetings([noMeta], 90, NOW).map((m) => m.id)).toEqual(['nometa']);
+  });
+});
+
 describe('findFinishedMeetings', () => {
   it('filters only meetings needing analysis', async () => {
     const { findFinishedMeetings } = await import('./detect');
@@ -86,7 +129,11 @@ describe('runPipeline', () => {
     const res = await runPipeline('aaa-bbbb-ccc', deps);
     expect(res.ok).toBe(true);
     expect(records.map((r) => r.status)).toEqual(['processing', 'processing', 'done']);
-    expect(deps.notify).toHaveBeenCalledWith(expect.stringContaining('siap'), expect.any(String));
+    expect(deps.notify).toHaveBeenCalledWith(
+      expect.stringContaining('siap'),
+      expect.any(String),
+      'aaa-bbbb-ccc',
+    );
   });
 
   it('records error state when AI fails', async () => {

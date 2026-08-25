@@ -1,12 +1,14 @@
 name: Build extension
 
-# Every push to main (and manual runs) produces a ready-to-load dist artifact.
+# Every push to a long-lived branch (and manual runs) produces a ready-to-load
+# dist artifact. `develop` is where the work lands, so it has to be checked
+# here too — otherwise the suite only ever runs on a PR.
 # Pushing a tag like v3.1.0 additionally publishes a GitHub Release with the
 # zip attached — download, extract, load-unpacked. No install/build needed.
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, develop]
     tags: ['v*']
   pull_request:
   workflow_dispatch:
@@ -31,11 +33,21 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Lint
+        run: npm run lint
+
       - name: Test
         run: npx vitest run
 
       - name: Build
         run: npm run build -w apps/extension
+
+      # the MCP bin is bundled TypeScript; the smoke test proves it starts
+      # under plain node and answers over stdio
+      - name: Build and smoke-test MCP server
+        run: |
+          npm run build -w @meetcc/mcp
+          npm run smoke -w @meetcc/mcp
 
       - name: Read version from manifest
         id: meta

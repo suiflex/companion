@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS, type Settings } from '@meetcc/shared';
 import { PROVIDER_PRESETS, resolveConfig, validateSettings } from './client';
+import { originPattern, requiredOrigins } from './permissions';
 import { createRateLimiter } from './ratelimit';
 
 const s = (over: Partial<Settings>): Settings => ({ ...DEFAULT_SETTINGS, ...over });
@@ -44,5 +45,65 @@ describe('rate limiter', () => {
     expect(rl.take(10)).toBe(true);
     expect(rl.take(20)).toBe(false);
     expect(rl.take(1011)).toBe(true); // first call aged out
+  });
+});
+
+describe('requiredOrigins (§8.3)', () => {
+  const base: Settings = {
+    ...DEFAULT_SETTINGS,
+    integrations: {
+      ...DEFAULT_SETTINGS.integrations,
+      tracker: { ...DEFAULT_SETTINGS.integrations.tracker },
+      sync: { ...DEFAULT_SETTINGS.integrations.sync },
+      transcription: { ...DEFAULT_SETTINGS.integrations.transcription },
+    },
+  };
+
+  it('asks for nothing when everything is off', () => {
+    expect(requiredOrigins(base)).toEqual([]);
+  });
+
+  it('asks only for the provider the user picked', () => {
+    expect(requiredOrigins({ ...base, provider: 'openai' })).toEqual(['https://api.openai.com/*']);
+    expect(requiredOrigins({ ...base, provider: 'ollama', baseUrl: 'http://localhost:11434/v1' })).toEqual([
+      'http://localhost:11434/*',
+    ]);
+  });
+
+  it('adds an integration origin only once it is actually configured', () => {
+    const half = {
+      ...base,
+      integrations: { ...base.integrations, tracker: { ...base.integrations.tracker, token: 'a:b' } },
+    };
+    expect(requiredOrigins(half)).toEqual([]); // no project key yet
+
+    const ready = {
+      ...half,
+      integrations: {
+        ...half.integrations,
+        tracker: { provider: 'linear' as const, baseUrl: '', token: 'k', target: 'team' },
+      },
+    };
+    expect(requiredOrigins(ready)).toEqual(['https://api.linear.app/*']);
+  });
+
+  it('does not ask for a sync endpoint while sync is switched off', () => {
+    const off = {
+      ...base,
+      integrations: { ...base.integrations, sync: { ...base.integrations.sync, endpoint: 'https://s.example.com' } },
+    };
+    expect(requiredOrigins(off)).toEqual([]);
+    expect(
+      requiredOrigins({
+        ...off,
+        integrations: { ...off.integrations, sync: { ...off.integrations.sync, enabled: true } },
+      }),
+    ).toEqual(['https://s.example.com/*']);
+  });
+
+  it('ignores junk instead of requesting a bogus pattern', () => {
+    expect(originPattern('not a url')).toBe('');
+    expect(originPattern('javascript:alert(1)')).toBe('');
+    expect(originPattern('https://api.openai.com/v1/chat')).toBe('https://api.openai.com/*');
   });
 });

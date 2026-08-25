@@ -1,0 +1,11 @@
+{
+  "transcript:room#1000": [
+    { "speaker": "Rina", "text": "Kita bahas insiden Freeport", "time": "2026-08-24T07:00:00.000Z" }
+  ],
+  "meta:room#1000": {
+    "id": "room#1000",
+    "startedAt": "2026-08-24T07:00:00.000Z",
+    "lastSeenAt": "2026-08-24T07:01:00.000Z"
+  },
+  "title:room#1000": "Incident Freeport"
+}

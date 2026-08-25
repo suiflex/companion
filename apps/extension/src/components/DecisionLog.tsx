@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ANALYSIS_PREFIX,
+  RESOLVED_PREFIX,
   buildAgenda,
   collectDecisions,
   collectOpenQuestions,
@@ -30,7 +32,7 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
 
   useEffect(() => {
     refresh();
-    return watchStorage(refresh);
+    return watchStorage(refresh, [ANALYSIS_PREFIX, RESOLVED_PREFIX]);
   }, [refresh]);
 
   const decisions = useMemo(() => collectDecisions(records), [records]);

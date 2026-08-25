@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Diagram, Meeting } from '@meetcc/shared';
-import { renderSvg } from '../lib/mermaid';
+import { lazyImport } from '../lib/lazy';
 import { useToast } from '../toast';
 
 type State =
@@ -10,7 +10,11 @@ type State =
 
 /** Renders one Mermaid definition to inline SVG. Full syntax validation
  *  happens here (browser has the DOM the service worker lacks) — a bad
- *  diagram degrades to its source, the rest of the tab stays intact. */
+ *  diagram degrades to its source, the rest of the tab stays intact.
+ *
+ *  The wrapper is imported dynamically, the same way SummaryView's PDF export
+ *  does it: a static import here would pull it into the main dashboard chunk
+ *  and block that split for both call sites. */
 function DiagramCard({ diagram, index }: { diagram: Diagram; index: number }) {
   const [state, setState] = useState<State>({ status: 'rendering' });
   const toast = useToast();
@@ -18,7 +22,8 @@ function DiagramCard({ diagram, index }: { diagram: Diagram; index: number }) {
   useEffect(() => {
     let alive = true;
     setState({ status: 'rendering' });
-    renderSvg(diagram.mermaid)
+    lazyImport(() => import('../lib/mermaid'))
+      .then(({ renderSvg }) => renderSvg(diagram.mermaid))
       .then((svg) => alive && setState({ status: 'ready', svg }))
       .catch((e: unknown) =>
         alive && setState({ status: 'error', message: (e as Error).message }),

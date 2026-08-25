@@ -1,6 +1,7 @@
 import { decryptString, encryptString } from './crypto';
 import { migrateAnalysis } from './migrate';
 import {
+  DEFAULT_INTEGRATIONS,
   DEFAULT_SETTINGS,
   type AnalysisRecord,
   type AuditEvent,
@@ -9,6 +10,7 @@ import {
   type DocProgressRecord,
   type DocType,
   type Entry,
+  type IntegrationSettings,
   type Meeting,
   type MeetingDocs,
   type MeetingMeta,
@@ -29,6 +31,7 @@ export const DOCS_PREFIX = 'docs:';
 export const RESOLVED_PREFIX = 'resolved:';
 export const CLEAN_PREFIX = 'clean:';
 export const DOCPROG_PREFIX = 'docprog:';
+export const TITLE_PREFIX = 'title:';
 const SETTINGS_KEY = 'settings';
 const AUDIT_KEY = 'audit';
 
@@ -52,8 +55,13 @@ export function participants(m: Meeting): string[] {
   return [...new Set(m.entries.map((e) => e.speaker))];
 }
 
-export async function loadMeetings(): Promise<Meeting[]> {
-  const all = await chrome.storage.local.get(null);
+/**
+ * chrome.storage.local has no key-enumeration API, so listing meetings always
+ * costs one full `get(null)`. Parsing is split out from fetching so a caller
+ * that needs several views (dashboard) pays for that dump once instead of
+ * once per view — see `loadDashboard`.
+ */
+export function parseMeetings(all: Record<string, unknown>): Meeting[] {
   const byId = new Map<string, Meeting>();
   const get = (id: string): Meeting => {
     let m = byId.get(id);
@@ -83,8 +91,7 @@ export async function loadMeetings(): Promise<Meeting[]> {
   );
 }
 
-export async function loadAnalyses(): Promise<Record<string, AnalysisRecord>> {
-  const all = await chrome.storage.local.get(null);
+export function parseAnalyses(all: Record<string, unknown>): Record<string, AnalysisRecord> {
   const out: Record<string, AnalysisRecord> = {};
   for (const [key, value] of Object.entries(all)) {
     if (key.startsWith(ANALYSIS_PREFIX) && value) {
@@ -92,6 +99,54 @@ export async function loadAnalyses(): Promise<Record<string, AnalysisRecord>> {
     }
   }
   return out;
+}
+
+export function parseTitles(all: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(all)) {
+    if (key.startsWith(TITLE_PREFIX) && typeof value === 'string' && value) {
+      out[key.slice(TITLE_PREFIX.length)] = value;
+    }
+  }
+  return out;
+}
+
+export async function loadMeetings(): Promise<Meeting[]> {
+  return parseMeetings(await chrome.storage.local.get(null));
+}
+
+export async function loadAnalyses(): Promise<Record<string, AnalysisRecord>> {
+  return parseAnalyses(await chrome.storage.local.get(null));
+}
+
+export interface DashboardData {
+  meetings: Meeting[];
+  records: Record<string, AnalysisRecord>;
+  titles: Record<string, string>;
+}
+
+/** Everything the dashboard renders, from a single storage dump. */
+export async function loadDashboard(): Promise<DashboardData> {
+  const all = await chrome.storage.local.get(null);
+  return {
+    meetings: parseMeetings(all),
+    records: parseAnalyses(all),
+    titles: parseTitles(all),
+  };
+}
+
+// -- meeting title (auto-derived from the analysis, user-overridable) --
+
+export async function getTitle(id: string): Promise<string> {
+  const v = (await chrome.storage.local.get(TITLE_PREFIX + id))[TITLE_PREFIX + id];
+  return typeof v === 'string' ? v : '';
+}
+
+/** Empty/blank title removes the override so the UI falls back to the id. */
+export async function saveTitle(id: string, title: string): Promise<void> {
+  const trimmed = title.trim();
+  if (!trimmed) return chrome.storage.local.remove(TITLE_PREFIX + id);
+  await chrome.storage.local.set({ [TITLE_PREFIX + id]: trimmed });
 }
 
 export async function getAnalysis(id: string): Promise<AnalysisRecord | null> {
@@ -113,6 +168,7 @@ export async function clearMeeting(id: string): Promise<void> {
     DOCPROG_PREFIX + id,
     RESOLVED_PREFIX + id,
     CLEAN_PREFIX + id,
+    TITLE_PREFIX + id,
   ]);
 }
 
@@ -195,25 +251,92 @@ export async function clearDocProgress(id: string): Promise<void> {
   await chrome.storage.local.remove(DOCPROG_PREFIX + id);
 }
 
-export function watchStorage(onChange: () => void): () => void {
-  const listener = () => onChange();
+/** A live meeting writes its transcript every 500ms; without coalescing every
+ *  watcher re-read the whole of storage twice a second. */
+export const WATCH_DEBOUNCE_MS = 400;
+
+/** True when at least one changed key is one this watcher cares about. */
+export function matchesPrefixes(keys: string[], prefixes?: string[]): boolean {
+  if (!prefixes?.length) return true;
+  return keys.some((k) => prefixes.some((p) => k.startsWith(p)));
+}
+
+/**
+ * Subscribe to storage changes, debounced and (optionally) narrowed to the
+ * key prefixes the caller actually reads — a transcript write should not make
+ * the document tab reload its documents.
+ */
+export function watchStorage(onChange: () => void, prefixes?: string[]): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const listener = (changes: Record<string, unknown>) => {
+    if (!matchesPrefixes(Object.keys(changes), prefixes)) return;
+    clearTimeout(timer);
+    timer = setTimeout(onChange, WATCH_DEBOUNCE_MS);
+  };
   chrome.storage.onChanged.addListener(listener);
-  return () => chrome.storage.onChanged.removeListener(listener);
+  return () => {
+    clearTimeout(timer);
+    chrome.storage.onChanged.removeListener(listener);
+  };
 }
 
 // -- settings (API key encrypted at rest) --
 
+/** Integration secrets get the same at-rest treatment as the provider key:
+ *  encrypted on write, decrypted on read, never stored in plain text. */
+async function mapSecrets(
+  integrations: IntegrationSettings,
+  fn: (value: string) => Promise<string>,
+): Promise<IntegrationSettings> {
+  return {
+    ...integrations,
+    tracker: { ...integrations.tracker, token: await fn(integrations.tracker.token) },
+    sync: {
+      ...integrations.sync,
+      token: await fn(integrations.sync.token),
+      passphrase: await fn(integrations.sync.passphrase),
+    },
+    transcription: { ...integrations.transcription, apiKey: await fn(integrations.transcription.apiKey) },
+  };
+}
+
+/** Merge stored settings over the defaults without losing nested defaults when
+ *  an older install has no `integrations` block at all. */
+function withDefaults(raw: Partial<Settings>): Settings {
+  const stored = raw.integrations ?? DEFAULT_INTEGRATIONS;
+  return {
+    ...DEFAULT_SETTINGS,
+    ...raw,
+    integrations: {
+      ...DEFAULT_INTEGRATIONS,
+      ...stored,
+      tracker: { ...DEFAULT_INTEGRATIONS.tracker, ...stored.tracker },
+      sync: { ...DEFAULT_INTEGRATIONS.sync, ...stored.sync },
+      transcription: { ...DEFAULT_INTEGRATIONS.transcription, ...stored.transcription },
+    },
+  };
+}
+
 export async function loadSettings(): Promise<Settings> {
   const raw = (await chrome.storage.local.get(SETTINGS_KEY))[SETTINGS_KEY];
   if (!raw) return { ...DEFAULT_SETTINGS };
-  const s = { ...DEFAULT_SETTINGS, ...raw } as Settings;
+  const s = withDefaults(raw as Partial<Settings>);
   s.apiKey = await decryptString(s.apiKey);
+  s.integrations = await mapSecrets(s.integrations, decryptString);
+  // retention drives irreversible deletion: anything not a positive finite
+  // number falls back to "keep forever" rather than to some guessed window
+  s.retentionDays =
+    Number.isFinite(s.retentionDays) && s.retentionDays > 0 ? Math.floor(s.retentionDays) : 0;
   return s;
 }
 
 export async function saveSettings(s: Settings): Promise<void> {
   await chrome.storage.local.set({
-    [SETTINGS_KEY]: { ...s, apiKey: await encryptString(s.apiKey) },
+    [SETTINGS_KEY]: {
+      ...s,
+      apiKey: await encryptString(s.apiKey),
+      integrations: await mapSecrets(s.integrations, encryptString),
+    },
   });
 }
 

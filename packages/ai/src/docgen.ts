@@ -173,11 +173,28 @@ export function buildDocUserPrompt(meeting: Meeting, analysis: Analysis | null):
   return `Rapat: ${meeting.id}\n\nTranscript:\n${formatTranscript(meeting)}${ctx}`
 }
 
-function draftUser(context: string, analysis: Analysis | null): string {
+function draftUser(context: string, analysis: Analysis | null, template?: DocTemplate): string {
   const ctx = analysis?.executiveSummary
     ? `\n\nRingkasan analisis (konteks, verifikasi ke transcript):\n${analysis.executiveSummary}`
     : ''
-  return `Transcript / notes rapat (dengan timestamp):\n${context}${ctx}`
+  return `Transcript / notes rapat (dengan timestamp):\n${context}${ctx}${templateBlock(template)}`
+}
+
+/** P2.1 — a user-defined template steers structure and emphasis. It is added
+ *  to the prompt, never replacing the grounding rules: a template can ask for
+ *  different sections, not for facts the transcript does not contain. */
+export interface DocTemplate {
+  name: string
+  instructions: string
+  sections?: string[]
+}
+
+export function templateBlock(template?: DocTemplate): string {
+  if (!template?.instructions && !template?.sections?.length) return ''
+  const sections = template.sections?.length
+    ? `\nGunakan struktur section berikut, dengan urutan ini:\n${template.sections.map((x) => `- ${x}`).join('\n')}`
+    : ''
+  return `\n\nTemplate "${template.name}" dari pengguna (ikuti strukturnya, tetap jangan mengarang fakta):\n${template.instructions}${sections}`
 }
 
 function critiqueUser(docLabel: string, draft: string, context: string): string {
@@ -218,6 +235,7 @@ export async function generateDoc(
   analysis: Analysis | null,
   type: DocType,
   onProgress?: DocProgress,
+  template?: DocTemplate,
 ): Promise<string> {
   const meta = DOC_META[type]
   if (!meta) throw new AIError(`Tipe dokumen tidak dikenal: ${type}`, false)
@@ -234,7 +252,7 @@ export async function generateDoc(
     await tick('Menyiapkan konteks')
   })
 
-  const draft = unfence(await complete1(client, meta.system, draftUser(context, analysis)))
+  const draft = unfence(await complete1(client, meta.system, draftUser(context, analysis, template)))
   if (!draft) throw new AIError('Draft dokumen kosong', true)
   step += 1
   await tick('Menulis draft')

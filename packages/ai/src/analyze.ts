@@ -51,8 +51,36 @@ Gunakan bahasa yang sama dengan transcript. Field yang tidak ada isinya = array 
 
 Aturan "decisions": tiap keputusan berisi "what" (keputusan yang diambil), "why" (alasan singkat), "rejected" (opsi yang ditolak beserta alasan, boleh kosong), dan "topic" (label topik/area pendek dalam kebab-case, mis. "arsitektur-order"). Kosongkan field yang tidak disebut.`;
 
-export function buildUserPrompt(m: Meeting): string {
-  return `Meeting: ${m.id}\nTranscript:\n${formatTranscript(m)}`;
+export function buildUserPrompt(m: Meeting, part?: { index: number; total: number }): string {
+  const header = part
+    ? `Meeting: ${m.id} (bagian ${part.index + 1} dari ${part.total} — analisis bagian ini saja)`
+    : `Meeting: ${m.id}`;
+  return `${header}\nTranscript:\n${formatTranscript(m)}`;
+}
+
+/**
+ * Split entries into chunks that each fit one request. Greedy over the
+ * formatted line length, so a chunk never overflows `maxChars` unless a
+ * single line already does (then it gets a chunk of its own and
+ * `formatTranscript` truncates it as a last resort).
+ */
+export function chunkEntries(entries: Entry[], maxChars = MAX_TRANSCRIPT_CHARS): Entry[][] {
+  if (entries.length <= 1) return [entries];
+  const chunks: Entry[][] = [];
+  let current: Entry[] = [];
+  let size = 0;
+  for (const e of entries) {
+    const len = formatEntries([e]).length + 1;
+    if (current.length && size + len > maxChars) {
+      chunks.push(current);
+      current = [];
+      size = 0;
+    }
+    current.push(e);
+    size += len;
+  }
+  if (current.length) chunks.push(current);
+  return chunks;
 }
 
 const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
@@ -93,9 +121,9 @@ export function parseAnalysis(raw: string): Analysis {
   return analysis;
 }
 
-/** Full analysis with one retry on retryable failures. */
-export async function analyzeMeeting(client: AIClient, meeting: Meeting): Promise<Analysis> {
-  const req = { system: SYSTEM_PROMPT, user: buildUserPrompt(meeting), json: true };
+/** One completion + parse, retried once on retryable failures. */
+async function completeAnalysis(client: AIClient, user: string): Promise<Analysis> {
+  const req = { system: SYSTEM_PROMPT, user, json: true };
   let lastError: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
@@ -106,4 +134,104 @@ export async function analyzeMeeting(client: AIClient, meeting: Meeting): Promis
     }
   }
   throw lastError;
+}
+
+/** Case-insensitive de-dupe that keeps the first spelling seen. */
+function uniqueBy<T>(items: T[], key: (x: T) => string): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const item of items) {
+    const k = key(item).toLowerCase().trim();
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push(item);
+  }
+  return out;
+}
+
+/** Fold per-chunk analyses into one. Executive summaries are concatenated
+ *  here; `analyzeMeeting` replaces that with a real reduce pass when it can. */
+export function mergeAnalyses(parts: Analysis[]): Analysis {
+  const all = <T>(pick: (a: Analysis) => T[]): T[] => parts.flatMap(pick);
+  return {
+    executiveSummary: parts
+      .map((p) => p.executiveSummary.trim())
+      .filter(Boolean)
+      .join(' '),
+    timeline: all((p) => p.timeline), // chronological: chunks are already in order
+    keyDiscussions: uniqueBy(all((p) => p.keyDiscussions), (x) => x),
+    decisions: uniqueBy(all((p) => p.decisions), (d) => d.what),
+    actionItems: uniqueBy(all((p) => p.actionItems), (a) => a.task),
+    risks: uniqueBy(all((p) => p.risks), (x) => x),
+    openQuestions: uniqueBy(all((p) => p.openQuestions), (x) => x),
+    nextSteps: uniqueBy(all((p) => p.nextSteps), (x) => x),
+    diagrams: all((p) => p.diagrams),
+  };
+}
+
+/** How many chunk analyses run at once — same bounded-parallel shape as the
+ *  transcript cleanup, so a long meeting isn't N sequential round-trips. */
+export const ANALYZE_CONCURRENCY = 3;
+
+const REDUCE_SYSTEM_PROMPT = `Kamu editor notulen. Kamu diberi beberapa ringkasan bagian dari SATU rapat.
+Gabungkan menjadi satu ringkasan eksekutif 2-4 kalimat untuk keseluruhan rapat.
+Balas HANYA teks ringkasannya, tanpa judul, tanpa markdown, tanpa penjelasan.
+Gunakan bahasa yang sama dengan ringkasan bagian. Jangan menambah fakta baru.`;
+
+/** Collapse the per-chunk summaries into one. Best-effort: if the extra call
+ *  fails, the concatenated summaries from `mergeAnalyses` are kept. */
+async function reduceSummary(client: AIClient, parts: Analysis[]): Promise<string> {
+  const user = parts
+    .map((p, i) => `Bagian ${i + 1}: ${p.executiveSummary}`)
+    .filter((line) => line.length > 12)
+    .join('\n');
+  const text = (await client.complete({ system: REDUCE_SYSTEM_PROMPT, user })).trim();
+  if (!text) throw new AIError('Ringkasan gabungan kosong', true);
+  return text;
+}
+
+/**
+ * Full analysis. Transcripts that fit one request take a single call; longer
+ * ones are analyzed chunk by chunk and folded back together (map-reduce), so
+ * a two-hour meeting is summarized in full instead of having its middle cut.
+ * A chunk that fails is skipped rather than failing the whole meeting — but
+ * if every chunk fails, the error propagates.
+ */
+export async function analyzeMeeting(client: AIClient, meeting: Meeting): Promise<Analysis> {
+  const chunks = chunkEntries(meeting.entries);
+  if (chunks.length <= 1) return completeAnalysis(client, buildUserPrompt(meeting));
+
+  const parts: Analysis[] = [];
+  let lastError: unknown;
+  for (let i = 0; i < chunks.length; i += ANALYZE_CONCURRENCY) {
+    const batch = chunks.slice(i, i + ANALYZE_CONCURRENCY);
+    const settled = await Promise.all(
+      batch.map((entries, k) =>
+        completeAnalysis(
+          client,
+          buildUserPrompt(
+            { ...meeting, entries },
+            { index: i + k, total: chunks.length },
+          ),
+        ).then(
+          (a) => a,
+          (e) => {
+            lastError = e;
+            return null;
+          },
+        ),
+      ),
+    );
+    for (const a of settled) if (a) parts.push(a);
+  }
+  if (!parts.length) throw lastError;
+
+  const merged = mergeAnalyses(parts);
+  if (parts.length < 2) return merged;
+  try {
+    merged.executiveSummary = await reduceSummary(client, parts);
+  } catch {
+    /* keep the concatenated per-chunk summaries */
+  }
+  return merged;
 }

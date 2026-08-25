@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
+  displayMeetingId,
   isLive,
   startedAt,
   type AnalysisRecord,
   type Meeting,
 } from '@meetcc/shared'
+
+import { listProjects, listSessions } from '../lib/db'
 
 type Theme = 'dark' | 'light'
 
@@ -48,11 +51,14 @@ interface Props {
   meetings: Meeting[]
   loading: boolean
   records: Record<string, AnalysisRecord>
+  titles: Record<string, string>
   now: number
   selectedId: string | null
   onSelect: (id: string) => void
   onSettings: () => void
   onDecisions: () => void
+  onKnowledge: () => void
+  onSearch: () => void
   onDelete: (id: string) => void
 }
 
@@ -60,16 +66,47 @@ export function Sidebar({
   meetings,
   loading,
   records,
+  titles,
   now,
   selectedId,
   onSelect,
   onSettings,
   onDecisions,
+  onKnowledge,
+  onSearch,
   onDelete,
 }: Props) {
   const [open, setOpen] = useState(true)
-  const live = meetings.filter((m) => isLive(m, now))
-  const past = meetings.filter((m) => !isLive(m, now))
+  // P2.3 — project grouping. The mapping lives in the index, so a failed load
+  // just means the filter is unavailable, never an empty meeting list.
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([])
+  const [projectOf, setProjectOf] = useState<Record<string, string>>({})
+  const [filter, setFilter] = useState('')
+
+  useEffect(() => {
+    let alive = true
+    void Promise.all([listProjects(), listSessions()])
+      .then(([p, sessions]) => {
+        if (!alive) return
+        setProjects(p)
+        setProjectOf(
+          Object.fromEntries(
+            sessions.filter((s) => s.projectId).map((s) => [s.id, s.projectId as string]),
+          ),
+        )
+      })
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [meetings.length])
+
+  const shown = useMemo(
+    () => (filter ? meetings.filter((m) => projectOf[m.id] === filter) : meetings),
+    [meetings, filter, projectOf],
+  )
+  const live = shown.filter((m) => isLive(m, now))
+  const past = shown.filter((m) => !isLive(m, now))
 
   const badge = (m: Meeting) => {
     const r = records[m.id]
@@ -80,14 +117,18 @@ export function Sidebar({
     return <span className='ai-badge done'>✓</span>
   }
 
-  const item = (m: Meeting) => (
+  const item = (m: Meeting) => {
+    // named by the AI summary (or the user); falls back to the raw meeting id
+    const label = titles[m.id] || displayMeetingId(m.id)
+    return (
     <div key={m.id} className='meeting-row'>
       <button
         className={`meeting ${m.id === selectedId ? 'selected' : ''}`}
+        title={m.id}
         onClick={() => onSelect(m.id)}>
         <span className={`status ${isLive(m, now) ? 'on' : ''}`} />
         <span className='meeting-body'>
-          <span className='meeting-id'>{m.id}</span>
+          <span className='meeting-id'>{label}</span>
           <span className='meeting-sub'>
             {fmtDate(startedAt(m))} · {m.entries.length} baris
           </span>
@@ -96,13 +137,14 @@ export function Sidebar({
       </button>
       <button
         className='meeting-del'
-        aria-label={`Hapus meeting ${m.id}`}
+        aria-label={`Hapus meeting ${label}`}
         title='Hapus meeting (transcript, notulen, chat)'
         onClick={() => onDelete(m.id)}>
         🗑
       </button>
     </div>
-  )
+    )
+  }
 
   // collapsed: slim icon rail — every action stays reachable, zero clutter
   if (!open) {
@@ -125,6 +167,20 @@ export function Sidebar({
         )}
         <span className='spacer' />
         <ThemeToggle />
+        <button
+          className='icon-btn'
+          onClick={onSearch}
+          aria-label='Cari semua rapat'
+          title='Cari semua rapat (⌘K)'>
+          ⌕
+        </button>
+        <button
+          className='icon-btn'
+          onClick={onKnowledge}
+          aria-label='Knowledge base lintas rapat'
+          title='Knowledge base lintas rapat'>
+          ✦
+        </button>
         <button
           className='icon-btn'
           onClick={onDecisions}
@@ -158,6 +214,20 @@ export function Sidebar({
         </button>
       </div>
 
+      {projects.length > 0 && (
+        <label className='sidebar-filter'>
+          <span className='section-label'>Proyek</span>
+          <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label='Filter proyek'>
+            <option value=''>Semua rapat</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       {loading ? (
         <div aria-hidden='true'>
           {[0, 1, 2].map((i) => (
@@ -184,6 +254,20 @@ export function Sidebar({
       )}
       <div className='sidebar-foot'>
         <ThemeToggle />
+        <button
+          className='icon-btn'
+          onClick={onSearch}
+          aria-label='Cari semua rapat'
+          title='Cari semua rapat (⌘K)'>
+          ⌕
+        </button>
+        <button
+          className='icon-btn'
+          onClick={onKnowledge}
+          aria-label='Knowledge base lintas rapat'
+          title='Knowledge base lintas rapat'>
+          ✦
+        </button>
         <button
           className='icon-btn'
           onClick={onDecisions}

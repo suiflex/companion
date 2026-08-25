@@ -1,8 +1,28 @@
-import type { AnalysisRecord, Decision } from './types';
+import type { Analysis, AnalysisRecord, Decision } from './types';
 
 // Cross-meeting rollups for the decision log + carry-over (F3). Pure functions
 // over the already-loaded analysis records, so they're unit-testable without
 // chrome.* — the storage layer just feeds them raw data.
+
+/** Longest title we auto-derive — the sidebar row is one line. */
+export const TITLE_MAX_CHARS = 60;
+
+/**
+ * A human label for a meeting, taken from the first sentence of the executive
+ * summary. Only a suggestion: the user can always rename, and an empty result
+ * means the UI falls back to the meeting id.
+ */
+export function deriveTitle(analysis: Analysis): string {
+  const summary = analysis.executiveSummary.trim().replace(/\s+/g, ' ');
+  if (!summary) return '';
+  // first sentence, but only when the split leaves something usable
+  const sentence = summary.split(/(?<=[.!?])\s/)[0] || summary;
+  const text = sentence.length >= 12 ? sentence : summary;
+  if (text.length <= TITLE_MAX_CHARS) return text.replace(/[.\s]+$/, '');
+  const cut = text.slice(0, TITLE_MAX_CHARS);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 20 ? cut.slice(0, lastSpace) : cut).replace(/[,.\s]+$/, '') + '…';
+}
 
 export interface DecisionEntry extends Decision {
   meetingId: string;

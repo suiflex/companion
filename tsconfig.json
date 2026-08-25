@@ -12,12 +12,14 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["chrome"],
+    "types": ["chrome", "node"],
     "baseUrl": ".",
     "paths": {
       "@meetcc/shared": ["packages/shared/src"],
       "@meetcc/ai": ["packages/ai/src"],
       "@meetcc/meeting": ["packages/meeting/src"],
+      "@meetcc/store": ["packages/store/src"],
+      "@meetcc/mcp": ["packages/mcp/src"],
       "@meetcc/exporters": ["packages/exporters/src"],
       "@meetcc/exporters/*": ["packages/exporters/src/*"]
     }
