@@ -1,6 +1,25 @@
 # Meet Companion — AI Meeting Assistant
 
-Chrome extension (Manifest V3) that captures Google Meet captions from the DOM, then automatically generates AI meeting notes: executive summary, timeline, decisions, action items, risks, open questions — exportable as Markdown and PDF.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.svg">
+    <img src="assets/brand/logo-light.svg" alt="Meet Companion" width="380">
+  </picture>
+</p>
+
+<p align="center">
+  Chrome extension (Manifest V3) that captures <b>Google Meet</b> and <b>Microsoft Teams</b>
+  captions from the DOM, then generates AI meeting notes: executive summary, timeline,
+  decisions, action items, risks, open questions — exportable as Markdown and PDF.
+</p>
+
+<p align="center">
+  <a href="INSTALL.md"><b>Install and run →</b></a>
+</p>
+
+Everything stays on the machine: capture, the searchable archive, and the notes.
+The only thing that leaves is the transcript you send to the AI provider you
+chose — and which provider that is, is yours to pick, including a local one.
 
 ## Monorepo
 
@@ -20,20 +39,7 @@ scripts/gen-icons.mjs   # icon generation
 
 One repository, one build — no microservices. UI is React 18 + TypeScript + Vite; capture and orchestration stay framework-free.
 
-## Develop
-
-```bash
-npm install
-npm test                # vitest — 304 tests
-npm run test:coverage   # v8 coverage
-npm run lint            # eslint (tsc --noEmit stays the authority on types)
-npm run build           # typecheck + bundle -> extension, MCP and sync-server dist/
-npm run smoke -w @meetcc/mcp          # the built MCP bin answers over stdio
-npm run smoke -w @meetcc/sync-server  # the built sync bin answers over HTTP
-```
-
-Load: `chrome://extensions` → Developer mode → **Load unpacked** → **`apps/extension/dist/`**.
-After every build: reload the extension, then refresh the Meet tab.
+> Build, test and load instructions: **[INSTALL.md](INSTALL.md)**.
 
 ## How it works
 
@@ -75,45 +81,17 @@ issue tracker, sync endpoint, speech-to-text endpoint and Google Calendar are
 `optional_host_permissions`, requested per origin when you save Settings —
 decline and only that integration stops working (roadmap §8.3).
 
-## Optional integrations
+## AI providers
 
-All off by default and configured with **your own** credentials — this extension
-ships no keys, no endpoints and no backend.
+One adapter per provider in `packages/ai/src/providers.ts`. Bring an API key
+(OpenAI, Gemini, Claude, Azure, OpenRouter, Ollama, LM Studio, any
+OpenAI-compatible endpoint), sign in to a **ChatGPT** or **Google** subscription
+you already pay for, or use Chrome's built-in Gemini Nano and configure nothing
+at all. Credentials are AES-GCM encrypted at rest (key material lives in the
+same profile — this guards against casual storage dumps, not full-profile
+compromise).
 
-| Integration | What it needs | Notes |
-|---|---|---|
-| Issue tracker | Jira / Linear / Notion token + project/team/database id | pushes an action item as an issue, then reads its status back |
-| Sync & team workspace | your endpoint + token + passphrase | payload is AES-GCM encrypted with a PBKDF2 key before it leaves the machine |
-| Sharing | a passphrase | exports one meeting as an encrypted file; summary-only is an option |
-| Speech-to-text | OpenAI-compatible endpoint (incl. local Whisper) | for imported audio/video, max 25 MB; diarized speakers used when the endpoint returns them |
-| Google Calendar | your own OAuth client id | or match agendas offline from an `.ics` file |
-| Import | — | `.vtt`, `.srt`, Zoom transcript, or plain text becomes a normal meeting |
-
-## Sync server
-
-There is no Companion service. `packages/sync-server` is a ~300-line endpoint
-you run yourself; it only ever stores the encrypted blob the extension sends,
-so it cannot read a meeting even if it wanted to.
-
-```bash
-npm run build -w @meetcc/sync-server
-COMPANION_TOKEN=$(openssl rand -hex 24) npm run start -w @meetcc/sync-server
-# -> http://127.0.0.1:8787 ; paste that + the token into Settings -> Sync
-```
-
-| Env | Default | Meaning |
-|---|---|---|
-| `COMPANION_TOKEN` | — | bearer token the extension must present |
-| `COMPANION_WORKSPACE` | `` (personal) | shared namespace for a team |
-| `COMPANION_TOKENS_FILE` | — | `{"<token>": "<workspace>"}` for several people |
-| `PORT` / `HOST` | `8787` / `127.0.0.1` | loopback by default, on purpose |
-| `COMPANION_DATA` | `./companion-sync-data` | one JSON file per meeting |
-
-It binds loopback because the token travels in a header: the extension accepts
-`https://` anywhere, but plain `http://` only on loopback (`localhost`, `127.0.0.1`, `[::1]`). To
-reach it from another machine, put it behind a TLS reverse proxy and use the
-`https://` URL. A token is bound to exactly one workspace, so it can neither
-read nor write another one.
+Setup for each is in [INSTALL.md](INSTALL.md#connecting-an-ai-provider).
 
 ## Action items and the tracker
 
@@ -139,45 +117,9 @@ AI rewrote shows what was actually said, with a one-click **Pakai versi asli**.
 That decision is what downstream AI reads — a wrong correction cannot quietly
 travel cleanup → summary → decisions → Ask → PRD (roadmap §26).
 
-## MCP server
-
-Expose the meeting archive to a coding agent, read-only:
-
-```bash
-# Settings → Data & MCP → "Ekspor snapshot"  (no API keys or audit log included)
-npm run build -w @meetcc/mcp
-node packages/mcp/dist/server.js ~/Downloads/companion-snapshot.json
-```
-
-The bin is bundled rather than run from source: the workspace packages ship as
-raw `src/*.ts` for the bundler, which plain `node` cannot resolve.
-`npm run build` at the root builds it alongside the extension.
-
-Tools: `list_meetings`, `search_meetings`, `get_meeting`, `get_transcript`,
-`ask_meeting`, `ask_meetings`, `get_decisions`, `get_action_items`,
-`get_open_questions`. The `ask_*` tools return grounded evidence windows rather
-than a generated answer — the calling agent does the reasoning.
-
-## AI providers
-
-Settings (⚙) — adapter per provider, add new ones in `packages/ai/src/providers.ts`:
-
-| Provider                                          | Notes                                                               |
-| ------------------------------------------------- | ------------------------------------------------------------------- |
-| Built-in (default)                                | Chrome Gemini Nano Prompt API, zero config, if the browser ships it |
-| OpenAI / OpenRouter / Ollama / LM Studio / Custom | one OpenAI-compatible adapter                                       |
-| Azure OpenAI                                      | endpoint + deployment name, `api-key` header                        |
-| Claude (Anthropic)                                | direct browser access header                                        |
-| Google Gemini                                     | `generateContent` REST                                              |
-
-API keys are AES-GCM encrypted at rest (key material lives in the same profile — this guards against casual storage dumps, not full-profile compromise).
-
 ## Data retention
 
 Everything stays in `chrome.storage.local` under the `unlimitedStorage` permission, so transcripts are not capped at the default 10 MB quota.
 
 Nothing is deleted automatically by default. Settings → **Simpan riwayat** opts into a retention window (30 / 90 / 365 days); the minute sweep then removes meetings whose last activity is older than that, including their transcript, notulen, chat and documents. There is no undo — enabling it asks for confirmation, as does deleting a single meeting.
 
-## When capture breaks
-
-Meet rotates obfuscated class names every few months. Console (filter `MeetCC`) dumps the caption container when nothing matches. Update `KNOWN` at the top of `apps/extension/public/content.js` (2026-07: block `.nMcdL`, speaker `.KcIKyf`, text `.ygicle`). The avatar-anchored heuristic usually keeps capture alive meanwhile.

@@ -1,8 +1,8 @@
 # Meet Companion
 
 MV3 Chrome extension that captures meeting captions from the DOM and turns them
-into AI notes. Architecture, features and setup live in `README.md` — this file
-only carries what the README does not say.
+into AI notes. Architecture and features live in `README.md`, setup and build
+steps in `INSTALL.md` — this file only carries what neither says.
 
 ## Commands
 
@@ -17,6 +17,9 @@ npm run smoke -w @meetcc/sync-server  # built sync bin answers over HTTP
 
 After every build: reload the extension at `chrome://extensions`, then refresh
 the meeting tab. Load unpacked from `apps/extension/dist/`.
+
+The brand mark is `assets/brand/logo-mark.svg`; `scripts/gen-icons.mjs`
+re-renders it into the extension's PNGs and has to be re-run when it changes.
 
 ## Layout
 
@@ -40,8 +43,8 @@ step, shipped as-is). Two platforms:
 `packages/meeting/src/import.ts`.
 
 Meet rotates obfuscated class names every few months, so `KNOWN` rots. When
-capture breaks, filter the console for `MeetCC` and update it; README has the
-procedure. Both `manifest.json` and `content.js` must agree on hosts.
+capture breaks, filter the console for `MeetCC` and update it; INSTALL.md has
+the procedure. Both `manifest.json` and `content.js` must agree on hosts.
 
 ## Conventions
 
@@ -50,6 +53,9 @@ procedure. Both `manifest.json` and `content.js` must agree on hosts.
   adding a platform needs no migration, but it is derived from the meeting-id
   prefix in `store.ts`, not from a URL.
 - Prefer the existing dependency set. New deps need a reason.
+- An AI provider is one adapter in `packages/ai/src/providers.ts` plus one row in
+  `PROVIDER_PRESETS`; `packages/ai/src/oauth.ts` is pure protocol and must stay
+  free of `chrome.*` and storage calls.
 
 # ForgeGuard
 
