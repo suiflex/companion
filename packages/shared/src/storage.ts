@@ -2,6 +2,7 @@ import { decryptString, encryptString } from './crypto';
 import { migrateAnalysis } from './migrate';
 import {
   DEFAULT_INTEGRATIONS,
+  DEFAULT_OAUTH,
   DEFAULT_SETTINGS,
   type AnalysisRecord,
   type AuditEvent,
@@ -14,6 +15,7 @@ import {
   type Meeting,
   type MeetingDocs,
   type MeetingMeta,
+  type OAuthSettings,
   type Settings,
   type StoredDoc,
 } from './types';
@@ -300,6 +302,20 @@ async function mapSecrets(
   };
 }
 
+/** OAuth tokens are credentials like any other: encrypted on write, decrypted
+ *  on read. The account id, project id and email are not secrets and stay
+ *  readable so the settings page can name the connected account. */
+async function mapOAuthSecrets(
+  oauth: OAuthSettings,
+  fn: (value: string) => Promise<string>,
+): Promise<OAuthSettings> {
+  return {
+    ...oauth,
+    accessToken: await fn(oauth.accessToken),
+    refreshToken: await fn(oauth.refreshToken),
+  };
+}
+
 /** Merge stored settings over the defaults without losing nested defaults when
  *  an older install has no `integrations` block at all. */
 function withDefaults(raw: Partial<Settings>): Settings {
@@ -307,6 +323,7 @@ function withDefaults(raw: Partial<Settings>): Settings {
   return {
     ...DEFAULT_SETTINGS,
     ...raw,
+    oauth: { ...DEFAULT_OAUTH, ...raw.oauth },
     integrations: {
       ...DEFAULT_INTEGRATIONS,
       ...stored,
@@ -322,6 +339,7 @@ export async function loadSettings(): Promise<Settings> {
   if (!raw) return { ...DEFAULT_SETTINGS };
   const s = withDefaults(raw as Partial<Settings>);
   s.apiKey = await decryptString(s.apiKey);
+  s.oauth = await mapOAuthSecrets(s.oauth, decryptString);
   s.integrations = await mapSecrets(s.integrations, decryptString);
   // retention drives irreversible deletion: anything not a positive finite
   // number falls back to "keep forever" rather than to some guessed window
@@ -335,6 +353,7 @@ export async function saveSettings(s: Settings): Promise<void> {
     [SETTINGS_KEY]: {
       ...s,
       apiKey: await encryptString(s.apiKey),
+      oauth: await mapOAuthSecrets(s.oauth, encryptString),
       integrations: await mapSecrets(s.integrations, encryptString),
     },
   });

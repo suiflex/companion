@@ -1,0 +1,11 @@
+# Default owner for everything in this repo.
+# See https://docs.github.com/articles/about-code-owners
+#
+# The owner must be a team that exists in the suiflex org and has write access to
+# this repository. GitHub does not report an unresolvable owner: it silently
+# requests no review, so a broken file looks exactly like a working one. Check
+# with:
+#
+#   gh api repos/suiflex/companion/codeowners/errors
+
+* @suiflex/maintainers

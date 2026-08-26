@@ -72,7 +72,9 @@ export type AnalysisRecord =
 export type ProviderId =
   | 'builtin'
   | 'openai'
+  | 'chatgpt'
   | 'gemini'
+  | 'google-codeassist'
   | 'anthropic'
   | 'ollama'
   | 'lmstudio'
@@ -115,9 +117,37 @@ export const DEFAULT_INTEGRATIONS: IntegrationSettings = {
   calendarClientId: '',
 };
 
+/** Tokens for a provider the user signed in to instead of pasting a key.
+ *  Empty `provider` means nobody is signed in. */
+export interface OAuthSettings {
+  provider: '' | 'chatgpt' | 'google-codeassist';
+  accessToken: string; // encrypted at rest
+  refreshToken: string; // encrypted at rest
+  /** Epoch ms; 0 when the issuer named no lifetime. */
+  expiresAt: number;
+  /** ChatGPT only — the `chatgpt-account-id` header. */
+  accountId: string;
+  /** Code Assist only — the project discovered or provisioned at sign-in. */
+  projectId: string;
+  /** Shown so the user can see which account is connected. */
+  email: string;
+}
+
+export const DEFAULT_OAUTH: OAuthSettings = {
+  provider: '',
+  accessToken: '',
+  refreshToken: '',
+  expiresAt: 0,
+  accountId: '',
+  projectId: '',
+  email: '',
+};
+
 export interface Settings {
   provider: ProviderId;
   apiKey: string; // decrypted in memory; encrypted at rest
+  /** Subscription sign-in, the alternative to `apiKey` for ChatGPT / Google. */
+  oauth: OAuthSettings;
   baseUrl: string; // used by ollama / lmstudio / azure / custom
   model: string;
   /** Auto-delete meetings older than this many days. 0 = keep forever.
@@ -131,6 +161,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   provider: 'builtin',
   apiKey: '',
+  oauth: DEFAULT_OAUTH,
   baseUrl: '',
   model: '',
   retentionDays: 0,

@@ -17,6 +17,7 @@ import {
   type PipelineDeps,
   type PipelineResult,
 } from '@meetcc/meeting';
+import { loadSettingsForAI } from './lib/aiSettings';
 import { getStore, handleDb, refreshHighlights, syncIndex } from './db';
 import {
   appendAudit,
@@ -56,7 +57,7 @@ const limiter = createRateLimiter(6, 10 * 60_000);
 const interactiveLimiter = createRateLimiter(20, 10 * 60_000);
 
 async function makeInteractiveClient() {
-  const settings = await loadSettings();
+  const settings = await loadSettingsForAI();
   const problem = validateSettings(settings);
   if (problem) throw new Error(problem);
   if (!interactiveLimiter.take()) {
@@ -101,7 +102,7 @@ const deps: PipelineDeps = {
   getRecord: getAnalysis,
   setRecord: setAnalysis,
   createClient: async () => {
-    const settings = await loadSettings();
+    const settings = await loadSettingsForAI();
     const problem = validateSettings(settings);
     if (problem) throw new Error(problem);
     if (!limiter.take()) throw new Error('Rate limit: terlalu banyak analisis, coba lagi nanti.');

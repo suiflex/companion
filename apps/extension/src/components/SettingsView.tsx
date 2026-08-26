@@ -15,6 +15,7 @@ import {
 } from '@meetcc/shared';
 import { useToast } from '../toast';
 import { DataPanel, IntegrationsPanel, TemplatesPanel } from './SettingsPanels';
+import { SignInPanel } from './SignInPanel';
 
 type Panel = 'provider' | 'integrations' | 'templates' | 'data';
 
@@ -165,7 +166,15 @@ export function SettingsView({
           </p>
         )}
 
-        {settings.provider !== 'builtin' && (
+        {preset.needsSignIn && (
+          <SignInPanel
+            provider={settings.provider as 'chatgpt' | 'google-codeassist'}
+            settings={settings}
+            onChange={set}
+          />
+        )}
+
+        {settings.provider !== 'builtin' && !preset.needsSignIn && (
           <label className="field">
             <span>API Key{preset.needsKey ? '' : ' (opsional)'}</span>
             <input
