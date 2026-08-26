@@ -1,6 +1,7 @@
 export * from './client';
 export * from './providers';
 export * from './permissions';
+export * from './oauth';
 export * from './analyze';
 export * from './ask';
 export * from './retrieval';

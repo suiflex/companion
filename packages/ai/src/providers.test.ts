@@ -151,3 +151,62 @@ describe('error mapping', () => {
     });
   });
 });
+
+describe('subscription sign-ins', () => {
+  const signedIn = (provider: 'chatgpt' | 'google-codeassist', over = {}) =>
+    s({
+      provider,
+      oauth: { ...DEFAULT_SETTINGS.oauth, provider, accessToken: 'tok', ...over },
+    });
+
+  it('chatgpt: /responses with instructions and input items, not messages', async () => {
+    const cap = stubFetch({
+      output: [{ type: 'message', content: [{ type: 'output_text', text: 'halo' }] }],
+    });
+    const out = await createClient(signedIn('chatgpt', { accountId: 'acc_1' })).complete(REQ);
+
+    expect(out).toBe('halo');
+    expect(cap.url).toBe('https://chatgpt.com/backend-api/codex/responses');
+    expect(cap.headers.Authorization).toBe('Bearer tok');
+    expect(cap.headers['chatgpt-account-id']).toBe('acc_1');
+    expect(cap.body.instructions).toBe('sys');
+    expect(cap.body.messages).toBeUndefined();
+    expect(cap.body.input[0].content[0]).toEqual({ type: 'input_text', text: 'usr' });
+  });
+
+  it('chatgpt: reads a stream even though the request asked for one body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            'data: {"type":"response.output_text.delta","delta":"ha"}\n' +
+              'data: {"type":"response.completed"}\n' +
+              'data: {"type":"response.output_text.delta","delta":"lo"}\n',
+            { status: 200 },
+          ),
+      ),
+    );
+    expect(await createClient(signedIn('chatgpt')).complete(REQ)).toBe('halo');
+  });
+
+  it('code assist: gemini request wrapped in the project envelope', async () => {
+    const cap = stubFetch({
+      response: { candidates: [{ content: { parts: [{ text: 'halo' }] } }] },
+    });
+    const out = await createClient(
+      signedIn('google-codeassist', { projectId: 'proj-1' }),
+    ).complete(REQ);
+
+    expect(out).toBe('halo');
+    expect(cap.url).toBe('https://cloudcode-pa.googleapis.com/v1internal:generateContent');
+    expect(cap.body.project).toBe('proj-1');
+    expect(cap.body.request.systemInstruction.parts[0].text).toBe('sys');
+    expect(cap.body.request.generationConfig.responseMimeType).toBe('application/json');
+  });
+
+  it('code assist: accepts a body the backend already unwrapped', async () => {
+    stubFetch({ candidates: [{ content: { parts: [{ text: 'halo' }] } }] });
+    expect(await createClient(signedIn('google-codeassist')).complete(REQ)).toBe('halo');
+  });
+});

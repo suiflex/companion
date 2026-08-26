@@ -1,5 +1,9 @@
 import type { Settings } from '@meetcc/shared';
 import { PROVIDER_PRESETS } from './client';
+import { CHATGPT_ISSUER, CLOUDCODE_ENDPOINT } from './oauth';
+
+/** Google's token endpoint host, where a refresh is spent. */
+const GOOGLE_TOKEN_HOST = 'https://oauth2.googleapis.com';
 
 // Roadmap §8.3 — an extension that can read every https site is a much bigger
 // promise than this product needs. Capture is limited to the meeting hosts in
@@ -33,6 +37,13 @@ export function requiredOrigins(settings: Settings): string[] {
 
   if (settings.provider !== 'builtin') {
     urls.push(settings.baseUrl || PROVIDER_PRESETS[settings.provider]?.baseUrl || '');
+  }
+  // A sign-in reaches its issuer as well as the completion host: the token has
+  // to be refreshable in the background, not only at the moment the user
+  // pressed the button.
+  if (settings.oauth.provider === 'chatgpt') urls.push(CHATGPT_ISSUER);
+  if (settings.oauth.provider === 'google-codeassist') {
+    urls.push(GOOGLE_TOKEN_HOST, CLOUDCODE_ENDPOINT);
   }
 
   const { tracker, sync, transcription, calendarClientId } = settings.integrations;
