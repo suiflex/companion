@@ -151,15 +151,51 @@ export async function transcribeAudio(
     body: form,
   });
   if (!res.ok) throw new Error(`Transkripsi gagal (${res.status})`);
-  const data = (await res.json()) as { text?: string; segments?: { start: number; text: string }[] };
+  const data = (await res.json()) as {
+    text?: string;
+    segments?: { start: number; text: string; speaker?: string }[];
+  };
   if (data.segments?.length) {
     // rebuild an SRT-ish body so the normal parser handles speakers/timing
-    return data.segments
-      .map((seg) => {
-        const t = new Date(seg.start * 1000).toISOString().slice(11, 19);
-        return `${t} Unknown: ${seg.text.trim()}`;
+    return labelSpeakers(data.segments)
+      .map(({ start, speaker, text }) => {
+        const t = new Date(start * 1000).toISOString().slice(11, 19);
+        return `${t} ${speaker}: ${text}`;
       })
       .join('\n');
   }
   return data.text ?? '';
+}
+
+/** whisper.cpp's `--tinydiarize` marks a change of voice inline instead of
+ *  labelling segments. */
+const SPEAKER_TURN = /\[SPEAKER_TURN\]/g;
+
+/**
+ * Attach a speaker to each transcribed segment.
+ *
+ * Whisper itself does not diarize, so this uses whatever the endpoint actually
+ * provides and never invents more than that:
+ *  * a `speaker` field (WhisperX / pyannote / Deepgram-style wrappers) is used
+ *    verbatim — that is real diarization;
+ *  * failing that, a `[SPEAKER_TURN]` marker advances the counter;
+ *  * failing both, everything is "Speaker 1", which is honest for a recording
+ *    we cannot tell apart and is renameable in the Transcript view.
+ */
+export function labelSpeakers(
+  segments: { start: number; text: string; speaker?: string }[],
+): { start: number; speaker: string; text: string }[] {
+  const out: { start: number; speaker: string; text: string }[] = [];
+  let turn = 1;
+  for (const seg of segments) {
+    const pieces = seg.text.split(SPEAKER_TURN);
+    pieces.forEach((piece, i) => {
+      const text = piece.trim();
+      // a turn marker still advances the speaker even when it lands on silence
+      if (i > 0) turn++;
+      if (!text) return;
+      out.push({ start: seg.start, speaker: seg.speaker?.trim() || `Speaker ${turn}`, text });
+    });
+  }
+  return out;
 }

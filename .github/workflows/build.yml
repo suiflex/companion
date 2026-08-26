@@ -42,12 +42,14 @@ jobs:
       - name: Build
         run: npm run build -w apps/extension
 
-      # the MCP bin is bundled TypeScript; the smoke test proves it starts
-      # under plain node and answers over stdio
-      - name: Build and smoke-test MCP server
+      # both bins are bundled TypeScript; the smoke tests prove they start
+      # under plain node and answer over stdio / HTTP
+      - name: Build and smoke-test the MCP and sync servers
         run: |
           npm run build -w @meetcc/mcp
           npm run smoke -w @meetcc/mcp
+          npm run build -w @meetcc/sync-server
+          npm run smoke -w @meetcc/sync-server
 
       - name: Read version from manifest
         id: meta

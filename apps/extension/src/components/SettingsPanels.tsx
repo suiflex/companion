@@ -130,7 +130,8 @@ export function IntegrationsPanel({
           <span>Aktifkan sync</span>
           <span className="hint">
             Opsional. Isi transcript dienkripsi dengan passphrase kamu sebelum dikirim — server
-            tidak pernah menerima kuncinya, dan tidak ada server bawaan.
+            tidak pernah menerima kuncinya. Tidak ada layanan Companion: jalankan{' '}
+            <code>@meetcc/sync-server</code> di komputer sendiri, atau pakai endpoint https milikmu.
           </span>
         </label>
         <label className="field">
@@ -138,7 +139,7 @@ export function IntegrationsPanel({
           <input
             type="url"
             value={i.sync.endpoint}
-            placeholder="https://sync.perusahaan.com/companion"
+            placeholder="http://localhost:8787"
             onChange={(e) => patch({ sync: { ...i.sync, endpoint: e.target.value } })}
           />
         </label>

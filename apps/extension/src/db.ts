@@ -13,6 +13,7 @@ import {
   detectHighlights,
   draftIssue,
   exportShare,
+  fetchIssueStatus,
   importShare,
   fetchGoogleEvents,
   matchEvent,
@@ -190,6 +191,27 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
       return { ref, alreadyPushed: false };
     }
 
+    // Pull the tracker's own status back onto every action already pushed, so
+    // an item closed in Jira/Linear/Notion stops showing as open here. One
+    // unreadable issue must not abort the rest of the sweep.
+    case 'refresh-issues': {
+      const settings = await loadSettings();
+      const pushed = db.actions().filter((x) => x.externalRef);
+      let changed = 0;
+      const failed: string[] = [];
+      for (const action of pushed) {
+        try {
+          const status = await fetchIssueStatus(settings.integrations.tracker, action.externalRef as string);
+          if (!status || status === action.status) continue;
+          db.setActionStatus(action.id, status);
+          changed++;
+        } catch (e) {
+          failed.push(`${action.externalRef}: ${(e as Error).message}`);
+        }
+      }
+      return { checked: pushed.length, changed, failed };
+    }
+
     case 'sync-now': {
       const settings = await loadSettings();
       if (!settings.integrations.sync.enabled) throw new Error('Sync belum diaktifkan di Settings.');
@@ -238,6 +260,26 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
       db.upsertSession({ id, title: str(a.title), startedAt: entries[0].time, endedAt: entries[entries.length - 1].time });
       db.replaceEntries(id, 'raw', entries);
       return { sessionId: id, entries: entries.length };
+    }
+
+    // Speech-to-text without diarization labels everyone "Speaker 1"; only a
+    // human can say who that was. chrome.storage is rewritten alongside the
+    // index because it stays the source of truth a re-index reads from, so a
+    // rename that skipped it would silently revert (§30 Phase 3).
+    case 'rename-speaker': {
+      const sessionId = str(a.sessionId);
+      const from = str(a.from);
+      const to = str(a.to).trim();
+      if (!to) throw new Error('Nama baru tidak boleh kosong.');
+      const moved = db.renameSpeaker(sessionId, from, to);
+      const key = `transcript:${sessionId}`;
+      const stored = (await chrome.storage.local.get(key))[key] as Entry[] | undefined;
+      if (stored?.length) {
+        await chrome.storage.local.set({
+          [key]: stored.map((e) => (e.speaker === from ? { ...e, speaker: to } : e)),
+        });
+      }
+      return { moved };
     }
 
     // P2.4: the MCP server runs outside Chrome and cannot open OPFS, so the

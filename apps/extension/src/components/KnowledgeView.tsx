@@ -67,6 +67,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
   const [actions, setActions] = useState<ActionRow[]>([]);
   const [showDone, setShowDone] = useState(false);
   const [pushing, setPushing] = useState(0);
+  const [syncingIssues, setSyncingIssues] = useState(false);
   const toast = useToast();
 
   const refresh = useCallback(() => {
@@ -125,6 +126,24 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
       toast('error', (e as Error).message);
     } finally {
       setPushing(0);
+    }
+  };
+
+  // the tracker is where the team actually closes work, so its status wins
+  const refreshIssues = async () => {
+    setSyncingIssues(true);
+    try {
+      const res = await db<{ checked: number; changed: number; failed: string[] }>('refresh-issues');
+      toast(
+        res.failed.length ? 'error' : 'success',
+        `${res.checked} issue dicek, ${res.changed} status diperbarui` +
+          (res.failed.length ? `, ${res.failed.length} gagal` : ''),
+      );
+      refresh();
+    } catch (e) {
+      toast('error', (e as Error).message);
+    } finally {
+      setSyncingIssues(false);
     }
   };
 
@@ -189,10 +208,17 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
           <h2 className="section-label">
             Action item {story?.overdueActions.length ? `· ${story.overdueActions.length} lewat due` : ''}
           </h2>
-          <label className="kb-toggle">
-            <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} />
-            Tampilkan yang selesai
-          </label>
+          <div className="kb-toggle-row">
+            <label className="kb-toggle">
+              <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} />
+              Tampilkan yang selesai
+            </label>
+            {actions.some((a) => a.externalRef) && (
+              <button className="kb-refresh" disabled={syncingIssues} onClick={() => void refreshIssues()}>
+                {syncingIssues ? 'Cek tracker…' : 'Tarik status tracker'}
+              </button>
+            )}
+          </div>
           {visibleActions.length ? (
             <ul className="kb-list">
               {visibleActions.map((a) => (

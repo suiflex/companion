@@ -13,6 +13,7 @@ packages/
   meeting/              # pipeline, global Ask, continuity, import, sync, trackers
   store/                # SQLite WASM + OPFS + FTS5 index, structured meeting memory
   mcp/                  # read-only MCP server over an exported snapshot
+  sync-server/          # optional sync endpoint you run on your own machine
   exporters/            # markdown + pdf generators (pure)
 scripts/gen-icons.mjs   # icon generation
 ```
@@ -23,11 +24,12 @@ One repository, one build — no microservices. UI is React 18 + TypeScript + Vi
 
 ```bash
 npm install
-npm test                # vitest — 274 tests
-npm run test:coverage   # v8 coverage (packages ~93% lines)
+npm test                # vitest — 304 tests
+npm run test:coverage   # v8 coverage
 npm run lint            # eslint (tsc --noEmit stays the authority on types)
-npm run build           # typecheck + bundle -> apps/extension/dist/ and packages/mcp/dist/
-npm run smoke -w @meetcc/mcp   # the built MCP bin answers over stdio
+npm run build           # typecheck + bundle -> extension, MCP and sync-server dist/
+npm run smoke -w @meetcc/mcp          # the built MCP bin answers over stdio
+npm run smoke -w @meetcc/sync-server  # the built sync bin answers over HTTP
 ```
 
 Load: `chrome://extensions` → Developer mode → **Load unpacked** → **`apps/extension/dist/`**.
@@ -80,12 +82,55 @@ ships no keys, no endpoints and no backend.
 
 | Integration | What it needs | Notes |
 |---|---|---|
-| Issue tracker | Jira / Linear / Notion token + project/team/database id | pushes an action item as an issue, stores the reference |
+| Issue tracker | Jira / Linear / Notion token + project/team/database id | pushes an action item as an issue, then reads its status back |
 | Sync & team workspace | your endpoint + token + passphrase | payload is AES-GCM encrypted with a PBKDF2 key before it leaves the machine |
 | Sharing | a passphrase | exports one meeting as an encrypted file; summary-only is an option |
-| Speech-to-text | OpenAI-compatible endpoint (incl. local Whisper) | for imported audio/video, max 25 MB |
+| Speech-to-text | OpenAI-compatible endpoint (incl. local Whisper) | for imported audio/video, max 25 MB; diarized speakers used when the endpoint returns them |
 | Google Calendar | your own OAuth client id | or match agendas offline from an `.ics` file |
 | Import | — | `.vtt`, `.srt`, Zoom transcript, or plain text becomes a normal meeting |
+
+## Sync server
+
+There is no Companion service. `packages/sync-server` is a ~300-line endpoint
+you run yourself; it only ever stores the encrypted blob the extension sends,
+so it cannot read a meeting even if it wanted to.
+
+```bash
+npm run build -w @meetcc/sync-server
+COMPANION_TOKEN=$(openssl rand -hex 24) npm run start -w @meetcc/sync-server
+# -> http://127.0.0.1:8787 ; paste that + the token into Settings -> Sync
+```
+
+| Env | Default | Meaning |
+|---|---|---|
+| `COMPANION_TOKEN` | — | bearer token the extension must present |
+| `COMPANION_WORKSPACE` | `` (personal) | shared namespace for a team |
+| `COMPANION_TOKENS_FILE` | — | `{"<token>": "<workspace>"}` for several people |
+| `PORT` / `HOST` | `8787` / `127.0.0.1` | loopback by default, on purpose |
+| `COMPANION_DATA` | `./companion-sync-data` | one JSON file per meeting |
+
+It binds loopback because the token travels in a header: the extension accepts
+`https://` anywhere, but plain `http://` only on loopback (`localhost`, `127.0.0.1`, `[::1]`). To
+reach it from another machine, put it behind a TLS reverse proxy and use the
+`https://` URL. A token is bound to exactly one workspace, so it can neither
+read nor write another one.
+
+## Action items and the tracker
+
+**Kirim ke tracker** creates the issue and stores its reference, so the same
+task is never pushed twice. **Tarik status tracker** then reads the status back
+— an item closed in Jira, Linear or Notion is closed here too. The tracker
+wins, but only when it answers clearly: an unreadable or unrecognised status
+leaves the local state alone rather than guessing.
+
+## Speakers in imported recordings
+
+Whisper transcribes but does not diarize. Companion uses whatever the endpoint
+actually gives it: a per-segment `speaker` (WhisperX, pyannote, Deepgram-style
+wrappers) is used as-is, a whisper.cpp `[SPEAKER_TURN]` marker advances the
+count, and a recording with neither becomes one `Speaker 1` rather than a wall
+of `Unknown`. Click a name in the Transcript view of a finished meeting to
+rename that speaker everywhere at once — search and participants follow.
 
 ## Transcript cleanup provenance
 

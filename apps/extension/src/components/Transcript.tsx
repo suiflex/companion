@@ -11,7 +11,7 @@ import {
   type Meeting,
 } from '@meetcc/shared'
 import { useToast } from '../toast'
-import { listHighlights } from '../lib/db'
+import { db, listHighlights } from '../lib/db'
 
 // Teams avatar URLs need the Teams session cookies; from the extension page
 // they 401 into a broken image, so fall back to the initial on load error.
@@ -63,6 +63,10 @@ export function Transcript({ meeting, live, onClear }: Props) {
   const [highlights, setHighlights] = useState<
     { id: number; seq: number; kind: string; text: string }[]
   >([])
+  // imported recordings arrive as "Speaker 1" when the endpoint cannot diarize;
+  // renaming is offered only once a meeting is over, because live captions keep
+  // arriving under the original name and would undo it
+  const [renaming, setRenaming] = useState<{ from: string; draft: string } | null>(null)
 
   const reload = useCallback(() => {
     void loadClean(meeting.id).then((r) => {
@@ -111,6 +115,25 @@ export function Transcript({ meeting, live, onClear }: Props) {
     const next = { ...record, kept: [...kept].sort((a, b) => a - b) }
     setRecord(next)
     await saveClean(meeting.id, next)
+  }
+
+  // renames every line of one speaker at once, in the index and in the
+  // chrome.storage copy a re-index would otherwise restore
+  const commitRename = async () => {
+    if (!renaming) return
+    const { from, draft } = renaming
+    setRenaming(null)
+    if (!draft.trim() || draft.trim() === from) return
+    try {
+      const res = await db<{ moved: number }>('rename-speaker', {
+        sessionId: meeting.id,
+        from,
+        to: draft.trim(),
+      })
+      toast('success', `${res.moved} baris kini atas nama ${draft.trim()}.`)
+    } catch (e) {
+      toast('error', (e as Error).message)
+    }
   }
 
   const cleaned = record?.status === 'done' ? record.entries : null
@@ -281,7 +304,29 @@ export function Transcript({ meeting, live, onClear }: Props) {
                 <Avatar src={e.avatar} name={e.speaker} />
                 <div className='entry-body'>
                   <div className='entry-head'>
-                    <span className='speaker'>{e.speaker}</span>
+                    {renaming?.from === e.speaker ? (
+                      <input
+                        className='speaker-rename'
+                        autoFocus
+                        aria-label={`Ganti nama ${e.speaker}`}
+                        value={renaming.draft}
+                        onChange={(ev) => setRenaming({ from: e.speaker, draft: ev.target.value })}
+                        onBlur={() => setRenaming(null)}
+                        onKeyDown={(ev) => {
+                          if (ev.key === 'Escape') setRenaming(null)
+                          if (ev.key === 'Enter') void commitRename()
+                        }}
+                      />
+                    ) : live ? (
+                      <span className='speaker'>{e.speaker}</span>
+                    ) : (
+                      <button
+                        className='speaker speaker-editable'
+                        title='Ganti nama pembicara ini di seluruh rapat'
+                        onClick={() => setRenaming({ from: e.speaker, draft: e.speaker })}>
+                        {e.speaker}
+                      </button>
+                    )}
                     <time className='stamp'>{fmtTime(e.time)}</time>
                     {flag && <span className={`hl-tag hl-${flag}`}>{HIGHLIGHT_LABEL[flag] ?? flag}</span>}
                   </div>

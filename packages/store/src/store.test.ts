@@ -385,3 +385,47 @@ describe('ingest from chrome.storage.local', () => {
     expect(store.listSessions()).toHaveLength(1);
   });
 });
+
+describe('speaker rename', () => {
+  async function imported(): Promise<CompanionStore> {
+    const store = await freshStore();
+    store.upsertSession({ id: 's#1', title: 'Rekaman rapat', startedAt: at(0) });
+    store.replaceEntries('s#1', 'raw', [
+      line('Speaker 1', 'Ada beberapa aplikasi yang terdampak insiden Freeport', 0),
+      line('Speaker 2', 'Solusinya dishare atau dibuat terpisah?', 30),
+      line('Speaker 1', 'Kita pakai shared service dulu', 60),
+    ]);
+    return store;
+  }
+
+  it('renames every line of one speaker and leaves the others alone', async () => {
+    const store = await imported();
+    expect(store.renameSpeaker('s#1', 'Speaker 1', 'Akbar')).toBe(2);
+    expect(store.getEntries('s#1').map((e) => e.speaker)).toEqual(['Akbar', 'Speaker 2', 'Akbar']);
+  });
+
+  it('rebuilds the participant list, including when two labels are merged', async () => {
+    const store = await imported();
+    store.renameSpeaker('s#1', 'Speaker 1', 'Akbar');
+    expect(store.getSession('s#1')?.participants.sort()).toEqual(['Akbar', 'Speaker 2']);
+
+    store.renameSpeaker('s#1', 'Speaker 2', 'Akbar');
+    expect(store.getSession('s#1')?.participants).toEqual(['Akbar']);
+  });
+
+  it('keeps full-text search in step with the new name', async () => {
+    const store = await imported();
+    store.renameSpeaker('s#1', 'Speaker 1', 'Akbar');
+    const hits = store.search(ftsQuery('Akbar'));
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits.every((h) => h.speaker !== 'Speaker 1')).toBe(true);
+  });
+
+  it('does nothing for an unknown, empty or unchanged name', async () => {
+    const store = await imported();
+    expect(store.renameSpeaker('s#1', 'Tidak Ada', 'Akbar')).toBe(0);
+    expect(store.renameSpeaker('s#1', 'Speaker 1', '   ')).toBe(0);
+    expect(store.renameSpeaker('s#1', 'Speaker 1', 'Speaker 1')).toBe(0);
+    expect(store.getEntries('s#1').map((e) => e.speaker)).toEqual(['Speaker 1', 'Speaker 2', 'Speaker 1']);
+  });
+});

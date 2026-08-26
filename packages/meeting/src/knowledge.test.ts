@@ -11,10 +11,31 @@ import {
 } from './globalask';
 import { buildChronology, carryOverFor, isOverdue } from './continuity';
 import { detectHighlights } from './highlights';
-import { detectFormat, normalizeImported, parseTranscript, transcribeAudio } from './import';
+import {
+  detectFormat,
+  labelSpeakers,
+  normalizeImported,
+  parseTranscript,
+  transcribeAudio,
+} from './import';
 import { matchEvent, parseIcs } from './calendar';
-import { buildRequest, createIssue, draftIssue, isoDue, validateTracker } from './issues';
-import { applyBundle, buildBundle, exportShare, importShare, runSync, validateSync } from './sync';
+import {
+  buildRequest,
+  createIssue,
+  draftIssue,
+  fetchIssueStatus,
+  isoDue,
+  validateTracker,
+} from './issues';
+import {
+  applyBundle,
+  buildBundle,
+  exportShare,
+  importShare,
+  isAllowedSyncEndpoint,
+  runSync,
+  validateSync,
+} from './sync';
 
 const T0 = Date.parse('2026-08-24T07:00:00Z');
 const at = (sec: number): string => new Date(T0 + sec * 1000).toISOString();
@@ -281,6 +302,36 @@ Widi: halo juga
     expect(detectFormat(text)).toBe('zoom');
     expect(parseTranscript(text, { startedAt: at(0) })[0].text).toBe('halo semua');
   });
+
+  it('uses the diarized speaker when the endpoint provides one', () => {
+    const labelled = labelSpeakers([
+      { start: 0, text: 'halo semua', speaker: 'Rina' },
+      { start: 8, text: 'aplikasi terdampak', speaker: 'Akbar' },
+      { start: 20, text: 'setuju', speaker: 'Rina' },
+    ]);
+    expect(labelled.map((l) => l.speaker)).toEqual(['Rina', 'Akbar', 'Rina']);
+  });
+
+  it('advances the speaker on a whisper.cpp turn marker', () => {
+    const labelled = labelSpeakers([
+      { start: 0, text: 'halo semua [SPEAKER_TURN] aplikasi terdampak' },
+      { start: 30, text: 'setuju' },
+    ]);
+    expect(labelled.map((l) => [l.speaker, l.text])).toEqual([
+      ['Speaker 1', 'halo semua'],
+      ['Speaker 2', 'aplikasi terdampak'],
+      ['Speaker 2', 'setuju'],
+    ]);
+  });
+
+  it('labels an undiarizable recording as one renameable speaker, not Unknown', () => {
+    const labelled = labelSpeakers([
+      { start: 0, text: 'halo semua' },
+      { start: 30, text: 'aplikasi terdampak' },
+    ]);
+    expect(labelled.map((l) => l.speaker)).toEqual(['Speaker 1', 'Speaker 1']);
+    expect(labelled.some((l) => l.speaker === 'Unknown')).toBe(false);
+  });
 });
 
 describe('calendar', () => {
@@ -386,6 +437,45 @@ describe('issue trackers', () => {
       ),
     ).rejects.toThrow(/403/);
   });
+
+  const jira = { provider: 'jira' as const, baseUrl: 'https://org.atlassian.net', token: 'a@b.com:tok', target: 'ENG' };
+  const linear = { provider: 'linear' as const, baseUrl: '', token: 'lin_key', target: 'team' };
+  const notion = { provider: 'notion' as const, baseUrl: '', token: 'secret', target: 'db' };
+  const answers = (body: unknown, status = 200) =>
+    vi.fn(async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
+
+  it('reads a Jira status back from the workflow-independent category', async () => {
+    const done = { fields: { status: { name: 'Rilis', statusCategory: { key: 'done' } } } };
+    expect(await fetchIssueStatus(jira, 'ENG-42', answers(done))).toBe('done');
+
+    const wip = { fields: { status: { name: 'In Progress', statusCategory: { key: 'indeterminate' } } } };
+    expect(await fetchIssueStatus(jira, 'ENG-42', answers(wip))).toBe('open');
+  });
+
+  it('treats a completed or cancelled Linear issue as done', async () => {
+    expect(await fetchIssueStatus(linear, 'ENG-42', answers({ data: { issue: { state: { type: 'completed' } } } }))).toBe('done');
+    expect(await fetchIssueStatus(linear, 'ENG-42', answers({ data: { issue: { state: { type: 'canceled' } } } }))).toBe('done');
+    expect(await fetchIssueStatus(linear, 'ENG-42', answers({ data: { issue: { state: { type: 'started' } } } }))).toBe('open');
+  });
+
+  it('reads a Notion page from its status, select, checkbox or archive flag', async () => {
+    expect(await fetchIssueStatus(notion, 'page', answers({ archived: true }))).toBe('done');
+    expect(await fetchIssueStatus(notion, 'page', answers({ properties: { S: { type: 'status', status: { name: 'Selesai' } } } }))).toBe('done');
+    expect(await fetchIssueStatus(notion, 'page', answers({ properties: { S: { type: 'status', status: { name: 'Backlog' } } } }))).toBe('open');
+    expect(await fetchIssueStatus(notion, 'page', answers({ properties: { D: { type: 'checkbox', checkbox: true } } }))).toBe('done');
+  });
+
+  it('returns null rather than guessing when the tracker says nothing useful', async () => {
+    expect(await fetchIssueStatus(jira, 'ENG-42', answers({ fields: {} }))).toBeNull();
+    expect(await fetchIssueStatus(linear, 'ENG-42', answers({ data: { issue: null } }))).toBeNull();
+    expect(await fetchIssueStatus(notion, 'page', answers({ properties: {} }))).toBeNull();
+    // a deleted issue must not abort a refresh of the others
+    expect(await fetchIssueStatus(jira, 'ENG-9', answers({}, 404))).toBeNull();
+  });
+
+  it('still surfaces a real tracker failure', async () => {
+    await expect(fetchIssueStatus(jira, 'ENG-42', answers({}, 401))).rejects.toThrow(/401/);
+  });
 });
 
 describe('sync and sharing', () => {
@@ -393,6 +483,19 @@ describe('sync and sharing', () => {
     expect(validateSync({ endpoint: 'http://x', token: '', workspaceId: '', passphrase: 'longenough' })).toMatch(/https/);
     expect(validateSync({ endpoint: 'https://x', token: '', workspaceId: '', passphrase: 'short' })).toMatch(/Passphrase/);
     expect(validateSync({ endpoint: 'https://x', token: '', workspaceId: '', passphrase: 'longenough' })).toBeNull();
+  });
+
+  it('allows plain http only on loopback, where the token cannot be sniffed', () => {
+    expect(isAllowedSyncEndpoint('http://localhost:8787')).toBe(true);
+    expect(isAllowedSyncEndpoint('http://127.0.0.1:8787/companion')).toBe(true);
+    expect(isAllowedSyncEndpoint('http://[::1]:8787')).toBe(true);
+    expect(isAllowedSyncEndpoint('https://sync.example.com')).toBe(true);
+    // a LAN address is not a secure context: TLS or nothing
+    expect(isAllowedSyncEndpoint('http://192.168.1.10:8787')).toBe(false);
+    expect(isAllowedSyncEndpoint('http://localhost.evil.com')).toBe(false);
+    expect(isAllowedSyncEndpoint('http://127.0.0.1.evil.com')).toBe(false);
+    expect(isAllowedSyncEndpoint('ftp://localhost')).toBe(false);
+    expect(isAllowedSyncEndpoint('not a url')).toBe(false);
   });
 
   it('pushes encrypted bundles and pulls remote ones', async () => {

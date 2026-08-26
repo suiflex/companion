@@ -51,6 +51,16 @@ export function cleanChanges(raw: Entry[], record: CleanRecord | null): CleanCha
 export function effectiveClean(raw: Entry[], record: CleanRecord | null): Entry[] {
   if (record?.status !== 'done' || !record.entries.length) return raw;
   const kept = new Set(record.kept ?? []);
-  const merged = record.entries.map((e, i) => (kept.has(i) && raw[i] ? raw[i] : e));
+  const merged = record.entries.map((e, i) => {
+    const original = raw[i];
+    if (!original) return e;
+    if (kept.has(i)) return original;
+    // Cleanup only ever rewrites text — the prompt forbids touching the
+    // speaker, and the model answers with {i, text}. Everything else therefore
+    // comes from the capture, so a later edit there (a speaker renamed on an
+    // imported recording) shows up in the clean view too instead of leaving
+    // the two transcripts disagreeing about who said what.
+    return { ...original, text: e.text };
+  });
   return raw.length > merged.length ? merged.concat(raw.slice(merged.length)) : merged;
 }

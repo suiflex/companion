@@ -178,3 +178,100 @@ export async function createIssue(
   if (!ref) throw new Error(`${config.provider} tidak mengembalikan id issue.`);
   return ref;
 }
+
+// -- reading status back --
+//
+// Pushing was one-way: an action closed in Jira stayed "open" in Companion
+// forever. The tracker is where the team actually works, so it wins — but only
+// when it answers clearly. An unreadable or unrecognised status returns null
+// and the local state is left alone rather than guessed at.
+
+/** Status names that mean "finished" across the three trackers' defaults. */
+const DONE_NAMES = new Set(['done', 'completed', 'complete', 'closed', 'resolved', 'canceled', 'cancelled', 'selesai']);
+
+interface StatusEndpoint {
+  url: string;
+  method: 'GET' | 'POST';
+  headers: Record<string, string>;
+  body?: unknown;
+  status: (data: Record<string, unknown>) => 'open' | 'done' | null;
+}
+
+/** Deep-search a Notion page for the first property that carries a status. */
+function notionStatus(data: Record<string, unknown>): 'open' | 'done' | null {
+  if (data.archived === true) return 'done';
+  const props = data.properties as Record<string, Record<string, unknown>> | undefined;
+  for (const prop of Object.values(props ?? {})) {
+    if (prop?.type === 'checkbox' && typeof prop.checkbox === 'boolean') {
+      return prop.checkbox ? 'done' : 'open';
+    }
+    const named = (prop?.status ?? prop?.select) as { name?: string } | undefined;
+    if (named?.name) return DONE_NAMES.has(named.name.toLowerCase()) ? 'done' : 'open';
+  }
+  return null;
+}
+
+export function buildStatusRequest(config: TrackerConfig, ref: string): StatusEndpoint {
+  if (config.provider === 'jira') {
+    const base = config.baseUrl.replace(/\/+$/, '');
+    return {
+      url: `${base}/rest/api/3/issue/${encodeURIComponent(ref)}?fields=status`,
+      method: 'GET',
+      headers: { Authorization: `Basic ${toBase64(config.token)}`, Accept: 'application/json' },
+      status: (d) => {
+        const fields = d.fields as { status?: { statusCategory?: { key?: string }; name?: string } } | undefined;
+        // statusCategory is the workflow-independent one: 'new' | 'indeterminate' | 'done'
+        const category = fields?.status?.statusCategory?.key;
+        if (category) return category === 'done' ? 'done' : 'open';
+        const name = fields?.status?.name;
+        return name ? (DONE_NAMES.has(name.toLowerCase()) ? 'done' : 'open') : null;
+      },
+    };
+  }
+
+  if (config.provider === 'linear') {
+    return {
+      url: 'https://api.linear.app/graphql',
+      method: 'POST',
+      headers: { Authorization: config.token, 'Content-Type': 'application/json' },
+      body: { query: 'query($id: String!) { issue(id: $id) { state { type } } }', variables: { id: ref } },
+      status: (d) => {
+        const data = d.data as { issue?: { state?: { type?: string } } } | undefined;
+        const type = data?.issue?.state?.type;
+        if (!type) return null;
+        return type === 'completed' || type === 'canceled' ? 'done' : 'open';
+      },
+    };
+  }
+
+  return {
+    url: `https://api.notion.com/v1/pages/${encodeURIComponent(ref)}`,
+    method: 'GET',
+    headers: { Authorization: `Bearer ${config.token}`, 'Notion-Version': '2022-06-28' },
+    status: notionStatus,
+  };
+}
+
+/** Current tracker status for one pushed action, or null when unreadable. */
+export async function fetchIssueStatus(
+  config: TrackerConfig,
+  ref: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<'open' | 'done' | null> {
+  const problem = validateTracker(config);
+  if (problem) throw new Error(problem);
+  const ep = buildStatusRequest(config, ref);
+  const res = await fetchImpl(ep.url, {
+    method: ep.method,
+    headers: ep.headers,
+    ...(ep.body ? { body: JSON.stringify(ep.body) } : {}),
+  });
+  // a deleted issue is not an error worth stopping a whole refresh for
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`${config.provider} menolak (${res.status})`);
+  try {
+    return ep.status((await res.json()) as Record<string, unknown>);
+  } catch {
+    return null;
+  }
+}

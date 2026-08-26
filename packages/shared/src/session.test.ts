@@ -148,4 +148,14 @@ describe('cleanup provenance (§26)', () => {
   it('returns the raw transcript when there is no finished cleanup', () => {
     expect(effectiveClean(raw, null)).toBe(raw);
   });
+
+  // cleanup rewrites text only, so a speaker renamed on the capture (an
+  // imported recording labelled "Speaker 1") must not stay stale in the
+  // clean view while the raw view already shows the real name
+  it('takes the speaker from the capture, not from the frozen clean record', () => {
+    const renamed = raw.map((e) => (e.speaker === 'A' ? { ...e, speaker: 'Akbar' } : e));
+    const merged = effectiveClean(renamed, record());
+    expect(merged.map((e) => e.speaker)).toEqual(['Akbar', 'B']);
+    expect(merged[0].text).toBe('target 2023'); // the correction still applies
+  });
 });

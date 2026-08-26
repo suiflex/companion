@@ -45,8 +45,31 @@ export interface RemoteRecord {
   payload: string;
 }
 
+/**
+ * https anywhere, or plain http on loopback only.
+ *
+ * The bearer token travels in a header, so http on a routable address would
+ * put it on the wire in clear. Loopback is the exception browsers themselves
+ * make (localhost is a secure context) and is how @meetcc/sync-server is meant
+ * to be run — on the user's own machine. Anything remote needs TLS.
+ */
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+export function isAllowedSyncEndpoint(endpoint: string): boolean {
+  try {
+    const url = new URL(endpoint.trim());
+    if (url.protocol === 'https:') return true;
+    // URL keeps the brackets on an IPv6 host, so '[::1]' is what to compare
+    return url.protocol === 'http:' && LOOPBACK.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 export function validateSync(config: SyncConfig): string | null {
-  if (!/^https:\/\//.test(config.endpoint)) return 'Endpoint sync harus https://';
+  if (!isAllowedSyncEndpoint(config.endpoint)) {
+    return 'Endpoint sync harus https://, atau http:// khusus localhost.';
+  }
   if (!config.passphrase || config.passphrase.length < 8) {
     return 'Passphrase minimal 8 karakter (kunci enkripsi diturunkan darinya).';
   }

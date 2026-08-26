@@ -314,6 +314,47 @@ export class CompanionStore {
       }));
   }
 
+  /**
+   * Rename one speaker across a meeting, in every transcript variant.
+   *
+   * Needed because an imported recording arrives with placeholder names
+   * ("Speaker 1") that only a human can resolve. The FTS triggers reindex the
+   * speaker column on UPDATE, so search follows the new name; `participants`
+   * is rebuilt because two placeholders can be merged into one real person.
+   * Returns the number of lines moved.
+   */
+  renameSpeaker(sessionId: string, from: string, to: string): number {
+    const name = to.trim();
+    if (!name || name === from) return 0;
+    return transact(this.db, () => {
+      const before = this.db.all<{ c: number }>(
+        'SELECT COUNT(*) AS c FROM transcript_entries WHERE session_id = ? AND speaker = ?',
+        [sessionId, from],
+      );
+      const moved = before[0]?.c ?? 0;
+      if (!moved) return 0;
+      this.db.run(
+        'UPDATE transcript_entries SET speaker = ? WHERE session_id = ? AND speaker = ?',
+        [name, sessionId, from],
+      );
+      this.db.run('DELETE FROM participants WHERE session_id = ?', [sessionId]);
+      const counts = this.db.all<{ speaker: string; lines: number }>(
+        `SELECT speaker, COUNT(*) AS lines FROM transcript_entries
+         WHERE session_id = ? AND variant = 'raw' GROUP BY speaker`,
+        [sessionId],
+      );
+      for (const row of counts) {
+        this.db.run('INSERT INTO participants(session_id, name, lines) VALUES(?,?,?)', [
+          sessionId,
+          s(row.speaker),
+          row.lines,
+        ]);
+      }
+      this.db.run('UPDATE meeting_sessions SET updated_at = ? WHERE id = ?', [nowIso(), sessionId]);
+      return moved;
+    });
+  }
+
   countEntries(sessionId: string, variant: TranscriptVariant = 'raw'): number {
     const rows = this.db.all<{ c: number }>(
       'SELECT COUNT(*) AS c FROM transcript_entries WHERE session_id = ? AND variant = ?',
