@@ -412,12 +412,11 @@ export async function resolveCodeAssistAccount(accessToken: string): Promise<Cod
   const raw = await body(load, 'LOAD_FAILED');
 
   let tierId = DEFAULT_TIER;
-  if (Array.isArray(raw.allowedTiers)) {
-    for (const tier of raw.allowedTiers) {
-      if (tier && typeof tier === 'object' && (tier as any).isDefault && typeof (tier as any).id === 'string') {
-        tierId = (tier as any).id.trim();
-        break;
-      }
+  for (const entry of Array.isArray(raw.allowedTiers) ? raw.allowedTiers : []) {
+    const tier = entry as Record<string, unknown> | null;
+    if (tier?.isDefault && typeof tier.id === 'string') {
+      tierId = tier.id.trim();
+      break;
     }
   }
 
