@@ -7,3 +7,4 @@ dist/
 .agents/
 .forgeguard/
 coverage/
+.obsidian/

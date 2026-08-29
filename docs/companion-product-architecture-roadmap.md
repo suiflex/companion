@@ -7,6 +7,19 @@
 **Dokumen:** Product & Architecture Recommendation  
 **Fokus:** Ask Engine, retrieval, meeting memory, storage, SQLite/FTS5, keamanan extension, dan roadmap pengembangan
 
+> **⚠️ STATUS DOKUMEN — 27 Agustus 2026: dokumen ini SEBAGIAN SUDAH TERGANTIKAN.**
+> Sumber kebenaran utama sekarang: [`COMPANION_UNIFIED_ARCHITECTURE.md`](./COMPANION_UNIFIED_ARCHITECTURE.md) (audit repo `develop@3bfe1449`, terverifikasi 27-08-2026). Bila isi dokumen ini bertentangan dengan dokumen unified, **dokumen unified yang menang**.
+>
+> **Sudah usang — jangan dijadikan acuan:**
+> - **§3** "Kondisi Storage Saat Ini" — klaim "belum menggunakan SQLite" sudah tidak benar: SQLite WASM + OPFS + FTS5 (schema v5) sudah terimplementasi dan teraudit (unified §2.5).
+> - **§7** "SQLite di Chrome Extension" — sudah diimplementasi; yang masih relevan hanya catatan keamanannya (§8 dokumen ini).
+> - **§19** "Proposed SQLite Schema" — sketsa lama; arah skema kanonis ada di unified §12.
+> - **§30** "Migration Strategy" — sebagian sudah jalan (`ingestAll` + rebuild indeks); rencana migrasi vault kanonis ada di unified §11.2 dan §35.1 Q19.
+> - **§32 baris P1** — sebagian besar sudah terealisasi di extension; urutan kerja baru mengikuti unified §32 (Phased Roadmap) + §32.1 (product gate).
+> - **§34** "Target Architecture" — diganti unified §6–§8; ringkasan tiga permukaan sistem (extension / desktop / server): unified §36.
+>
+> **Masih otoritatif sampai spesifikasi Ask v2 final:** §9–§18 (Ask Engine v2), §31 (evaluation suite), dan daftar P0 di §32. Catatan: sebagian item P0 sudah jalan (mis. conversation-window expansion, `AskResult` terstruktur) — audit dulu sebelum memasukkan ulang ke backlog. Bagian lain yang tidak disebut di atas (mis. §8.3 permission hardening, §26 transcript cleanup provenance) masih konsisten dengan implementasi.
+
 ---
 
 ## 1. Executive Summary
