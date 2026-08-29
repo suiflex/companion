@@ -1,0 +1,74 @@
+# Path -> label map for the PR area labeler (the `label` job in
+# .github/workflows/suiflex.yml).
+#
+# One entry per npm workspace, so a reviewer can tell from the label row which
+# parts of the monorepo a pull request touches without opening the diff.
+#
+# Adding a workspace means adding it here as well as to package.json's
+# `workspaces` — nothing checks that this file stayed in sync.
+
+
+"area: extension":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "apps/extension/**"
+
+# Deliberately overlaps 'area: extension'. content.js is the one file that rots
+# on its own schedule — Google Meet rotates its obfuscated class names every few
+# months — so a change to it is worth seeing without opening the diff.
+"area: capture":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "apps/extension/public/content.js"
+
+"area: ai":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "packages/ai/**"
+
+"area: meeting":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "packages/meeting/**"
+
+"area: store":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "packages/store/**"
+
+"area: shared":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "packages/shared/**"
+
+"area: mcp":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "packages/mcp/**"
+
+"area: sync-server":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "packages/sync-server/**"
+
+"area: exporters":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "packages/exporters/**"
+
+"area: ci":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
+
+"area: docs":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "*.md"
+          - "docs/**"
+
+"area: brand":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "assets/brand/**"
+          - "scripts/gen-icons.mjs"

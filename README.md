@@ -3,7 +3,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.svg">
-    <img src="assets/brand/logo-light.svg" alt="Meet Companion" width="380">
+    <img src="assets/brand/logo-light.svg" alt="Meet Companion" width="425">
   </picture>
 </p>
 
