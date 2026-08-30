@@ -60,8 +60,15 @@ function parseArgs() {
       case '--profile': opts.profile = resolve(args[++i]); break;
       case '--dry-run': opts.dryRun = true; break;
       case '--preview': opts.preview = true; break;
-      case '--help': case '-h': case 'help': console.log(HELP); process.exit(0);
-      default: console.error(`Unknown argument: ${args[i]}\n\n${HELP}`); process.exit(1);
+      case '--help':
+      case '-h':
+      case 'help':
+        console.log(HELP);
+        process.exit(0);
+        break;
+      default:
+        console.error(`Unknown argument: ${args[i]}\n\n${HELP}`);
+        process.exit(1);
     }
   }
   return opts;
@@ -326,8 +333,6 @@ function paint(code) {
 
 const accent = paint(C.accent);
 const fg1 = paint(C.fg1);
-const fg3 = paint(C.fg3);
-const border = paint(C.border);
 
 // Speech-bubble badge next to the wordmark, matching the logomark
 // (assets/brand/logo-mark.svg: a rounded caption bubble with a tail pointing
@@ -366,7 +371,7 @@ async function cmdInstall(opts) {
     console.log('No supported Chromium browser detected (Chrome, Edge, or Brave).');
     process.exit(1);
   }
-  browsers.forEach((b, i) => console.log(`  found: ${b.name} (${b.binary})`));
+  browsers.forEach((b) => console.log(`  found: ${b.name} (${b.binary})`));
 
   // preview: show the full TTY flow but do not resolve dist or launch anything
   if (opts.preview) {
