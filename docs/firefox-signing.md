@@ -16,15 +16,24 @@ signature is Mozilla's — distribution stays on our GitHub Releases.
    <https://addons.mozilla.org/en-US/developers/addon/api/key/>. You get a
    **JWT issuer** (`user:12345:67`) and a **JWT secret**. The secret is shown
    once.
-3. Put them in the repo's `.env` (gitignored) or your shell profile:
+3. Copy `.env.example` to `.env` (gitignored) and fill both values in:
 
    ```bash
-   export WEB_EXT_API_KEY="user:12345:67"
-   export WEB_EXT_API_SECRET="…"
+   cp .env.example .env && chmod 600 .env
+   ```
+
+   Then load it for the signing command only:
+
+   ```bash
+   set -a; . ./.env; set +a
+   npm run sign:firefox
    ```
 
    `web-ext` reads both from the environment; nothing is passed on the command
-   line, so the secret never lands in shell history.
+   line, so the secret never lands in shell history or in `ps` output.
+
+   A version number is signable **once per add-on, forever**. Treat every
+   upload as spending that number.
 
 The add-on id is `companion@suiflex.dev`, set in
 `apps/extension/public/manifest.json` under `browser_specific_settings.gecko`.
