@@ -167,3 +167,61 @@ export function carryOverFor(
     fromSessions: [...new Set([...openActions, ...openQuestions].map((r) => r.sessionId))],
   };
 }
+
+// -- weekly digest --
+
+/** How far back a digest looks when nothing else is asked for. */
+export const DIGEST_DAYS = 7;
+
+const dayOf = (iso: string): string => iso.slice(0, 10);
+
+/**
+ * The week in markdown: what was decided, what is now due, what is still open.
+ * Built from a `Chronology` that is already on screen, so a digest costs no
+ * query and no AI call — it is a copy button, not a feature with a pipeline.
+ */
+export function weeklyDigest(
+  story: Chronology,
+  opts: { now?: number; days?: number } = {},
+): string {
+  const now = opts.now ?? Date.now();
+  const days = opts.days ?? DIGEST_DAYS;
+  const since = now - days * 86_400_000;
+  const recent = story.events.filter((e) => {
+    const t = Date.parse(e.at);
+    return Number.isFinite(t) && t >= since && t <= now;
+  });
+
+  const bullets = (kind: TimelineEvent['kind']): string[] =>
+    recent
+      .filter((e) => e.kind === kind)
+      .map((e) => `- ${e.text}${e.detail ? ` — ${e.detail}` : ''} _(${e.sessionTitle})_`);
+
+  const meetings = new Set(recent.map((e) => e.sessionId));
+  const lines = [
+    `# Digest ${dayOf(new Date(since).toISOString())} – ${dayOf(new Date(now).toISOString())}`,
+    '',
+    `${meetings.size} rapat · ${story.openActions.length} action item terbuka · ` +
+      `${story.overdueActions.length} lewat due · ${story.openQuestions.length} pertanyaan terbuka`,
+  ];
+
+  const section = (title: string, items: string[]): void => {
+    if (!items.length) return;
+    lines.push('', `## ${title}`, ...items);
+  };
+
+  section('Keputusan', bullets('decision'));
+  section('Action item baru', bullets('action'));
+  section('Pertanyaan terjawab', bullets('question-resolved'));
+  section(
+    'Lewat due',
+    story.overdueActions.map((a) => `- ${a.task}${a.owner ? ` — ${a.owner}` : ''} (due ${a.dueAt})`),
+  );
+  section(
+    'Masih terbuka',
+    story.openQuestions.map((q) => `- ${q.question}`),
+  );
+
+  if (!recent.length) lines.push('', '_Tidak ada aktivitas rapat pada periode ini._');
+  return lines.join('\n');
+}
