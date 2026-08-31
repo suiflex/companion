@@ -53,3 +53,60 @@ export function detectHighlights(entries: Entry[], fromSeq = 0): Highlight[] {
   }
   return out;
 }
+
+// -- live action items --
+// The AI pass after the meeting is still the authoritative list. During the
+// call there is no AI at all (cost, and captions leaving the machine mid-
+// meeting), so owner and due are read off the sentence itself and left blank
+// when the sentence does not say — a wrong PIC is worse than an empty one.
+
+export interface LiveAction {
+  seq: number;
+  task: string;
+  owner: string;
+  /** Verbatim deadline wording ("besok", "minggu depan"), never a parsed date. */
+  due: string;
+}
+
+const DUE_CUE =
+  /\b(hari ini|besok|lusa|minggu (?:ini|depan)|bulan (?:ini|depan)|akhir (?:minggu|bulan)|end of day|EOD|senin|selasa|rabu|kamis|jumat|sabtu|minggu|tanggal \d{1,2}(?: \w+)?)\b/i;
+const SELF = /\b(saya|aku|gue|gw|I'?ll|I will)\b/i;
+
+/** The speaker took it themselves, or a participant was named in the line. */
+export function guessOwner(text: string, speaker: string, participants: string[]): string {
+  const others = participants.filter((p) => p && p !== speaker);
+  const named = others.find((p) => {
+    const first = p.split(/\s+/)[0];
+    return first.length > 2 && new RegExp(`\\b${first.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(text);
+  });
+  if (named) return named;
+  return SELF.test(text) ? speaker : '';
+}
+
+/**
+ * Provisional action items from the live lexical pass — what to raise before
+ * everyone leaves the call. Duplicate wording is dropped so a topic repeated
+ * three times is one line, not three.
+ */
+export function liveActions(
+  highlights: { seq: number; kind: string; text: string }[],
+  entries: { speaker: string }[],
+): LiveAction[] {
+  const out: LiveAction[] = [];
+  const seenText = new Set<string>();
+  const participants = [...new Set(entries.map((e) => e.speaker).filter(Boolean))];
+  for (const h of highlights) {
+    if (h.kind !== 'action') continue;
+    const key = h.text.trim().toLowerCase();
+    if (seenText.has(key)) continue;
+    seenText.add(key);
+    const speaker = entries[h.seq]?.speaker ?? '';
+    out.push({
+      seq: h.seq,
+      task: h.text.trim(),
+      owner: guessOwner(h.text, speaker, participants),
+      due: h.text.match(DUE_CUE)?.[0] ?? '',
+    });
+  }
+  return out;
+}
