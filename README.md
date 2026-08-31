@@ -21,6 +21,25 @@ Everything stays on the machine: capture, the searchable archive, and the notes.
 The only thing that leaves is the transcript you send to the AI provider you
 chose — and which provider that is, is yours to pick, including a local one.
 
+## Install from the terminal
+
+Prefer a prompt over Developer-mode clicks? The `companion` CLI installs the
+latest release and launches it in a Chromium browser (Chrome, Edge, Brave, Arc,
+Vivaldi, Opera, …), each in its own dedicated profile so your everyday windows
+are untouched. An interactive select box lets you arrow-key through browsers,
+Space to toggle, and Enter to launch — one or several at once.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/suiflex/companion/<branch>/scripts/install.sh | bash
+companion install          # TTY-pick browser(s), then launches
+companion install --preview # see the picker without launching
+companion update           # re-download the latest release dist
+```
+
+`companion` lives in `~/.local/bin` (add it to your `PATH`) with the release
+`dist` in `~/.companion`. From a checkout, `node scripts/companion.mjs install`
+is equivalent. Full steps: **[INSTALL.md](INSTALL.md)**.
+
 ## Monorepo
 
 ```

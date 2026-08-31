@@ -31,7 +31,7 @@ async function raw(method, path, headers, body) {
   const t0 = performance.now();
   const r = await fetch(base + path, { method, headers, body });
   const ms = performance.now() - t0;
-  let j = null; try { j = await r.json(); } catch {}
+  let j = null; try { j = await r.json(); } catch { /* non-JSON body */ }
   return { status: r.status, j, ms };
 }
 const put = (id, updatedAt, payload, hdrs = H) =>
@@ -124,11 +124,11 @@ for (const n of jsons) {
   try { const r = JSON.parse(readFileSync(join(dir, n), 'utf8')); if (!r.sessionId || !r.updatedAt || typeof r.payload !== 'string') missingFields++; }
   catch { parseFail++; }
 }
-const expectedSessions = 6 + 1 + 1 + 100 + 1; // a_* yg lolos + race-pair + race-50same + perf + race-lww(tz terpisah sudah masuk)
+// total inserts expected is informational; logging only
 console.log(`G files: json=${jsons.length} tmp_leftover=${tmps.length} parseFail=${parseFail} missingFields=${missingFields}`);
 
 console.log('PROBE_COMPLETE');
 writeFileSync('/tmp/dewi-probe-results.json', JSON.stringify(F, (k, v) => (v instanceof Map ? undefined : v), 2));
 child.kill('SIGTERM');
-try { rmSync(data, { recursive: true, force: true }); } catch {}
+try { rmSync(data, { recursive: true, force: true }); } catch { /* already gone */ }
 process.exit(0);

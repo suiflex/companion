@@ -33,6 +33,37 @@ npm run smoke -w @meetcc/sync-server  # the built sync bin answers over HTTP
 Load: `chrome://extensions` → Developer mode → **Load unpacked** → **`apps/extension/dist/`**.
 After every build: reload the extension, then refresh the Meet tab.
 
+### Terminal installer (no npm, no manual load)
+
+For a quicker path — especially on a machine that just wants to run the
+released extension without a checkout — run the curl installer. It puts the
+`companion` CLI and the latest release `dist` into `~/.companion` and a
+`companion` wrapper into `~/.local/bin` (add it to your `PATH` if it isn't
+there). Nothing is published to npm.
+
+```bash
+# from a raw GitHub URL (replace <branch> with main or develop):
+curl -fsSL https://raw.githubusercontent.com/suiflex/companion/<branch>/scripts/install.sh | bash
+
+# then:
+companion install              # TTY-pick one or several browsers, launch each
+companion install --preview    # see the TTY flow without launching anything
+companion update               # re-downloads the latest release dist
+```
+
+`companion install` launches each chosen browser in its own **dedicated
+profile** (`~/.meetcc/browser-profiles/<browser>`), so it never touches your
+everyday windows. The picker is an interactive **select box**: arrow keys move,
+**Space** toggles a browser on/off, **Enter** confirms — select several or all
+detected Chromium browsers (Chrome, Edge, Brave, Arc, Vivaldi, Opera, Canary…).
+Sign-ins (AI provider, trackers) persist in each profile across runs. Everyday
+profile sign-ins do not carry over, by design. Inside the repo you can
+equivalently run `node scripts/companion.mjs install --preview`.
+
+
+The same `--load-extension` / dedicated-profile mechanism is what the manual
+Developer-mode load does, minus the manual extract-and-click steps.
+
 ## Connecting an AI provider
 
 Settings (⚙) → **AI Provider**. Two ways to pay for the completions, and the

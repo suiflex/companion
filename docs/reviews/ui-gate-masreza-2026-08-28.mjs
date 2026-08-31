@@ -106,5 +106,5 @@ try {
   console.log('GATE_SCRIPT_COMPLETE');
 } finally {
   child.kill('SIGTERM');
-  try { rmSync(data, { recursive: true, force: true }); } catch {}
+  try { rmSync(data, { recursive: true, force: true }); } catch { /* already gone */ }
 }
