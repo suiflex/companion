@@ -68,7 +68,28 @@ jobs:
           path: apps/extension/dist
           if-no-files-found: error
 
-      # tag push (v*) -> public Release with the zip attached
+      # AMO requires the source when the reviewed files are minified, and ours
+      # are a Vite bundle. REVIEWERS.md rebuilds the exact tree from it.
+      - name: Pack the source archive for AMO
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: npm run pack:source
+
+      # Submits to the listed channel, which puts it in Mozilla's review queue —
+      # AMO then distributes and auto-updates it. Skipped on a fork, where the
+      # secret is absent, so a fork's tag build still produces its artifacts.
+      - name: Submit the Firefox build to AMO
+        if: startsWith(github.ref, 'refs/tags/v') && env.WEB_EXT_API_KEY != ''
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+        run: |
+          npx web-ext sign --channel=listed \
+            --source-dir apps/extension/dist-firefox \
+            --artifacts-dir web-ext-artifacts \
+            --upload-source-code "meetcc-source-v${{ steps.meta.outputs.version }}.zip"
+
+      # tag push (v*) -> public Release with the zips attached. The Firefox
+      # add-on itself is served by AMO, so only the source archive joins them.
       - name: Publish Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -76,3 +97,4 @@ jobs:
           files: |
             meetcc-extension-v*.zip
             meetcc-extension-firefox-v*.zip
+            meetcc-source-v*.zip
