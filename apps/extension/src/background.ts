@@ -26,6 +26,7 @@ import {
   clearMeeting,
   deriveTitle,
   effectiveClean,
+  fetchLatestRelease,
   getAnalysis,
   getTitle,
   loadAnalyses,
@@ -42,6 +43,7 @@ import {
   saveDocProgress,
   saveTitle,
   setAnalysis,
+  UPDATE_KEY,
   type Analysis,
   type AskResult,
   type ChatMessage,
@@ -163,15 +165,25 @@ async function sweep(): Promise<void> {
   }
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+// Chromium never auto-updates an unpacked extension, so the dashboard has to
+// be told a release exists. Once a day is plenty — the user updates by hand
+// anyway, and GitHub's unauthenticated API is rate-limited per IP.
+async function checkForUpdate(): Promise<void> {
+  const state = await fetchLatestRelease();
+  if (state) await chrome.storage.local.set({ [UPDATE_KEY]: state });
+}
+
+function scheduleAlarms(): void {
   chrome.alarms.create('sweep', { periodInMinutes: 1 });
-});
-chrome.runtime.onStartup.addListener(() => {
-  chrome.alarms.create('sweep', { periodInMinutes: 1 });
-});
+  chrome.alarms.create('update-check', { delayInMinutes: 1, periodInMinutes: 60 * 24 });
+}
+
+chrome.runtime.onInstalled.addListener(scheduleAlarms);
+chrome.runtime.onStartup.addListener(scheduleAlarms);
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name.startsWith('sweep')) void sweep();
+  if (alarm.name === 'update-check') void checkForUpdate();
 });
 
 // Dashboard window: one shared popup window, reused/focused if already open.
