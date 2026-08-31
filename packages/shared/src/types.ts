@@ -129,6 +129,9 @@ export interface OAuthSettings {
   accountId: string;
   /** Code Assist only — the project discovered or provisioned at sign-in. */
   projectId: string;
+  /** Code Assist only — the tier that project was resolved on. Kept because it
+   *  is what a failed sign-in has to be diagnosed against. */
+  tierId: string;
   /** Shown so the user can see which account is connected. */
   email: string;
 }
@@ -140,6 +143,7 @@ export const DEFAULT_OAUTH: OAuthSettings = {
   expiresAt: 0,
   accountId: '',
   projectId: '',
+  tierId: '',
   email: '',
 };
 
