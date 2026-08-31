@@ -31,10 +31,26 @@ The add-on id is `companion@suiflex.dev`, set in
 The first signed upload registers that id to your AMO account — after that
 only that account can sign it, so use the project account, not a personal one.
 
-## Signing
+## Checking the package before you upload
 
 ```bash
 npm run build
+npm run lint:firefox
+```
+
+Mozilla's validator has to report **0 errors**. The warnings it does report all
+come from bundled vendor code (mermaid's `innerHTML`, sqlite-wasm's `Function`
+constructor) and do not block an unlisted signature, which is automated and
+skips human review.
+
+The manifest declares `data_collection_permissions.required:
+["personalCommunications"]` — captions are other people's speech, and Firefox
+shows that to the user at install time. `strict_min_version` is `142.0`, the
+first release supporting that key on both desktop and Android.
+
+## Signing
+
+```bash
 npm run sign:firefox
 ```
 

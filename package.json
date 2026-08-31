@@ -12,6 +12,7 @@
     "pack": "node scripts/pack.mjs",
     "zip": "npm run build && npm run pack",
     "sign:firefox": "npm run pack -- firefox && web-ext sign --channel=unlisted --source-dir apps/extension/dist-firefox --artifacts-dir web-ext-artifacts",
+    "lint:firefox": "npm run pack -- firefox && web-ext lint --source-dir apps/extension/dist-firefox",
     "lint": "eslint .",
     "dev": "npm run dev -w apps/extension",
     "typecheck": "tsc --noEmit",
