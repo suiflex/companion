@@ -68,13 +68,8 @@ second if the form lets you.
 
 ## Step 5 — License
 
-**This is the one decision that is not drafted for you.** The repo currently
-has no LICENSE file, no `license` field in `package.json`, and GitHub reports
-no license — so there is nothing to copy from. AMO requires a choice for a
-listed add-on.
-
-Whatever you pick, add a matching `LICENSE` file to the repo in the same pass,
-so the two do not disagree.
+Pick **Apache License 2.0** from the dropdown. It matches `LICENSE` in the repo
+and the `license` field in every `package.json`, so nothing disagrees.
 
 ## Step 6 — Privacy policy
 
@@ -174,7 +169,7 @@ Nothing is deleted behind your back either: retention is off by default, and
 you opt in to a 30, 90 or 365 day window if you want one.
 
 OPEN SOURCE
-https://github.com/suiflex/companion
+Apache 2.0 — https://github.com/suiflex/companion
 ```
 
 ## Categories

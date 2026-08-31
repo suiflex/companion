@@ -1,9 +1,12 @@
 {
   "name": "@meetcc/sync-server",
   "version": "1.0.0",
+  "license": "Apache-2.0",
   "private": true,
   "type": "module",
-  "bin": { "companion-sync": "dist/server.js" },
+  "bin": {
+    "companion-sync": "dist/server.js"
+  },
   "scripts": {
     "build": "vite build",
     "start": "node dist/server.js",

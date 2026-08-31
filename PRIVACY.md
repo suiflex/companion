@@ -108,6 +108,12 @@ Meet Companion is a workplace tool and is not directed at children.
 Material changes to this policy will be noted in `CHANGELOG.md` and in the
 release notes for the version that carries them.
 
+## License
+
+Meet Companion is open source under the Apache License 2.0. The full source of
+every released version is at <https://github.com/suiflex/companion>, so any
+claim in this document can be checked against the code.
+
 ## Contact
 
 Questions, or a request about your data:

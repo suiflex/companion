@@ -157,3 +157,6 @@ Everything stays in `chrome.storage.local` under the `unlimitedStorage` permissi
 
 Nothing is deleted automatically by default. Settings → **Simpan riwayat** opts into a retention window (30 / 90 / 365 days); the minute sweep then removes meetings whose last activity is older than that, including their transcript, notulen, chat and documents. There is no undo — enabling it asks for confirmation, as does deleting a single meeting.
 
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE). Privacy: [PRIVACY.md](PRIVACY.md).

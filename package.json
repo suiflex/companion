@@ -2,6 +2,7 @@
   "name": "meet-cc-monorepo",
   "private": true,
   "version": "1.5.1",
+  "license": "Apache-2.0",
   "type": "module",
   "workspaces": [
     "apps/*",
