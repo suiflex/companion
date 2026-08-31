@@ -113,9 +113,23 @@ a version number.
 
 ## Screenshots
 
-Needed before submitting, taken at 1280×800 in the dedicated profile:
+**Optional, not a blocker.** Sampling the 50 most recently created listed
+extensions on AMO, 40 shipped with none. They are a listing-quality item: the
+public page just shows the icon and description without them.
+
+Worth adding later, at 1280x800 from the dedicated profile:
 
 1. Dashboard with a finished meeting — summary tab
 2. Transcript tab with speakers attributed
 3. Action items / decision log
 4. Settings showing the provider picker, with a local provider selected
+
+## What actually blocks the submission
+
+| Item | Status |
+| --- | --- |
+| Name, summary, description, category, license | drafted above — needs pasting into the form |
+| Privacy policy text | `PRIVACY.md`, paste the rendered text into the field |
+| Source archive | `npm run pack:source`, uploaded by CI |
+| Build instructions | `REVIEWERS.md`, inside the archive |
+| Screenshots | not required |
