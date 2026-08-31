@@ -60,19 +60,23 @@ export function bm25(index: LexicalIndex, terms: string[], fuzzy = false): numbe
       const doc = index.docs[i];
       if (!doc.length) continue;
       let tf = 0;
-      let weight = 1;
+      let exact = 0;
       for (const t of doc) {
-        if (t === term) tf += 1;
-        else if (
+        if (t === term) {
+          tf += 1;
+          exact += 1;
+        } else if (
           fuzzy &&
           term.length >= MIN_PREFIX_LEN &&
           (t.startsWith(term) || term.startsWith(t.slice(0, MIN_PREFIX_LEN)))
         ) {
           tf += 0.5;
-          weight = 0.6;
         }
       }
       if (!tf) continue;
+      // a prefix hit is weaker evidence than the real term, but a doc that
+      // also matched exactly must not be penalised for happening to contain one
+      const weight = exact ? 1 : 0.6;
       // df is exact-only; an unseen fuzzy term falls back to the rarest idf
       const df = index.df.get(term) ?? 1;
       const idf = Math.log(1 + (n - df + 0.5) / (df + 0.5));
