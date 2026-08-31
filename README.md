@@ -160,3 +160,5 @@ Nothing is deleted automatically by default. Settings → **Simpan riwayat** opt
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE). Privacy: [PRIVACY.md](PRIVACY.md).
+Found a vulnerability? [SECURITY.md](SECURITY.md) — please do not open a public
+issue.
