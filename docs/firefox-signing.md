@@ -85,45 +85,43 @@ fails with `Version already exists` — bump the version and try again.
 
 ## Moving it to CI
 
-Once the manual run works, add `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` to the
-repository secrets and a step to `.github/workflows/build.yml` that runs only
-on a tag push and only when the secret is present, so forks and pull requests
-are unaffected:
+`.github/workflows/build.yml` does this on a tag push, using the repository
+secrets `WEB_EXT_API_KEY` and `WEB_EXT_API_SECRET` — the same names `web-ext`
+reads from the environment, so nothing has to be renamed:
 
 ```yaml
-- name: Sign the Firefox build
+- name: Submit the Firefox build to AMO
   if: startsWith(github.ref, 'refs/tags/v') && env.WEB_EXT_API_KEY != ''
   env:
-    WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
-    WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
-  run: npm run sign:firefox
+    WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+    WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+  run: npx web-ext sign --channel=listed ... --upload-source-code ...
 ```
 
-then add `web-ext-artifacts/*.xpi` to the `files:` list of the release step.
+The `env.WEB_EXT_API_KEY != ''` guard means a fork, where the secret is absent,
+still gets its artifacts from a tag build instead of a failed run.
 
-## Auto-update, once signing is in CI
+`--upload-source-code` takes the archive from `npm run pack:source`. AMO
+requires it because the reviewed files are a Vite bundle; `REVIEWERS.md`
+rebuilds the exact tree from it.
 
-Signed and self-hosted means Firefox can update itself, which Chromium cannot
-do for this install shape. Add to the manifest's `gecko` block:
+## Listed versus unlisted
 
-```json
-"update_url": "https://suiflex.github.io/companion/updates.json"
-```
+The first signature, 1.5.1, went to the **unlisted** channel: no review queue,
+signed in seconds, but invisible on addons.mozilla.org and self-distributed.
 
-and publish an `updates.json` listing each version and the `.xpi` URL from its
-release:
+From 1.6.0 the submission is **listed**: it appears in AMO search, users install
+with one click, and AMO handles updates. That is why `companion install` opens
+the add-on's AMO page for Firefox rather than downloading anything, and why
+there is no `updates.json` to host.
 
-```json
-{
-  "addons": {
-    "companion@suiflex.dev": {
-      "updates": [
-        { "version": "1.6.0", "update_link": "https://github.com/suiflex/companion/releases/download/v1.6.0/companion-1.6.0.xpi" }
-      ]
-    }
-  }
-}
-```
+A listed submission enters Mozilla's review queue, so a release is not
+immediately installable from AMO the way the Chromium zip is immediately
+downloadable.
 
-Firefox polls it on its own schedule. Chromium users keep the in-app banner
-and `companion update` instead.
+## Auto-update
+
+Handled by AMO for a listed add-on — there is no `update_url` to set and no
+`updates.json` to host. Chromium users get the in-app banner and
+`companion update` instead, because Chromium cannot auto-update an unpacked
+extension at all.

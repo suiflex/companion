@@ -27,9 +27,9 @@ Prefer a prompt over Developer-mode clicks? The `companion` CLI installs the
 latest release and launches it in Chrome, Edge, Brave, Arc, Vivaldi, Opera or
 Firefox, each in its own dedicated profile so your everyday windows are
 untouched. An interactive select box lets you arrow-key through browsers, Space
-to toggle, and Enter to launch — one or several at once. Firefox gets the
-signed add-on and asks you to click **Add** once; Chromium browsers start ready
-to use.
+to toggle, and Enter to launch — one or several at once. Chromium browsers start
+ready to use; Firefox opens on the add-on's page at addons.mozilla.org, where one
+click installs it and Firefox handles updates from then on.
 
 ```bash
 # macOS / Linux

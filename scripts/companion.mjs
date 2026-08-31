@@ -18,10 +18,10 @@
 //   companion --help | -h            this help
 
 import { existsSync, mkdirSync } from 'node:fs';
-import { mkdir, rm, readdir, stat, copyFile, writeFile } from 'node:fs/promises';
+import { mkdir, rm, readdir, stat, copyFile } from 'node:fs/promises';
 import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { join, dirname, resolve } from 'node:path';
 import { homedir, platform } from 'node:os';
 import { extractZip } from './unzip.mjs';
@@ -33,11 +33,15 @@ const COMPANION_HOME = process.env.COMPANION_HOME || null;
 const REPO = 'suiflex/companion';
 const API_LATEST = `https://api.github.com/repos/${REPO}/releases/latest`;
 
+// Firefox installs from AMO, which also keeps the add-on updated. Addressed by
+// add-on id rather than slug: AMO resolves either, and the slug can be renamed.
+const AMO_URL = 'https://addons.mozilla.org/en-US/firefox/addon/companion%40suiflex.dev/';
+
 const HELP = `Companion — terminal installer for Meet Companion
 
 Loads the extension into a dedicated browser profile so your everyday browser
-is never touched. Chromium browsers are loaded unpacked and start ready to
-use; Firefox gets the signed .xpi and asks you to click Add once.
+is never touched. Chromium browsers are loaded unpacked and start ready to use;
+Firefox opens on the add-on's page, where one click installs it.
 
 Usage:
   companion install                build/fetch dist, TTY-pick browser(s), launch
@@ -197,16 +201,6 @@ async function downloadLatestDist(distDir, rel = null) {
   console.log(`Installed to ${distDir}\n`);
 }
 
-// Firefox cannot load an unpacked directory, so the Gecko path ships the signed
-// .xpi from the release instead of a dist folder.
-async function downloadLatestXpi(xpiPath, rel = null) {
-  const release = rel || (await fetchLatestRelease());
-  const buf = await downloadAsset(release, /\.xpi$/, 'signed .xpi');
-  await mkdir(dirname(xpiPath), { recursive: true });
-  await writeFile(xpiPath, buf);
-  console.log(`Installed to ${xpiPath}\n`);
-}
-
 async function resolveChromiumDist(opts) {
   if (opts.dir) {
     if (!hasManifest(opts.dir)) throw new Error(`No unpacked extension at ${opts.dir} (missing manifest.json).`);
@@ -235,48 +229,11 @@ async function resolveChromiumDist(opts) {
   return distDir;
 }
 
-/**
- * Locate the signed add-on, or explain why there isn't one.
- *
- * Never throws: a release without an .xpi is the normal state until signing is
- * live, and picking Firefox alongside Chrome must not stop Chrome launching.
- *
- * @returns {Promise<{ path: string | null, reason: string | null }>}
- */
-async function resolveXpi() {
-  if (!COMPANION_HOME) {
-    // In-repo there is no signed .xpi — signing needs AMO credentials. The
-    // packer's unsigned tree can still be loaded temporarily.
-    return {
-      path: null,
-      reason: 'a repo checkout has no signed .xpi.\n'
-        + '  Run `npm run pack -- firefox`, then load apps/extension/dist-firefox\n'
-        + '  from about:debugging → Load Temporary Add-on. See docs/firefox-signing.md.',
-    };
-  }
-
-  const xpiPath = join(COMPANION_HOME, 'companion.xpi');
-  if (existsSync(xpiPath)) return { path: xpiPath, reason: null };
-
-  const yes = await confirm(`No Firefox add-on at ${xpiPath} — download the latest release? (Y/n): `, true);
-  if (!yes) return { path: null, reason: 'download declined.' };
-  try {
-    await downloadLatestXpi(xpiPath);
-    return { path: xpiPath, reason: null };
-  } catch (e) {
-    return { path: null, reason: e.message };
-  }
-}
-
-/** Resolve one source per engine the picked browsers actually need. */
+/** Resolve the local source Chromium needs. Firefox installs from AMO. */
 export async function resolveSources(opts, browsers) {
-  const engines = new Set(browsers.map((b) => b.engine));
-  const sources = { chromium: null, gecko: null, geckoReason: null };
-  if (engines.has('chromium')) sources.chromium = await resolveChromiumDist(opts);
-  if (engines.has('gecko')) {
-    const { path, reason } = await resolveXpi();
-    sources.gecko = path;
-    sources.geckoReason = reason;
+  const sources = { chromium: null };
+  if (browsers.some((b) => b.engine === 'chromium')) {
+    sources.chromium = await resolveChromiumDist(opts);
   }
   return sources;
 }
@@ -423,12 +380,12 @@ function banner(stream = process.stdout) {
 
 // --- launch -----------------------------------------------------------------
 
-// Firefox has no --load-extension: it is handed the signed .xpi and shows an
-// install prompt, which the user has to accept once per profile. After that it
-// persists there and Firefox updates it on its own.
+// Firefox has no --load-extension. It opens on the AMO page instead, where one
+// click installs the signed add-on into this profile — and AMO keeps it updated
+// from then on, which Chromium cannot do for an unpacked extension.
 export function launchArgs(browser, sources, profileDir) {
   if (browser.engine === 'gecko') {
-    return ['-profile', profileDir, '-no-remote', pathToFileURL(sources.gecko).href];
+    return ['-profile', profileDir, '-no-remote', AMO_URL];
   }
   return [
     `--user-data-dir=${profileDir}`,
@@ -487,25 +444,13 @@ async function cmdInstall(opts) {
     return;
   }
 
-  // No signed .xpi means Firefox is skipped, not that the run failed — the
-  // Chromium browsers picked alongside it still launch.
-  const gecko = selected.filter((b) => b.engine === 'gecko');
-  const launchable = sources.gecko ? selected : selected.filter((b) => b.engine !== 'gecko');
-  if (gecko.length > 0 && !sources.gecko) {
-    console.log(`\nSkipping ${gecko.map((b) => b.name).join(', ')}: ${sources.geckoReason}`);
-  }
-  if (launchable.length === 0) {
-    console.log('\nNothing left to launch.\n');
-    return;
-  }
-
-  console.log(`\nLaunching ${launchable.length} Companion instance(s)...`);
-  for (const b of launchable) {
+  console.log(`\nLaunching ${selected.length} Companion instance(s)...`);
+  for (const b of selected) {
     const profileDir = opts.profile || join(homedir(), '.meetcc', 'browser-profiles', b.tag);
     const pid = launch(b, sources, profileDir);
     console.log(`  ${b.name} started (pid ${pid})`);
     console.log(`    profile: ${profileDir}`);
-    if (b.engine === 'gecko') console.log('    click Add in Firefox to finish installing.');
+    if (b.engine === 'gecko') console.log('    click "Add to Firefox" on the page that opens.');
   }
   console.log('\nTip: sign in / pick your AI provider in each profile once — it persists there.');
   console.log('Capture works on meet.google.com and Microsoft Teams.');
@@ -517,15 +462,9 @@ async function cmdUpdate() {
     console.log('`update` only applies to a standalone curl install. Run `node scripts/companion.mjs install` in the repo instead.');
     return;
   }
-  const rel = await fetchLatestRelease();
-  await downloadLatestDist(join(COMPANION_HOME, 'dist'), rel);
-  // Only refresh the .xpi if Firefox was actually installed — no reason to pull
-  // it for a Chromium-only user.
-  if (existsSync(join(COMPANION_HOME, 'companion.xpi'))) {
-    await downloadLatestXpi(join(COMPANION_HOME, 'companion.xpi'), rel);
-    console.log('Firefox updates the add-on itself; open the .xpi again to force it.');
-  }
+  await downloadLatestDist(join(COMPANION_HOME, 'dist'));
   console.log('Done. Restart Companion to pick up the update.');
+  console.log('(Firefox updates itself from addons.mozilla.org — nothing to do there.)');
 }
 
 // --- main -------------------------------------------------------------------

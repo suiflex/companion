@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { launchArgs } from './companion.mjs';
 
-const sources = { chromium: '/home/u/.companion/dist', gecko: '/home/u/.companion/companion.xpi' };
+const sources = { chromium: '/home/u/.companion/dist' };
 const profile = '/home/u/.meetcc/browser-profiles/chrome';
 
 describe('launchArgs', () => {
@@ -16,9 +16,13 @@ describe('launchArgs', () => {
     ]);
   });
 
-  it('hands Firefox the xpi as a file URL, not a --load-extension flag', () => {
+  it('sends Firefox to the AMO page, not a --load-extension flag', () => {
     const args = launchArgs({ engine: 'gecko' }, sources, profile);
-    expect(args).toEqual(['-profile', profile, '-no-remote', 'file:///home/u/.companion/companion.xpi']);
+    // addressed by add-on id: AMO resolves it and the slug can be renamed
+    expect(args).toEqual([
+      '-profile', profile, '-no-remote',
+      'https://addons.mozilla.org/en-US/firefox/addon/companion%40suiflex.dev/',
+    ]);
     expect(args.join(' ')).not.toContain('--load-extension');
   });
 
@@ -31,14 +35,11 @@ describe('launchArgs', () => {
 });
 
 describe('resolveSources', () => {
-  it('reports a missing add-on instead of failing the whole run', async () => {
-    // A release with no .xpi is the normal state until signing is live. Picking
-    // Firefox alongside Chrome must not stop Chrome launching.
+  it('resolves nothing locally when only Firefox is picked', async () => {
+    // Firefox installs from AMO, so there is no download to fail on and no
+    // reason to build the Chromium dist.
     const { resolveSources } = await import('./companion.mjs');
-    const picked = [{ engine: 'gecko', name: 'Firefox' }];
-    const sources = await resolveSources({ dir: null }, picked);
-    expect(sources.gecko).toBeNull();
-    expect(sources.geckoReason).toContain('repo checkout');
+    const sources = await resolveSources({ dir: null }, [{ engine: 'gecko', name: 'Firefox' }]);
     expect(sources.chromium).toBeNull();
   });
 });
