@@ -33,6 +33,18 @@ npm run smoke -w @meetcc/sync-server  # the built sync bin answers over HTTP
 Load: `chrome://extensions` → Developer mode → **Load unpacked** → **`apps/extension/dist/`**.
 After every build: reload the extension, then refresh the Meet tab.
 
+The manifest carries a `key`, so the extension id is the same wherever it is
+loaded from:
+
+| browser  | id                                 |
+| -------- | ---------------------------------- |
+| Chromium | `pkgpllhlmhhocidmipbokpigndoeiemb` |
+| Firefox  | `companion@suiflex.dev`            |
+
+That matters because your meetings live in `chrome.storage.local`, which is
+scoped to the id — without the pinned key, loading the same build from a
+different folder would hand you an empty dashboard.
+
 ### Terminal installer (no npm, no manual load)
 
 For a quicker path — especially on a machine that just wants to run the
