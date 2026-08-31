@@ -4,8 +4,8 @@
   "include-component-in-tag": false,
   "packages": {
     ".": {
-      "package-name": "companion",
       "changelog-path": "CHANGELOG.md",
+      "pull-request-title-pattern": "chore${scope}: release ${version}",
       "extra-files": [
         {
           "type": "json",
