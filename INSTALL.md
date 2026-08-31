@@ -22,7 +22,7 @@ it works stays in [README.md](README.md).
 
 ```bash
 npm install
-npm test                # vitest — 331 tests
+npm test                # vitest
 npm run test:coverage   # v8 coverage
 npm run lint            # eslint (tsc --noEmit stays the authority on types)
 npm run build           # typecheck + bundle -> extension, MCP and sync-server dist/
@@ -32,6 +32,18 @@ npm run smoke -w @meetcc/sync-server  # the built sync bin answers over HTTP
 
 Load: `chrome://extensions` → Developer mode → **Load unpacked** → **`apps/extension/dist/`**.
 After every build: reload the extension, then refresh the Meet tab.
+
+The manifest carries a `key`, so the extension id is the same wherever it is
+loaded from:
+
+| browser  | id                                 |
+| -------- | ---------------------------------- |
+| Chromium | `pkgpllhlmhhocidmipbokpigndoeiemb` |
+| Firefox  | `companion@suiflex.dev`            |
+
+That matters because your meetings live in `chrome.storage.local`, which is
+scoped to the id — without the pinned key, loading the same build from a
+different folder would hand you an empty dashboard.
 
 ### Terminal installer (no npm, no manual load)
 
@@ -68,14 +80,54 @@ profile** (`~/.meetcc/browser-profiles/<browser>`), so it never touches your
 everyday windows (`%USERPROFILE%\.meetcc\browser-profiles\<browser>` on
 Windows). The picker is an interactive **select box**: arrow keys move,
 **Space** toggles a browser on/off, **Enter** confirms — select several or all
-detected Chromium browsers (Chrome, Edge, Brave, Arc, Vivaldi, Opera, Canary…).
+detected browsers (Chrome, Edge, Brave, Arc, Vivaldi, Opera, Canary, Firefox).
 Sign-ins (AI provider, trackers) persist in each profile across runs. Everyday
 profile sign-ins do not carry over, by design. Inside the repo you can
 equivalently run `node scripts/companion.mjs install --preview`.
 
+For Chromium browsers the same `--load-extension` / dedicated-profile mechanism
+is what the manual Developer-mode load does, minus the manual
+extract-and-click steps.
 
-The same `--load-extension` / dedicated-profile mechanism is what the manual
-Developer-mode load does, minus the manual extract-and-click steps.
+### Firefox
+
+Firefox has no `--load-extension`, and its add-ons must be signed by Mozilla to
+survive a restart. So the installer opens Firefox on the add-on's page at
+addons.mozilla.org in the dedicated profile, and one click on **Add to Firefox**
+installs it. From then on Firefox keeps it up to date by itself — no
+`companion update`, no banner.
+
+In a repo checkout, load your own build instead: `npm run pack -- firefox`, then
+`about:debugging` → **Load Temporary Add-on** → `apps/extension/dist-firefox`. A
+temporary add-on is gone on the next Firefox restart, which is fine for
+development and not fine for daily use.
+
+## Upgrading from a version before 1.6.0
+
+Your meetings live in `chrome.storage.local`, which the browser scopes to the
+extension id. Before 1.6.0 that id was a hash of the folder the extension was
+loaded from, so it changed whenever the install moved. 1.6.0 pins it for good —
+but the pinned id is not the old one, so an archive captured before the upgrade
+does not follow you across it, and the dashboard opens empty.
+
+Once, before you remove the old install:
+
+1. Load the **old** version, open **Settings → Cadangan → Unduh cadangan**. One
+   file, every meeting.
+2. Upgrade (`companion update`, or install the Firefox add-on).
+3. Open the new one, **Settings → Cadangan → Pulihkan dari cadangan**, pick that
+   file.
+
+The backup carries transcripts, notes, chat and documents. It carries **no API
+key, no token and no audit log**, so it is safe to keep on disk — and you will
+need to set your AI provider up again afterwards.
+
+Restoring only adds: a meeting already in the profile is never overwritten, so
+restoring the same file twice does nothing and you cannot lose work by trying.
+
+Already upgraded and staring at an empty dashboard? The old data is not gone —
+it is under the old extension id. Load the previous build from its original
+folder, take the backup, then restore it into the new one.
 
 ## Connecting an AI provider
 

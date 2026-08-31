@@ -13,7 +13,7 @@ Start with [00-vision.md](00-vision.md), then use
 | System boundaries | [02 system architecture](02-system-architecture.md) |
 | Data and identity | [03 data and identity](03-data-and-identity.md) plus accepted [ADRs](ADR/) |
 | Ask implementation | [04 AI Ask Engine](04-ai-ask-engine.md) and [Ask v2 spec](ask-v2-spec.md) |
-| Packaging and native bridge | [05 distribution and installer](05-distribution-and-installer.md) |
+| Packaging and native bridge | [05 distribution and installer](05-distribution-and-installer.md), [Firefox signing](firefox-signing.md) |
 | Operations | [08 operations](08-operations.md) |
 | Shared terms | [09 glossary](09-glossary.md) |
 

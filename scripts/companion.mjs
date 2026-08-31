@@ -33,10 +33,15 @@ const COMPANION_HOME = process.env.COMPANION_HOME || null;
 const REPO = 'suiflex/companion';
 const API_LATEST = `https://api.github.com/repos/${REPO}/releases/latest`;
 
+// Firefox installs from AMO, which also keeps the add-on updated. Addressed by
+// add-on id rather than slug: AMO resolves either, and the slug can be renamed.
+const AMO_URL = 'https://addons.mozilla.org/en-US/firefox/addon/companion%40suiflex.dev/';
+
 const HELP = `Companion — terminal installer for Meet Companion
 
-Loads the unpacked extension into a dedicated Chromium profile so your
-everyday browser is never touched.
+Loads the extension into a dedicated browser profile so your everyday browser
+is never touched. Chromium browsers are loaded unpacked and start ready to use;
+Firefox opens on the add-on's page, where one click installs it.
 
 Usage:
   companion install                build/fetch dist, TTY-pick browser(s), launch
@@ -78,6 +83,8 @@ function parseArgs() {
 
 // --- browser detection ------------------------------------------------------
 
+// Chromium browsers take --load-extension; Firefox does not, and installs a
+// signed .xpi instead. Everything downstream branches on this one field.
 function detectBrowsers() {
   const p = platform();
   const found = [];
@@ -94,22 +101,24 @@ function detectBrowsers() {
       ['Arc', 'arc'],
       ['Vivaldi', 'Vivaldi'],
       ['Opera', 'Opera'],
+      ['Firefox', 'firefox', 'gecko'],
     ];
-    for (const [name, binName] of apps) {
+    for (const [name, binName, engine = 'chromium'] of apps) {
       const bin = `/Applications/${name}.app/Contents/MacOS/${binName}`;
-      if (existsSync(bin)) found.push({ name, binary: bin, tag: slug(name) });
+      if (existsSync(bin)) found.push({ name, binary: bin, tag: slug(name), engine });
     }
   } else if (p === 'linux') {
-    for (const [name, cmds, tag] of [
+    for (const [name, cmds, tag, engine = 'chromium'] of [
       ['Google Chrome', ['google-chrome', 'google-chrome-stable'], 'chrome'],
       ['Chromium', ['chromium', 'chromium-browser'], 'chromium'],
       ['Microsoft Edge', ['microsoft-edge', 'microsoft-edge-stable'], 'edge'],
       ['Brave Browser', ['brave-browser', 'brave-browser-stable'], 'brave'],
       ['Vivaldi', ['vivaldi-stable', 'vivaldi'], 'vivaldi'],
       ['Opera', ['opera'], 'opera'],
+      ['Firefox', ['firefox', 'firefox-esr'], 'firefox', 'gecko'],
     ]) {
       const bin = cmds.find((c) => commandExists(c));
-      if (bin) found.push({ name, binary: bin, tag });
+      if (bin) found.push({ name, binary: bin, tag, engine });
     }
   } else if (p === 'win32') {
     // Chrome, Brave, Vivaldi and Opera all default to a *per-user* install, so
@@ -119,7 +128,7 @@ function detectBrowsers() {
       process.env.PROGRAMFILES || 'C:\\Program Files',
       process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)',
     ];
-    for (const [name, rels, tag] of [
+    for (const [name, rels, tag, engine = 'chromium'] of [
       ['Google Chrome', ['Google\\Chrome\\Application\\chrome.exe'], 'chrome'],
       ['Google Chrome Canary', ['Google\\Chrome SxS\\Application\\chrome.exe'], 'chrome-canary'],
       ['Chromium', ['Chromium\\Application\\chrome.exe'], 'chromium'],
@@ -127,9 +136,10 @@ function detectBrowsers() {
       ['Brave Browser', ['BraveSoftware\\Brave-Browser\\Application\\brave.exe'], 'brave'],
       ['Vivaldi', ['Vivaldi\\Application\\vivaldi.exe'], 'vivaldi'],
       ['Opera', ['Programs\\Opera\\opera.exe', 'Opera\\Application\\opera.exe'], 'opera'],
+      ['Firefox', ['Mozilla Firefox\\firefox.exe'], 'firefox', 'gecko'],
     ]) {
       const bin = roots.flatMap((r) => rels.map((rel) => `${r}\\${rel}`)).find(existsSync);
-      if (bin) found.push({ name, binary: bin, tag });
+      if (bin) found.push({ name, binary: bin, tag, engine });
     }
   }
   return found;
@@ -156,18 +166,26 @@ async function recursiveCopy(src, dst) {
   }
 }
 
-async function downloadLatestDist(distDir) {
+async function fetchLatestRelease() {
   console.log(`Fetching latest release (${REPO})…`);
   const res = await fetch(API_LATEST, { headers: { 'User-Agent': 'companion-installer' } });
   if (!res.ok) throw new Error(`Could not reach GitHub releases (HTTP ${res.status}).`);
-  const rel = await res.json();
-  const asset = (rel.assets || []).find((a) => /^meetcc-extension-v.*\.zip$/.test(a.name));
-  if (!asset) throw new Error(`No meetcc-extension-v*.zip asset on latest release (${rel.tag_name}).`);
+  return await res.json();
+}
+
+async function downloadAsset(rel, match, what) {
+  const asset = (rel.assets || []).find((a) => match.test(a.name));
+  if (!asset) throw new Error(`No ${what} asset on the latest release (${rel.tag_name}).`);
 
   console.log(`Downloading ${asset.name} (${(asset.size / 1024 / 1024).toFixed(1)} MB)…`);
   const dl = await fetch(asset.browser_download_url, { headers: { 'User-Agent': 'companion-installer' } });
   if (!dl.ok) throw new Error(`Download failed (HTTP ${dl.status}).`);
-  const buf = Buffer.from(await dl.arrayBuffer());
+  return Buffer.from(await dl.arrayBuffer());
+}
+
+async function downloadLatestDist(distDir, rel = null) {
+  const release = rel || (await fetchLatestRelease());
+  const buf = await downloadAsset(release, /^meetcc-extension-v.*\.zip$/, 'meetcc-extension-v*.zip');
 
   const tmp = `${distDir}.tmp-${process.pid}`;
   await mkdir(tmp, { recursive: true });
@@ -183,7 +201,7 @@ async function downloadLatestDist(distDir) {
   console.log(`Installed to ${distDir}\n`);
 }
 
-async function resolveDist(opts) {
+async function resolveChromiumDist(opts) {
   if (opts.dir) {
     if (!hasManifest(opts.dir)) throw new Error(`No unpacked extension at ${opts.dir} (missing manifest.json).`);
     return opts.dir;
@@ -209,6 +227,15 @@ async function resolveDist(opts) {
   });
   if (r.status !== 0) throw new Error('Build failed — fix it, then re-run.');
   return distDir;
+}
+
+/** Resolve the local source Chromium needs. Firefox installs from AMO. */
+export async function resolveSources(opts, browsers) {
+  const sources = { chromium: null };
+  if (browsers.some((b) => b.engine === 'chromium')) {
+    sources.chromium = await resolveChromiumDist(opts);
+  }
+  return sources;
 }
 
 // --- TTY helpers ------------------------------------------------------------
@@ -353,15 +380,27 @@ function banner(stream = process.stdout) {
 
 // --- launch -----------------------------------------------------------------
 
-function launch(browser, distDir, profileDir) {
-  mkdirSync(dirname(profileDir), { recursive: true });
-  const child = spawn(browser.binary, [
+// Firefox has no --load-extension. It opens on the AMO page instead, where one
+// click installs the signed add-on into this profile — and AMO keeps it updated
+// from then on, which Chromium cannot do for an unpacked extension.
+export function launchArgs(browser, sources, profileDir) {
+  if (browser.engine === 'gecko') {
+    return ['-profile', profileDir, '-no-remote', AMO_URL];
+  }
+  return [
     `--user-data-dir=${profileDir}`,
-    `--load-extension=${distDir}`,
-    `--disable-extensions-except=${distDir}`,
+    `--load-extension=${sources.chromium}`,
+    `--disable-extensions-except=${sources.chromium}`,
     '--no-first-run',
     'https://meet.google.com/',
-  ], { detached: true, stdio: 'ignore' });
+  ];
+}
+
+function launch(browser, sources, profileDir) {
+  mkdirSync(profileDir, { recursive: true });
+  const child = spawn(browser.binary, launchArgs(browser, sources, profileDir), {
+    detached: true, stdio: 'ignore',
+  });
   child.unref();
   return child.pid;
 }
@@ -370,7 +409,7 @@ async function cmdInstall(opts) {
 
   const browsers = detectBrowsers();
   if (browsers.length === 0) {
-    console.log('No supported Chromium browser detected (Chrome, Edge, or Brave).');
+    console.log('No supported browser detected (Chrome, Edge, Brave, Vivaldi, Opera or Firefox).');
     process.exit(1);
   }
   browsers.forEach((b) => console.log(`  found: ${b.name} (${b.binary})`));
@@ -382,27 +421,36 @@ async function cmdInstall(opts) {
     return;
   }
 
-  let distDir;
+  // A dry run checks everything the real thing needs, so it resolves a source
+  // for every engine that was detected rather than asking which to use.
+  const selected = opts.dryRun ? browsers : await pickBrowsers(browsers);
+  if (selected.length === 0) {
+    console.log('\nNothing selected — nothing to launch.\n');
+    return;
+  }
+
+  let sources;
   try {
-    distDir = await resolveDist(opts);
+    sources = await resolveSources(opts, selected);
   } catch (e) {
     console.log(`\n${e.message}`);
     process.exit(1);
   }
-  console.log(`Extension: ${distDir}`);
+  if (sources.chromium) console.log(`Extension: ${sources.chromium}`);
+  if (sources.gecko) console.log(`Firefox add-on: ${sources.gecko}`);
 
   if (opts.dryRun) {
-    console.log('\nDry run — not launching. Browsers and dist look good.\n');
+    console.log('\nDry run — not launching. Browsers and sources look good.\n');
     return;
   }
 
-  const selected = await pickBrowsers(browsers);
   console.log(`\nLaunching ${selected.length} Companion instance(s)...`);
   for (const b of selected) {
     const profileDir = opts.profile || join(homedir(), '.meetcc', 'browser-profiles', b.tag);
-    const pid = launch(b, distDir, profileDir);
+    const pid = launch(b, sources, profileDir);
     console.log(`  ${b.name} started (pid ${pid})`);
     console.log(`    profile: ${profileDir}`);
+    if (b.engine === 'gecko') console.log('    click "Add to Firefox" on the page that opens.');
   }
   console.log('\nTip: sign in / pick your AI provider in each profile once — it persists there.');
   console.log('Capture works on meet.google.com and Microsoft Teams.');
@@ -416,6 +464,7 @@ async function cmdUpdate() {
   }
   await downloadLatestDist(join(COMPANION_HOME, 'dist'));
   console.log('Done. Restart Companion to pick up the update.');
+  console.log('(Firefox updates itself from addons.mozilla.org — nothing to do there.)');
 }
 
 // --- main -------------------------------------------------------------------
@@ -426,4 +475,7 @@ async function main() {
   return cmdInstall(opts);
 }
 
-main().catch((e) => { console.error(`\n${e.message}`); process.exit(1); });
+// Only install when run as a command — the test imports launchArgs.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((e) => { console.error(`\n${e.message}`); process.exit(1); });
+}

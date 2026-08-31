@@ -1,0 +1,91 @@
+name: Bug report
+description: Report something that is broken or behaving incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to file a bug. Please fill out the fields below.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Join a meeting on ...
+        2. Turn on captions
+        3. Open the dashboard and ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen?
+      options:
+        - Caption capture — Google Meet
+        - Caption capture — Microsoft Teams
+        - Transcript import (Zoom file or audio)
+        - Dashboard (summary, transcript, diagram, ask, docs)
+        - AI provider setup or sign-in
+        - Terminal installer (companion install / update)
+        - Sync server or MCP server
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Google Chrome
+        - Microsoft Edge
+        - Brave
+        - Arc
+        - Vivaldi
+        - Opera
+        - Chromium
+        - Firefox
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Windows
+        - Linux
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Companion version
+      description: The version shown at chrome://extensions (or about:debugging), or the release you installed.
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How is it installed?
+      options:
+        - Terminal installer (companion install)
+        - Load unpacked from a checkout
+        - Firefox add-on (.xpi)
+        - Other
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output
+      description: >-
+        Open DevTools on the meeting tab, filter the console for `MeetCC`, and
+        paste what it prints. For capture problems this is usually the whole
+        answer. Will be formatted as code automatically.
+      render: shell

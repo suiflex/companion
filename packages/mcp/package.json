@@ -1,9 +1,12 @@
 {
   "name": "@meetcc/mcp",
   "version": "1.0.0",
+  "license": "Apache-2.0",
   "private": true,
   "type": "module",
-  "bin": { "companion-mcp": "dist/server.js" },
+  "bin": {
+    "companion-mcp": "dist/server.js"
+  },
   "scripts": {
     "build": "vite build",
     "smoke": "node smoke.mjs"

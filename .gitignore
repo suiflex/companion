@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-firefox/
 .impeccable/
 .impeccable
 .codex/
@@ -8,3 +9,11 @@ dist/
 .forgeguard/
 coverage/
 .obsidian/
+
+# signing material and packaged artifacts — never committed
+*.pem
+.env
+web-ext-artifacts/
+meetcc-extension-*.zip
+meetcc-extension-*.xpi
+meetcc-source-*.zip
