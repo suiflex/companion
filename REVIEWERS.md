@@ -59,7 +59,7 @@ constructor originate in those two, not in our code.
 ## Verifying the build yourself
 
 ```bash
-npm test          # 392 unit tests
+npm test          # unit tests
 npm run typecheck # tsc --noEmit
 npm run lint      # eslint
 npm run lint:firefox  # web-ext lint — expected: 0 errors

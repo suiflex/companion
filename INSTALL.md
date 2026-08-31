@@ -22,7 +22,7 @@ it works stays in [README.md](README.md).
 
 ```bash
 npm install
-npm test                # vitest — 331 tests
+npm test                # vitest
 npm run test:coverage   # v8 coverage
 npm run lint            # eslint (tsc --noEmit stays the authority on types)
 npm run build           # typecheck + bundle -> extension, MCP and sync-server dist/
