@@ -1,11 +1,17 @@
 # Risk register
 
-Delivery risks for the Companion plan, per the authoritative unified architecture (`COMPANION_UNIFIED_ARCHITECTURE.md` §32.1 product gate, §33 risks, §36 integration contracts, §37 decision log D1–D9). Risks only — realized problems move to the issue log on the roadmap side. Verified against the working tree at `develop@3bfe144`; see Sources below for what was actually inspected.
+Status: dated risk snapshot for `develop@3bfe144`; current execution blockers and status live in
+[`06-roadmap.md`](06-roadmap.md). Do not execute directly from this snapshot.
+
+Delivery risks for the active product roadmap (`06-roadmap.md`), using the unified architecture
+for gate, integration, and decision background (§32.1, §33, §36, §37). Risks only — realized
+problems move to the issue tracker or roadmap. Verified against the working tree at
+`develop@3bfe144`; see Sources below for what was actually inspected.
 
 ## Sources
 
 - `docs/COMPANION_UNIFIED_ARCHITECTURE.md` — §32.1 (gate signals G1/G2/G3/G1'), §33 (risk ratings), §37 D3/D9 (signing spike), ADR-008 (native messaging).
-- `docs/companion-product-architecture-roadmap.md` — read only through its STATUS banner: §9–§18 and §31 remain authoritative; superseded sections were not used.
+- `docs/companion-product-architecture-roadmap.md` — historical input only; superseded sections were not used.
 - `packages/exporters/src/gate.ts` — 200-event capped audit ring, `GATE_EVENT = 'export.obsidian'`, documented anchor assumption.
 - `apps/extension/src/components/SummaryView.tsx` — `appendAudit(GATE_EVENT, meeting.id)` on export.
 - `packages/store/src/schema.ts`, `packages/store/src/store.ts` — `AskResult.evidence_refs` exists; no G3 aggregation.

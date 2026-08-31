@@ -958,8 +958,9 @@ Spec ini dianggap **final** ketika:
 
 | Dokumen | Status | Keterangan |
 |---------|--------|-----------|
-| `docs/companion-product-architecture-roadmap.md` §9–§18, §31 | **Otoritatif sampai spec ini final** | Roadmap 24 Agustus 2026 |
-| `docs/COMPANION_UNIFIED_ARCHITECTURE.md` §D1, §32 | **Sumber kebenaran utama** | Arsitektur teraudit |
+| `docs/06-roadmap.md` | **Roadmap aktif** | Urutan dan gate produk |
+| `docs/companion-product-architecture-roadmap.md` §9–§18, §31 | Referensi historis | Input awal spec, 24 Agustus 2026 |
+| `docs/COMPANION_UNIFIED_ARCHITECTURE.md` §D1, §32 | Referensi arsitektur | Arsitektur teraudit |
 | `packages/ai/src/ask.ts` | Implementasi aktual | Single-meeting ask |
 | `packages/ai/src/retrieval.ts` | Implementasi aktual | BM25, windows, budget |
 | `packages/ai/src/askeval.test.ts` | Test aktual | 6 dari 15 kategori |

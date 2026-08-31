@@ -8,7 +8,7 @@ const LOG = '/tmp/meetcc-spike-host.log';
 const STATE = '/tmp/meetcc-spike-host-state.json';
 
 function log(obj) {
-  try { fs.appendFileSync(LOG, JSON.stringify({ ts: new Date().toISOString(), ...obj }) + '\n'); } catch (e) { /* spike: never fatal */ }
+  try { fs.appendFileSync(LOG, JSON.stringify({ ts: new Date().toISOString(), ...obj }) + '\n'); } catch { /* spike: never fatal */ }
 }
 
 log({ event: 'start', argv: process.argv.slice(2) });
@@ -34,7 +34,7 @@ function tryParse() {
 }
 
 function seenState() {
-  try { return JSON.parse(fs.readFileSync(STATE, 'utf8')); } catch (e) { return {}; }
+  try { return JSON.parse(fs.readFileSync(STATE, 'utf8')); } catch { return {}; }
 }
 
 function handle(msg) {

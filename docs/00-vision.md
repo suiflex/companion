@@ -46,4 +46,4 @@ flowchart LR
 ## Where to read next
 
 - Product requirements: [01-product-requirements](01-product-requirements.md) · System and data architecture: [02-system-architecture](02-system-architecture.md)
-- Phases and demand gates: [06-roadmap](06-roadmap.md) · Authoritative detail: [COMPANION_UNIFIED_ARCHITECTURE](COMPANION_UNIFIED_ARCHITECTURE.md)
+- Product phases and demand gates: [06-roadmap](06-roadmap.md) · Architecture background: [COMPANION_UNIFIED_ARCHITECTURE](COMPANION_UNIFIED_ARCHITECTURE.md)

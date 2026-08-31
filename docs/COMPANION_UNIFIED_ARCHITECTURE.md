@@ -3,6 +3,8 @@
 ## Local-First AI Knowledge Workspace, Meeting Companion & Encrypted Sync
 
 Status: target architecture, implementation-oriented
+Roadmap status: architectural background; [`06-roadmap.md`](06-roadmap.md) governs product
+sequencing, current stage, and desktop scope gates.
 Supersedes: where the 2026-08-24 product roadmap (`companion-product-architecture-roadmap.md`) conflicts with this document, this document wins; that file now carries a staleness banner listing its superseded sections.
 Evidence baseline: branch `develop`, commit `3bfe1449ba89302d0cc12c7be2dc6c027fc26d80`, verified against `origin/develop` on 2026-08-27
 Decision horizon: personal, single-user, multi-device Companion; team collaboration is not an MVP requirement

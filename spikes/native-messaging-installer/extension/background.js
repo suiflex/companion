@@ -28,7 +28,7 @@ async function postReport(results) {
         body: JSON.stringify(results)
       });
       if (r.ok || r.status === 204) return true;
-    } catch (e) { /* receiver down, retry */ }
+    } catch { /* receiver down, retry */ }
     await new Promise((res) => setTimeout(res, 1500));
   }
   return false;

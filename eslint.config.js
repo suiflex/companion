@@ -7,7 +7,15 @@ import reactHooks from 'eslint-plugin-react-hooks';
 // same pipeline and is the authority on types, so lint only covers what the
 // compiler does not — unused vars, unreachable branches, hook rules.
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', 'coverage/**'] },
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      'coverage/**',
+      'docs/.obsidian/**',
+      'docs/mockup/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
@@ -37,6 +45,15 @@ export default tseslint.config(
 
   // Build/dev scripts run under node.
   { files: ['**/*.mjs'], languageOptions: { globals: globals.node } },
+  {
+    files: ['spikes/native-messaging-installer/**/*.cjs'],
+    languageOptions: { globals: globals.node },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    files: ['spikes/native-messaging-installer/extension/**/*.js'],
+    languageOptions: { globals: { ...globals.browser, ...globals.webextensions } },
+  },
 
   // The query builders here use `(push(...), push(...))` comma sequences to
   // keep one filter on one line. That is the file's established shape; the
