@@ -1,5 +1,6 @@
 export * from './client';
 export * from './providers';
+export * from './models';
 export * from './permissions';
 export * from './oauth';
 export * from './analyze';

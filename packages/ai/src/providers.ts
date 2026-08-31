@@ -5,7 +5,7 @@ import { AIError, resolveConfig, type AIClient, type CompletionRequest } from '.
 // "AI Processing" forever. Abort after this long so it fails as retryable.
 const REQUEST_TIMEOUT_MS = 120_000;
 
-async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+export async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
   try {

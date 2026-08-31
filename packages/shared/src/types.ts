@@ -129,6 +129,9 @@ export interface OAuthSettings {
   accountId: string;
   /** Code Assist only — the project discovered or provisioned at sign-in. */
   projectId: string;
+  /** Code Assist only — the tier that project was resolved on. Kept because it
+   *  is what a failed sign-in has to be diagnosed against. */
+  tierId: string;
   /** Shown so the user can see which account is connected. */
   email: string;
 }
@@ -140,8 +143,15 @@ export const DEFAULT_OAUTH: OAuthSettings = {
   expiresAt: 0,
   accountId: '',
   projectId: '',
+  tierId: '',
   email: '',
 };
+
+/** The two per-provider fields a user edits by hand. */
+export interface ProviderConfig {
+  model: string;
+  baseUrl: string;
+}
 
 export interface Settings {
   provider: ProviderId;
@@ -150,6 +160,11 @@ export interface Settings {
   oauth: OAuthSettings;
   baseUrl: string; // used by ollama / lmstudio / azure / custom
   model: string;
+  /** Model and Base URL last used for each provider. `model`/`baseUrl` above
+   *  stay the active provider's effective values; this only remembers what the
+   *  others were set to, so switching back does not hand the user a blank form
+   *  and silently fall through to the preset default. */
+  byProvider: Partial<Record<ProviderId, ProviderConfig>>;
   /** Auto-delete meetings older than this many days. 0 = keep forever.
    *  Opt-in only: deletion is irreversible, so the default never removes data. */
   retentionDays: number;
@@ -164,6 +179,7 @@ export const DEFAULT_SETTINGS: Settings = {
   oauth: DEFAULT_OAUTH,
   baseUrl: '',
   model: '',
+  byProvider: {},
   retentionDays: 0,
   liveHighlights: true,
   integrations: DEFAULT_INTEGRATIONS,

@@ -324,6 +324,7 @@ function withDefaults(raw: Partial<Settings>): Settings {
     ...DEFAULT_SETTINGS,
     ...raw,
     oauth: { ...DEFAULT_OAUTH, ...raw.oauth },
+    byProvider: { ...raw.byProvider },
     integrations: {
       ...DEFAULT_INTEGRATIONS,
       ...stored,
