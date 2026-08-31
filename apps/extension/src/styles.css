@@ -990,6 +990,20 @@ body[data-theme='light'] .bubble-assistant {
 .field-row { display: flex; gap: 6px; align-items: stretch; }
 .field-row input { flex: 1; min-width: 0; }
 
+/* A datalist field looks like plain text until you happen to click it. Chrome
+   draws a picker arrow for it, but the glyph is near-black and disappears into
+   the dark ground, so tint it there and leave the text room to breathe. */
+.field-row input[list] { padding-right: 26px; }
+.field-row input[list]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+  filter: invert(1);
+}
+.field-row input[list]::-webkit-calendar-picker-indicator:hover { opacity: 0.9; }
+body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+
 .hint { font-size: 11px; color: var(--text-faint); }
 
 /* ── states / toasts ── */
