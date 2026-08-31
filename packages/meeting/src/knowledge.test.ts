@@ -10,7 +10,7 @@ import {
   parseGlobalResult,
 } from './globalask';
 import { buildChronology, carryOverFor, isOverdue } from './continuity';
-import { detectHighlights } from './highlights';
+import { detectHighlights, guessOwner, liveActions } from './highlights';
 import {
   detectFormat,
   labelSpeakers,
@@ -589,5 +589,43 @@ describe('sync and sharing', () => {
     await importShare(target, packed, 'share-pass-1');
     expect(target.countEntries('room#1000')).toBe(0);
     expect(target.getAnalysis('room#1000')?.status).toBe('done');
+  });
+});
+
+describe('liveActions', () => {
+  const entries = [
+    { speaker: 'Akbar', text: 'a' },
+    { speaker: 'Widi', text: 'b' },
+    { speaker: 'Akbar', text: 'c' },
+  ];
+
+  it('takes the owner from the sentence and the deadline verbatim', () => {
+    const out = liveActions(
+      [
+        { seq: 0, kind: 'action', text: 'Tolong Widi kirim datanya besok ya' },
+        { seq: 1, kind: 'action', text: 'saya kerjakan deck-nya' },
+        { seq: 2, kind: 'risk', text: 'ini blocker' },
+      ],
+      entries,
+    );
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ owner: 'Widi', due: 'besok' });
+    expect(out[1]).toMatchObject({ owner: 'Widi', due: '' });
+  });
+
+  it('leaves the owner empty rather than guessing, and drops repeats', () => {
+    const out = liveActions(
+      [
+        { seq: 0, kind: 'action', text: 'follow up ke vendor' },
+        { seq: 2, kind: 'action', text: 'Follow up ke vendor' },
+      ],
+      entries,
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].owner).toBe('');
+  });
+
+  it('does not match a participant name inside another word', () => {
+    expect(guessOwner('kita pakai widiawan lain', 'Akbar', ['Akbar', 'Widi'])).toBe('');
   });
 });
