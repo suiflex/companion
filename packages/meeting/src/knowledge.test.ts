@@ -591,3 +591,10 @@ describe('sync and sharing', () => {
     expect(target.getAnalysis('room#1000')?.status).toBe('done');
   });
 });
+
+describe('parseTranscript anchoring', () => {
+  it('honours a startedAt that lands on the epoch', () => {
+    const entries = parseTranscript('Akbar: halo', { startedAt: '1970-01-01T00:00:00.000Z' });
+    expect(entries[0].time).toBe('1970-01-01T00:00:00.000Z');
+  });
+});

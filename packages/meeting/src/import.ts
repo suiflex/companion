@@ -66,7 +66,8 @@ export function parseTranscript(
   text: string,
   opts: { startedAt?: string; format?: TranscriptFormat } = {},
 ): Entry[] {
-  const base = Date.parse(opts.startedAt ?? '') || Date.now();
+  const parsed = Date.parse(opts.startedAt ?? '');
+  const base = Number.isFinite(parsed) ? parsed : Date.now();
   const format = opts.format ?? detectFormat(text);
   const iso = (ms: number): string => new Date(base + ms).toISOString();
 
