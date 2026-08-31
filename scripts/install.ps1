@@ -32,7 +32,7 @@ New-Item -ItemType Directory -Force -Path $home_, $binDir | Out-Null
 # 1. the CLI and the modules it imports
 # $PSScriptRoot is empty when the script is piped into iex, which is exactly the
 # case where the files have to come off the network anyway.
-foreach ($f in 'companion.mjs', 'unzip.mjs') {
+foreach ($f in 'companion.mjs', 'unzip.mjs', 'picker.mjs') {
   $local = if ($PSScriptRoot) { Join-Path $PSScriptRoot $f } else { $null }
   if ($local -and (Test-Path $local)) {
     Copy-Item $local (Join-Path $home_ $f) -Force
