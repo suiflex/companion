@@ -36,7 +36,8 @@ flips once a listed version is submitted with the listing filled in.
 The slug is `f24270123c6340a8a023`, auto-generated because the add-on has only
 ever been unlisted. It is in the public URL and in every signed filename.
 
-Edit page → **Add-on Details** → *Edit* → **URL slug** → `meet-companion`.
+Developer Hub → **Edit Product Page** → **Describe Add-on** → *Edit* →
+**Add-on URL** → `meet-companion`.
 
 Nothing in this repo breaks when you change it: the installer addresses the
 add-on by id (`companion@suiflex.dev`), and AMO redirects id → slug. Verified
@@ -54,31 +55,52 @@ capitals for section labels.
 
 ## Step 3 — Categories
 
-Pick **one** primary. Firefox extension categories on AMO are a fixed list;
-the one that fits is **Productivity & Time Management**. Add **Other** as a
-second if the form lets you.
+In the same **Describe Add-on** form. AMO has exactly 15 extension categories,
+and none of them is a "Productivity" one — that is a Chrome Web Store category,
+not a Mozilla one. The full list, from the AMO API:
+
+```
+feeds-news-blogging   web-development      download-management  privacy-security
+search-tools          appearance           bookmarks            language-support
+photos-music-videos   social-communication alerts-updates       other
+tabs                  shopping             games-entertainment
+```
+
+Pick **Social & Communication** (`social-communication`) as primary — a meeting
+tool is communication tooling — and **Other** (`other`) as secondary.
 
 ## Step 4 — Support and homepage
+
+In **Additional Details** → *Edit*.
 
 | Field | Value |
 | --- | --- |
 | Homepage | already `https://suiflex.dev` — leave, or change to the repo |
 | Support site | `https://github.com/suiflex/companion/issues` |
 | Support email | leave blank; issues are the channel |
+| Tags | `meetings`, `transcript`, `productivity` |
 
 ## Step 5 — License
+
+**Not on the product page.** Left nav → **Manage Authors & License**.
 
 Pick **Apache License 2.0** from the dropdown. It matches `LICENSE` in the repo
 and the `license` field in every `package.json`, so nothing disagrees.
 
 ## Step 6 — Privacy policy
 
-The form has a **Privacy Policy** field. Paste the rendered text of
-`PRIVACY.md` into it — AMO wants the text in the field, a link alone is not
-accepted.
+Also on **Manage Authors & License**, below the licence.
 
-Tick the "This add-on has a privacy policy" box first, or the field stays
-hidden.
+Tick **"This add-on has a privacy policy"** first, or the field stays hidden.
+Then paste the text of `PRIVACY.md` — AMO wants the text in the field, a link
+alone is not accepted.
+
+## Which fields the API can write, and which it cannot
+
+The AMO `PATCH /api/v5/addons/addon/{guid}/` endpoint accepts `slug`, `summary`,
+`description`, `categories`, `tags`, `homepage`, `support_email`,
+`developer_comments`. It does **not** accept `support_url`, `privacy_policy`, or
+the licence — those are web form only.
 
 ## Step 7 — Notes for the reviewer
 
