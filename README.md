@@ -98,6 +98,9 @@ model, no vector database, and no external retrieval service.
   decisions, and the action-item list with mark-done and tracker push.
 - Each meeting header shows date, duration, participants, platform and project,
   plus what is still open from earlier meetings in the same room or project.
+- The same carry-over appears **during** the call: a dismissible strip under the
+  in-page badge lists what is still open from earlier meetings in that room, so
+  it can be raised while everyone is there.
 
 The database lives in the service worker only (OPFS is single-writer); the
 dashboard reaches it through runtime messages.

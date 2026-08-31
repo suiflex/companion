@@ -3,6 +3,7 @@ export * from './pipeline';
 export * from './globalask';
 export * from './continuity';
 export * from './highlights';
+export * from './speakers';
 export * from './import';
 export * from './calendar';
 export * from './issues';

@@ -159,3 +159,14 @@ describe('renderSpans', () => {
     expect(text).not.toContain('baris 3');
   });
 });
+
+describe('bm25 fuzzy weighting', () => {
+  it('does not penalise a doc that matched exactly and also has a prefix hit', () => {
+    const entries = [
+      { speaker: 'A', text: 'deploy deployment', time: '2026-01-01T00:00:00.000Z' },
+      { speaker: 'A', text: 'deploy sekali', time: '2026-01-01T00:00:10.000Z' },
+    ];
+    const scores = bm25(buildIndex(entries), ['deploy'], true);
+    expect(scores[0]).toBeGreaterThan(scores[1]);
+  });
+});

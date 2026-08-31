@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AskResult } from '@meetcc/shared';
 import type { ActionRow } from '@meetcc/store';
-import type { Chronology } from '@meetcc/meeting';
+import { weeklyDigest, type Chronology } from '@meetcc/meeting';
 import { chronology, listActions, setActionStatus } from '../lib/db';
 import { db } from '../lib/db';
 import { useToast } from '../toast';
@@ -202,6 +202,21 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
           </article>
         )}
       </section>
+
+      <div className="kb-digest">
+        <button
+          className="kb-refresh"
+          disabled={!story}
+          title="Salin ringkasan 7 hari terakhir sebagai markdown"
+          onClick={async () => {
+            if (!story) return;
+            await navigator.clipboard.writeText(weeklyDigest(story));
+            toast('success', 'Digest mingguan disalin.');
+          }}
+        >
+          Salin digest mingguan
+        </button>
+      </div>
 
       <div className="kb-cols">
         <section className="kb-col">

@@ -258,7 +258,7 @@ export interface ChatMessage {
 }
 
 /** On-demand documents generated from a meeting. */
-export type DocType = 'brd' | 'prd' | 'notulen';
+export type DocType = 'brd' | 'prd' | 'notulen' | 'recap';
 
 export interface StoredDoc {
   content: string; // markdown
