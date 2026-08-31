@@ -24,8 +24,8 @@ Everything the API can write has been written. Verified by reading it back:
 | `tags` | `["google"]` |
 | `privacy_policy` | set, 5805 chars |
 | `previews` | 2 screenshots, one caption still missing |
-| `support_url` | **empty — web form only** |
-| licence | **unset — web form only** |
+| `support_url` | **empty — the one thing left to do by hand** |
+| licence | set by CI at submission — the form does not exist yet |
 | `status` | `incomplete`, until a listed version is submitted |
 
 Two gotchas the API taught us, both 400s on the first try:
@@ -86,32 +86,50 @@ In **Additional Details** → *Edit*.
 | Support email | leave blank; issues are the channel |
 | Tags | `meetings`, `transcript`, `productivity` |
 
-## Step 5 — License
+## Step 5 — License — cannot be done yet, and CI does it
 
-**Not on the product page.** Left nav → **Manage Authors & License**.
+This is the one that looks missing on the Developer Hub. It is not hidden and
+it is not under a differently-named menu: the form does not exist yet.
 
-Pick **Apache License 2.0** from the dropdown. It matches `LICENSE` in the repo
-and the `license` field in every `package.json`, so nothing disagrees.
+From `devhub/views.py`:
 
-## Step 6 — Privacy policy (done via API)
+```python
+license_form = forms.LicenseForm(post_data, version=addon.current_version)
+if ctx['license_form']:  # if addon has a version
+```
 
-Also on **Manage Authors & License**, below the licence.
+`current_version` means the current *listed* version. This add-on has only an
+unlisted 1.5.1, so `current_version` is null and the licence form never
+renders. The page at `/developers/addon/meet-companion/ownership` shows authors
+and the privacy policy, and nothing else.
 
-Tick **"This add-on has a privacy policy"** first, or the field stays hidden.
-Then paste the text of `PRIVACY.md` — AMO wants the text in the field, a link
-alone is not accepted.
+The licence belongs to a version, not to the add-on, and it is set when a
+listed version is submitted. CI does that: `docs/amo/amo-metadata.json` carries
+
+```json
+{ "version": { "license": "Apache-2.0", "approval_notes": "…" } }
+```
+
+and `web-ext sign --amo-metadata` merges it into the version being submitted —
+verified in `web-ext/src/util/submit-addon.js`, where the JSON is spread into
+the PUT body and `.version` is merged into the version object. The slug
+`Apache-2.0` is from addons-server's `constants/licenses.py`.
+
+So there is nothing to click. Once v1.6.0 is submitted, the licence is set and
+the form appears on the ownership page for later edits.
+
+## Step 7 — Notes for the reviewer — also automatic
+
+Same file, `version.approval_notes`. Only Mozilla reviewers see it.
 
 ## Which fields the API can write, and which it cannot
 
 The AMO `PATCH /api/v5/addons/addon/{guid}/` endpoint accepts `slug`, `summary`,
 `description`, `categories`, `tags`, `homepage`, `support_email`,
-`developer_comments`. It does **not** accept `support_url`, `privacy_policy`, or
-the licence — those are web form only.
-
-## Step 7 — Notes for the reviewer
-
-A separate box on the version submission screen, not the listing page. Text is
-at the bottom of this file.
+`developer_comments`. It does **not** accept `support_url` — that is the only field left that has to
+be typed into the web form. `privacy_policy` has its own endpoint
+(`PATCH .../eula_policy/`) and is already set; the licence rides along with the
+version submission.
 
 ## Step 8 — Submit the version
 

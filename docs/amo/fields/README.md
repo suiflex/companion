@@ -9,3 +9,6 @@ xclip -sel c < docs/amo/fields/summary.txt    # Linux
 ```
 
 Generated from `../listing.md` and `../../PRIVACY.md` — edit those, not these.
+
+Reviewer notes are not here: they go to AMO with the submission itself, via
+`../amo-metadata.json`, which CI passes to `web-ext sign --amo-metadata`.

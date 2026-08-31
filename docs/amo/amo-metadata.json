@@ -1,0 +1,6 @@
+{
+  "version": {
+    "license": "Apache-2.0",
+    "approval_notes": "Build instructions are in REVIEWERS.md in the source archive. Node 22 + npm ci,\nthen `npm run build -w apps/extension && npm run pack -- firefox`. The result is\nbyte-identical to the submitted package.\n\nThe submitted files are a Vite bundle, hence the source archive. The two large\nthird-party libraries are mermaid (diagram rendering) and @sqlite.org/sqlite-wasm\n(the local search index); the innerHTML and Function-constructor warnings the\nvalidator reports originate in those, not in our code.\n\nThere is no server operated by us and no account system. The extension talks\nonly to the AI endpoint the user configures, plus api.github.com once a day for\na version number."
+  }
+}

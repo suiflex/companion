@@ -86,6 +86,7 @@ jobs:
           npx web-ext sign --channel=listed \
             --source-dir apps/extension/dist-firefox \
             --artifacts-dir web-ext-artifacts \
+            --amo-metadata docs/amo/amo-metadata.json \
             --upload-source-code "meetcc-source-v${{ steps.meta.outputs.version }}.zip"
 
       # tag push (v*) -> public Release with the zips attached. The Firefox

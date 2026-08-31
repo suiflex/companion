@@ -95,7 +95,7 @@ reads from the environment, so nothing has to be renamed:
   env:
     WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
     WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
-  run: npx web-ext sign --channel=listed ... --upload-source-code ...
+  run: npx web-ext sign --channel=listed ... --amo-metadata ... --upload-source-code ...
 ```
 
 The `env.WEB_EXT_API_KEY != ''` guard means a fork, where the secret is absent,
@@ -104,6 +104,12 @@ still gets its artifacts from a tag build instead of a failed run.
 `--upload-source-code` takes the archive from `npm run pack:source`. AMO
 requires it because the reviewed files are a Vite bundle; `REVIEWERS.md`
 rebuilds the exact tree from it.
+
+`--amo-metadata docs/amo/amo-metadata.json` carries the licence
+(`Apache-2.0`) and the reviewer notes on the version itself. That is the only
+way to set the licence before a listed version exists: the Developer Hub's
+licence form only renders once the add-on has a listed `current_version`, so
+until the first submission there is no box to fill in.
 
 ## Listed versus unlisted
 
