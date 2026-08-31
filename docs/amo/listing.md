@@ -13,25 +13,31 @@ Two pages you will use:
 
 ## Current state (checked via the AMO API)
 
+Everything the API can write has been written. Verified by reading it back:
+
 | Field | State |
 | --- | --- |
-| `name` | filled — "Meet Companion", taken from the manifest |
-| `summary` | filled — the manifest description; replace with the copy below |
-| `homepage` | filled — `https://suiflex.dev` |
-| `contributions_url` | filled — GitHub Sponsors |
-| `icon_url` | **placeholder** — resolves once a listed version is published |
-| `description` | **empty** |
-| `categories` | **empty** |
-| `support_url` | **empty** |
-| `privacy_policy` | **empty** |
-| `tags`, `previews` | empty, both optional |
+| `slug` | `meet-companion` |
+| `summary` | set, 196 chars |
+| `description` | set, 1791 chars as stored |
+| `categories` | `["social-communication"]` |
+| `tags` | `["google"]` |
+| `privacy_policy` | set, 5805 chars |
+| `previews` | 2 screenshots, one caption still missing |
+| `support_url` | **empty — web form only** |
+| licence | **unset — web form only** |
+| `status` | `incomplete`, until a listed version is submitted |
 
-`status` is `incomplete`, which is what an unlisted-only add-on reads as. It
-flips once a listed version is submitted with the listing filled in.
+Two gotchas the API taught us, both 400s on the first try:
 
----
+- `other` cannot be combined with another category. It is an only-child.
+- Tags come from a fixed vocabulary of 42 words. `meetings`, `transcript` and
+  `productivity` are not among them; `google` is the only accurate fit.
 
-## Step 0 — rename the slug (do this first)
+Preview uploads and caption edits are aggressively rate-limited — expect to
+wait between calls, and a repeat offender gets a multi-minute cooldown.
+
+## Step 0 — rename the slug (done via API)
 
 The slug is `f24270123c6340a8a023`, auto-generated because the add-on has only
 ever been unlisted. It is in the public URL and in every signed filename.
@@ -43,17 +49,17 @@ Nothing in this repo breaks when you change it: the installer addresses the
 add-on by id (`companion@suiflex.dev`), and AMO redirects id → slug. Verified
 against a live add-on: both forms return 200.
 
-## Step 1 — Summary
+## Step 1 — Summary (done via API)
 
 Replace what is there. AMO limit is 250 characters; this is 196.
 
-## Step 2 — Description
+## Step 2 — Description (done via API)
 
 Paste the block below. AMO renders a limited Markdown — plain paragraphs and
 bullet characters survive, headings do not, which is why the block uses
 capitals for section labels.
 
-## Step 3 — Categories
+## Step 3 — Categories (done via API)
 
 In the same **Describe Add-on** form. AMO has exactly 15 extension categories,
 and none of them is a "Productivity" one — that is a Chrome Web Store category,
@@ -87,7 +93,7 @@ In **Additional Details** → *Edit*.
 Pick **Apache License 2.0** from the dropdown. It matches `LICENSE` in the repo
 and the `license` field in every `package.json`, so nothing disagrees.
 
-## Step 6 — Privacy policy
+## Step 6 — Privacy policy (done via API)
 
 Also on **Manage Authors & License**, below the licence.
 
