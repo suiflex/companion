@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { join, dirname, resolve } from 'node:path';
 import { homedir, platform } from 'node:os';
 import { extractZip } from './unzip.mjs';
+import { pickerFrame } from './picker.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const COMPANION_HOME = process.env.COMPANION_HOME || null;
@@ -246,15 +247,11 @@ async function pickBrowsers(browsers) {
   process.stdin.resume();
   process.stdout.write('\n');
 
+  let painted = 0;
   const render = () => {
-    const lines = ['Which browsers should Companion run in?\n'];
-    browsers.forEach((b, i) => {
-      const mark = selected.has(i) ? '◉' : '○';
-      const line = ` ${i === cursor ? '›' : ' '} ${mark} ${b.name}`;
-      lines.push(i === cursor ? fg1(line) : line);
-    });
-    lines.push('\n ↑↓ move · Space toggle · Enter confirm');
-    process.stdout.write(`\x1b[${lines.length}A` + lines.join('\n') + '\x1b[0J');
+    const frame = pickerFrame({ browsers, cursor, selected, painted, highlight: fg1 });
+    process.stdout.write(frame.out);
+    painted = frame.rows;
   };
 
   const input = process.stdin;
@@ -267,6 +264,7 @@ async function pickBrowsers(browsers) {
     input.removeListener('data', onData);
     input.setRawMode(false);
     input.pause();
+    process.stdout.write('\n'); // step off the frame's last row before anything else prints
     const picks = [...selected].sort((a, b) => a - b);
     resolvePicks(picks.map((i) => browsers[i]));
   };
