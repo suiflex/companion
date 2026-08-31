@@ -74,9 +74,29 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: npm run pack:source
 
+      # tag push (v*) -> public Release with the zips attached. The Firefox
+      # add-on itself is served by AMO, so only the source archive joins them.
+      #
+      # Ordered before the AMO submission on purpose: our own distribution must
+      # not fail because Mozilla's rate limiter said no. The AMO step still goes
+      # red when it fails, so the failure stays visible.
+      - name: Publish Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            meetcc-extension-v*.zip
+            meetcc-extension-firefox-v*.zip
+            meetcc-source-v*.zip
+
       # Submits to the listed channel, which puts it in Mozilla's review queue —
       # AMO then distributes and auto-updates it. Skipped on a fork, where the
       # secret is absent, so a fork's tag build still produces its artifacts.
+      #
+      # Runs last: it is the only step that depends on a third party, and AMO
+      # throttles hard enough that a source upload can be refused for half an
+      # hour. When that happens the release is already published and only this
+      # step has to be retried.
       - name: Submit the Firefox build to AMO
         if: startsWith(github.ref, 'refs/tags/v') && env.WEB_EXT_API_KEY != ''
         env:
@@ -88,14 +108,3 @@ jobs:
             --artifacts-dir web-ext-artifacts \
             --amo-metadata docs/amo/amo-metadata.json \
             --upload-source-code "meetcc-source-v${{ steps.meta.outputs.version }}.zip"
-
-      # tag push (v*) -> public Release with the zips attached. The Firefox
-      # add-on itself is served by AMO, so only the source archive joins them.
-      - name: Publish Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            meetcc-extension-v*.zip
-            meetcc-extension-firefox-v*.zip
-            meetcc-source-v*.zip
