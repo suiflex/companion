@@ -6,21 +6,26 @@ import {
   createClient,
   createRateLimiter,
   generateDiagrams,
-  generateDoc,
   validateSettings,
 } from '@meetcc/ai';
 import {
   askMeetings,
   findExpiredMeetings,
   findFinishedMeetings,
+  runDocGen,
   runPipeline,
+  type DocGenDeps,
   type PipelineDeps,
   type PipelineResult,
 } from '@meetcc/meeting';
+import { GATE_EVENT, describeGate, gateSummary } from '@meetcc/exporters/gate';
+import { obsidianVault } from '@meetcc/exporters/obsidian';
 import { loadSettingsForAI } from './lib/aiSettings';
+import { makeZip } from './lib/zip';
 import { getStore, handleDb, refreshHighlights, syncIndex } from './db';
 import {
   appendAudit,
+  AUDIT_RING_MAX,
   clearClean,
   clearDocProgress,
   clearMeeting,
@@ -29,6 +34,7 @@ import {
   getAnalysis,
   getTitle,
   loadAnalyses,
+  loadAudit,
   loadChat,
   loadClean,
   isLive,
@@ -238,49 +244,41 @@ async function handleGlobalAsk(
 ): Promise<{ ok: true; result: Awaited<ReturnType<typeof askMeetings>> } | { ok: false; error: string }> {
   const client = await makeInteractiveClient();
   const result = await askMeetings(client, await getStore(), question);
-  await appendAudit('ask.global', `${question.slice(0, 60)} (${result.answerability})`);
+  // §32.1 G3 needs the number of *distinct meetings* whose evidence supported
+  // the answer. The answer's verified spans are per-meeting windows, so the
+  // count comes from the ids those spans belong to — one structured audit
+  // field per query, still local-only (no telemetry).
+  const sessionsCited = new Set(result.evidence.map((span) => span.sessionId));
+  await appendAudit(
+    'ask.global',
+    `question=${question.slice(0, 60)}; meetingsCited=${sessionsCited.size}; answerability=${result.answerability}`,
+  );
   return { ok: true, result };
 }
 
-// F4: on-demand document generation (BRD / PRD / notulen).
+// F4: on-demand document generation (BRD / PRD / notulen). Orchestration and
+// the double-submit guard live in @meetcc/meeting (runDocGen); this is only
+// the chrome.* wiring, like the pipeline above.
+const docGenDeps: DocGenDeps = {
+  getMeeting: loadMeetingForAI,
+  getAnalysis: analysisOf,
+  createClient: makeInteractiveClient,
+  saveProgress: saveDocProgress,
+  clearProgress: clearDocProgress,
+  saveDoc,
+  getTemplate: async (templateId) =>
+    templateId ? (await getStore()).templates().find((t) => t.id === templateId) : undefined,
+  audit: appendAudit,
+  now: () => new Date().toISOString(),
+};
+
 async function handleGenerateDoc(
   id: string,
   docType: DocType,
   templateId?: string,
 ): Promise<{ ok: true; content: string } | { ok: false; error: string }> {
-  const meeting = await loadMeetingForAI(id);
-  if (!meeting) return { ok: false, error: 'Meeting tidak ditemukan.' };
-  if (!meeting.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
-  const startedAt = new Date().toISOString();
-  const now = () => new Date().toISOString();
-  await saveDocProgress(id, {
-    type: docType,
-    step: 0,
-    total: 1,
-    label: 'Mulai',
-    startedAt,
-    updatedAt: now(),
-  });
-  try {
-    const client = await makeInteractiveClient();
-    const content = await generateDoc(
-      client,
-      meeting,
-      await analysisOf(id),
-      docType,
-      async (step, total, label) => {
-        await saveDocProgress(id, { type: docType, step, total, label, startedAt, updatedAt: now() });
-      },
-      templateId ? (await getStore()).templates().find((t) => t.id === templateId) : undefined,
-    );
-    await saveDoc(id, docType, { content, generatedAt: now(), provider: client.provider });
-    await clearDocProgress(id);
-    await appendAudit('docgen', `${id}: ${docType}`);
-    return { ok: true, content };
-  } catch (e) {
-    await clearDocProgress(id); // free the button on failure
-    throw e;
-  }
+  const res = await runDocGen(id, docType, templateId, docGenDeps);
+  return res.ok ? res : { ok: false, error: res.error };
 }
 
 // F1: on-demand diagram generation. Runs on the cleaned transcript when
@@ -374,10 +372,73 @@ async function handleResolveSession(raw: string): Promise<{ sessionId: string }>
   return { sessionId };
 }
 
+// §32.1 W4: the gate review reads this device's audit ring as JSON. Local
+// download only — the ring never leaves the device (no telemetry, unchanged).
+// The per-device §32.1 snapshot (gateSummary) rides along so the review can
+// read G1/G2 numbers straight from the file.
+async function handleExportAudit(): Promise<{
+  ok: true; count: number; json: string;
+}> {
+  const events = await loadAudit();
+  const gate = gateSummary(events, Date.now());
+  return {
+    ok: true,
+    count: events.length,
+    json: JSON.stringify(
+      {
+        exportedAt: new Date().toISOString(),
+        ringMax: AUDIT_RING_MAX,
+        count: events.length,
+        gate: { ...gate, describe: describeGate(gate) },
+        events,
+      },
+      null,
+      2,
+    ),
+  };
+}
+
+// §32.1 W1: whole-vault Obsidian export. Runs in the worker because the
+// meeting library lives in chrome.storage (worker-owned), and the audit
+// event must record the true number of exported meetings even if the
+// dashboard tab dies mid-download.
+async function handleExportObsidian(): Promise<{
+  ok: true; count: number; base64: string; name: string;
+}> {
+  const [meetings, records] = await Promise.all([loadMeetings(), loadAnalyses()]);
+  const files = obsidianVault(meetings, records);
+  if (!files.length) throw new Error('Belum ada meeting dengan ringkasan yang bisa diekspor.');
+  const blob = makeZip(files);
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  }
+  await appendAudit(GATE_EVENT, `meetings=${files.length - 1}`); // minus README
+  return {
+    ok: true,
+    count: files.length - 1,
+    base64: btoa(binary),
+    name: `companion-vault-${new Date().toISOString().slice(0, 10)}.zip`,
+  };
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'db' && typeof msg.op === 'string') {
     handleDb({ op: msg.op, args: msg.args })
       .then((data) => sendResponse({ ok: true, data }))
+      .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
+    return true; // async response
+  }
+  if (msg?.type === 'export-obsidian') {
+    handleExportObsidian()
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
+    return true; // async response
+  }
+  if (msg?.type === 'export-audit') {
+    handleExportAudit()
+      .then(sendResponse)
       .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
     return true; // async response
   }

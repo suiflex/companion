@@ -1,5 +1,5 @@
 import { AIError, formatEntryLine, verifyEvidence, type AIClient } from '@meetcc/ai';
-import type { AskIntent, AskResult, Entry } from '@meetcc/shared';
+import type { AskIntent, AskResult, Entry, EvidenceSpan } from '@meetcc/shared';
 import type { CompanionStore, SearchHit } from '@meetcc/store';
 
 // P1.8 — Ask across every meeting, still without embeddings (§23). The planner
@@ -191,14 +191,24 @@ export function buildGlobalPrompt(evidence: GlobalEvidence[], question: string):
 /**
  * Evidence ids are only unique within a meeting, so verification runs per
  * meeting and the spans are merged — a cited id that exists in no meeting is
- * dropped exactly as in single-meeting Ask.
+ * dropped exactly as in single-meeting Ask. Unlike single-meeting Ask, the
+ * global result knows WHICH meeting every span came from (§32.1 G3 counts
+ * distinct `sessionId`s as `meetingsCited`).
  */
-export function verifyGlobalEvidence(evidence: GlobalEvidence[], ids: string[]): AskResult['evidence'] {
-  return evidence.flatMap((g) => verifyEvidence(g.entries, ids));
+export interface GlobalEvidenceSpan extends EvidenceSpan {
+  sessionId: string;
+}
+
+export function verifyGlobalEvidence(evidence: GlobalEvidence[], ids: string[]): GlobalEvidenceSpan[] {
+  return evidence.flatMap((g) =>
+    verifyEvidence(g.entries, ids).map((span) => ({ ...span, sessionId: g.sessionId })),
+  );
 }
 
 export interface GlobalAskResult extends AskResult {
   sessions: { id: string; title: string; startedAt: string | null }[];
+  /** Same spans as `AskResult.evidence`, each tagged with its source meeting. */
+  evidence: GlobalEvidenceSpan[];
 }
 
 export async function askMeetings(
@@ -254,12 +264,13 @@ export async function askMeetings(
 const ANSWERABILITY = ['explicit', 'partial', 'inferred', 'not_found'] as const;
 
 /** Parse + ground a global answer. Same contract as single-meeting Ask: a
- *  citation that verifies against no stored meeting simply does not exist. */
+ *  citation that verifies against no stored meeting simply does not exist.
+ *  Every surviving span is tagged with its source meeting (GlobalEvidenceSpan). */
 export function parseGlobalResult(
   raw: string,
   evidence: GlobalEvidence[],
   plan: GlobalPlan,
-): AskResult {
+): Omit<GlobalAskResult, 'sessions'> {
   const start = raw.indexOf('{');
   const end = raw.lastIndexOf('}');
   if (start < 0 || end <= start) throw new AIError('Respons AI bukan JSON', true);

@@ -4,6 +4,13 @@ import { AIError, type AIClient } from '@meetcc/ai';
 import { findExpiredMeetings, needsAnalysis, MIN_ENTRIES, STALE_PROCESSING_MS } from './detect';
 import { runPipeline, type PipelineDeps } from './pipeline';
 
+// Promise.withResolvers needs lib ES2024; the repo targets ES2022.
+function deferred<T = void>() {
+  let resolve!: (v: T) => void;
+  const promise = new Promise<T>((r) => (resolve = r));
+  return { promise, resolve };
+}
+
 const NOW = Date.parse('2026-07-13T03:00:00Z');
 const iso = (msAgo: number) => new Date(NOW - msAgo).toISOString();
 
@@ -154,6 +161,55 @@ describe('runPipeline', () => {
     const { deps } = makeDeps({ getRecord: async () => processing });
     expect((await runPipeline('x', deps)).ok).toBe(false);
     expect((await runPipeline('x', deps, { force: true })).ok).toBe(true);
+  });
+
+  it('concurrent non-force runs share ONE AI run (check-then-set would double-bill)', async () => {
+    const gate = deferred();
+    let calls = 0;
+    const slow: AIClient = {
+      provider: 'openai',
+      complete: async () => {
+        calls++; // arrived at the provider: a real analysis has started
+        await gate.promise; // hold the run in flight
+        return VALID;
+      },
+    };
+    const { deps, records } = makeDeps({ createClient: async () => slow });
+
+    const p1 = runPipeline('conc', deps);
+    await vi.waitFor(() => expect(calls).toBe(1)); // first run is mid-analysis
+    const p2 = runPipeline('conc', deps); // second trigger before it lands
+    gate.resolve();
+    const [r1, r2] = await Promise.all([p1, p2]);
+
+    expect(r1.ok).toBe(true);
+    expect(r2.ok).toBe(true);
+    expect(calls).toBe(1); // the old guard lost this race: 2 analyses
+    expect(records.filter((r) => r.status === 'done')).toHaveLength(1);
+    expect(deps.notify).toHaveBeenCalledTimes(1);
+  });
+
+  it('force while a run is in flight joins it instead of starting a second run', async () => {
+    const gate = deferred();
+    let calls = 0;
+    const slow: AIClient = {
+      provider: 'openai',
+      complete: async () => {
+        calls++;
+        await gate.promise;
+        return VALID;
+      },
+    };
+    const { deps } = makeDeps({ createClient: async () => slow });
+
+    const p1 = runPipeline('force-conc', deps);
+    await vi.waitFor(() => expect(calls).toBe(1));
+    const p2 = runPipeline('force-conc', deps, { force: true });
+    gate.resolve();
+    const [r1, r2] = await Promise.all([p1, p2]);
+    expect(r1.ok).toBe(true);
+    expect(r2.ok).toBe(true);
+    expect(calls).toBe(1);
   });
 
   it('rejects unknown/empty meetings', async () => {

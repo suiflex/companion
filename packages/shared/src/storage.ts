@@ -35,7 +35,7 @@ export const CLEAN_PREFIX = 'clean:';
 export const DOCPROG_PREFIX = 'docprog:';
 export const TITLE_PREFIX = 'title:';
 const SETTINGS_KEY = 'settings';
-const AUDIT_KEY = 'audit';
+export const AUDIT_KEY = 'audit';
 
 /** Heartbeat is every 5s; 15s of silence means the tab left the call. */
 export const LIVE_THRESHOLD_MS = 15_000;
@@ -361,10 +361,18 @@ export async function saveSettings(s: Settings): Promise<void> {
 
 // -- audit log (capped ring) --
 
+/**
+ * §32.1 demand gate needs a readable 14-day G1 window plus ~4 weekly G3
+ * buckets; 200 events evicted `export.obsidian` rows within days of active
+ * use. 5.000 keeps the whole gate window per device and stays trivially
+ * small for `unlimitedStorage` (each event ≈ 100 bytes → ≈ 0,5 MB worst case).
+ */
+export const AUDIT_RING_MAX = 5_000;
+
 export async function appendAudit(event: string, detail = ''): Promise<void> {
   const log: AuditEvent[] = (await chrome.storage.local.get(AUDIT_KEY))[AUDIT_KEY] ?? [];
   log.push({ time: new Date().toISOString(), event, detail });
-  await chrome.storage.local.set({ [AUDIT_KEY]: log.slice(-200) });
+  await chrome.storage.local.set({ [AUDIT_KEY]: log.slice(-AUDIT_RING_MAX) });
 }
 
 export async function loadAudit(): Promise<AuditEvent[]> {

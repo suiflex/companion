@@ -1,5 +1,7 @@
 export * from './detect';
 export * from './pipeline';
+export * from './docgen';
+export * from './inflight';
 export * from './globalask';
 export * from './continuity';
 export * from './highlights';

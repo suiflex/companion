@@ -140,6 +140,59 @@ describe('sync endpoint', () => {
   });
 });
 
+describe('timestamp canonicalization', () => {
+  // LWW, the since() filter and the output sort all compare updatedAt as a
+  // raw string, so every stored record must carry the same canonical shape
+  // (UTC 'Z', millisecond precision). parseRecord normalizes at the one door
+  // records enter through; these tests pin the three ways a mixed-format
+  // archive used to go silently wrong.
+
+  it('stores a later +07:00 push over an earlier Z one', async () => {
+    await put('alice-secret', 'team-a', 'room#7000', bundle('room#7000', '2026-08-28T15:00:00+07:00', 'wib-earlier'));
+    const res = await put('alice-secret', 'team-a', 'room#7000', bundle('room#7000', '2026-08-28T09:00:00Z', 'utc-later'));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ stored: true });
+  });
+
+  it('keeps an equal-instant push a no-op despite different precision', async () => {
+    await put('alice-secret', 'team-a', 'room#7100', bundle('room#7100', '2026-08-28T22:00:00.000Z', 'first'));
+    const res = await put('alice-secret', 'team-a', 'room#7100', bundle('room#7100', '2026-08-28T22:00:00Z', 'second'));
+    expect(await res.json()).toEqual({ stored: false });
+    const { sessions } = (await (await list('alice-secret', 'team-a')).json()) as {
+      sessions: { sessionId: string; payload: string }[];
+    };
+    expect(sessions.find((s) => s.sessionId === 'room#7100')?.payload).toBe('first');
+  });
+
+  it('hands back the canonical Z instant instead of the pushed offset shape', async () => {
+    await put('alice-secret', 'team-a', 'room#7500', bundle('room#7500', '2026-08-28T15:00:00+07:00', 'offset-shape'));
+    const { sessions } = (await (await list('alice-secret', 'team-a')).json()) as {
+      sessions: { sessionId: string; updatedAt: string }[];
+    };
+    expect(sessions.find((s) => s.sessionId === 'room#7500')?.updatedAt).toBe('2026-08-28T08:00:00.000Z');
+  });
+
+  it('does not let a Z cursor skip a record pushed with a local offset', async () => {
+    // 02:00-05:00 is 07:00Z — after the cursor — but the raw string sorts before it
+    await put('alice-secret', 'team-a', 'room#8000', bundle('room#8000', '2026-08-28T02:00:00-05:00', 'offset'));
+    const { sessions } = (await (await list('alice-secret', 'team-a', '2026-08-28T06:00:00.000Z')).json()) as {
+      sessions: { sessionId: string }[];
+    };
+    expect(sessions.map((s) => s.sessionId)).toContain('room#8000');
+  });
+
+  it('returns since() output ordered by real time across mixed input formats', async () => {
+    // pushed in this order on purpose: the +07:00 string sorts above the Z
+    // string, but its instant (08:00Z) is the earlier one
+    await put('alice-secret', 'team-a', 'room#9000', bundle('room#9000', '2026-09-01T15:00:00+07:00', 'a-08z'));
+    await put('alice-secret', 'team-a', 'room#9001', bundle('room#9001', '2026-09-01T09:00:00Z', 'b-09z'));
+    const { sessions } = (await (await list('alice-secret', 'team-a')).json()) as {
+      sessions: { sessionId: string }[];
+    };
+    expect(sessions.map((s) => s.sessionId).slice(-2)).toEqual(['room#9000', 'room#9001']);
+  });
+});
+
 describe('token table', () => {
   const read = (body: string) => () => body;
 

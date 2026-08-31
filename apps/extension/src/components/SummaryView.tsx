@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import type { Analysis, AnalysisRecord, Meeting } from '@meetcc/shared';
+import { appendAudit } from '@meetcc/shared';
 import { toMarkdown } from '@meetcc/exporters/markdown';
+import { obsidianPath, toObsidian } from '@meetcc/exporters/obsidian';
+import { GATE_EVENT } from '@meetcc/exporters/gate';
 import { datedCount, toChecklist, toIcs } from '@meetcc/exporters/tasks';
 import { lazyImport } from '../lib/lazy';
 import { useToast } from '../toast';
@@ -187,6 +190,20 @@ export function SummaryView({ meeting, record, live }: Props) {
         }}
       >
         ⬇ Markdown
+      </button>
+      <button
+        onClick={() => {
+          // §32.1 probe: Obsidian-friendly export + local audit event for the
+          // G1/G2 gate metrics. No telemetry — the event stays in the device ring.
+          downloadBlob(
+            obsidianPath(meeting).split('/').pop()!,
+            new Blob([toObsidian(meeting, analysis)], { type: 'text/markdown' }),
+          );
+          void appendAudit(GATE_EVENT, 'meetings=1').catch(() => undefined);
+          toast('success', 'Catatan Obsidian diunduh (folder Meetings/).');
+        }}
+      >
+        ⬇ Obsidian
       </button>
       <button
         disabled={busy}

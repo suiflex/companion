@@ -3,7 +3,15 @@
   "version": "3.0.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./markdown": "./src/markdown.ts",
+    "./pdf": "./src/pdf.ts",
+    "./docpdf": "./src/docpdf.ts",
+    "./tasks": "./src/tasks.ts",
+    "./obsidian": "./src/obsidian.ts",
+    "./gate": "./src/gate.ts"
+  },
   "dependencies": {
     "@meetcc/shared": "*",
     "jspdf": "^2.5.2"

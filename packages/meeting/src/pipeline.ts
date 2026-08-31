@@ -1,6 +1,7 @@
 import type { AIClient } from '@meetcc/ai';
 import { analyzeMeeting } from '@meetcc/ai';
 import type { AnalysisRecord, Meeting } from '@meetcc/shared';
+import { createInFlight } from './inflight';
 
 /**
  * All side effects injected -> the workflow is unit-testable and the
@@ -21,7 +22,22 @@ export type PipelineResult =
   | { ok: true }
   | { ok: false; reason: 'not-found' | 'empty' | 'already-processing' | 'ai-failed'; error?: string };
 
-export async function runPipeline(
+// Module-level, so every runPipeline call in this worker process shares one
+// guard per meeting. The `processing` record in storage stays as the second
+// layer (it survives worker restarts); this map closes the check-then-set
+// race that the storage layer alone provably loses (two callers read the old
+// record before either writes).
+const pipelineRuns = createInFlight<PipelineResult>();
+
+export function runPipeline(
+  id: string,
+  deps: PipelineDeps,
+  opts: { force?: boolean } = {},
+): Promise<PipelineResult> {
+  return pipelineRuns.run(`pipeline:${id}`, () => runPipelineInner(id, deps, opts));
+}
+
+async function runPipelineInner(
   id: string,
   deps: PipelineDeps,
   opts: { force?: boolean } = {},

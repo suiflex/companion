@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { IntegrationSettings, Settings } from '@meetcc/shared';
 import { db } from '../lib/db';
+import { sendMessage } from '../lib/sendMessage';
 import { useToast } from '../toast';
 
 // The panels behind the Settings tabs: optional integrations (P2.5-P2.10),
@@ -20,8 +21,9 @@ async function toBase64(file: Blob): Promise<string> {
   return btoa(binary);
 }
 
-function downloadText(name: string, text: string, type = 'application/json'): void {
-  const url = URL.createObjectURL(new Blob([text], { type }));
+function downloadText(name: string, text: string | Blob, type = 'application/json'): void {
+  const blob = typeof text === 'string' ? new Blob([text], { type }) : text;
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = name;
@@ -516,6 +518,44 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
             }
           >
             Bangun ulang indeks
+          </button>
+        </div>
+      </fieldset>
+
+      <fieldset className="field-group">
+        <legend>Ekspor Obsidian & log audit</legend>
+        <p className="hint">
+          Vault .zip berisi satu catatan Markdown per rapat yang sudah dianalisis — siap dibuka di
+          Obsidian. Log audit (metrik gate §32.1) diekspor sebagai JSON dan tidak pernah meninggalkan
+          perangkat ini.
+        </p>
+        <div className="subbar">
+          <button
+            disabled={!!busy}
+            onClick={() =>
+              void run('obsidian', async () => {
+                const res = await sendMessage<{ count: number; base64: string; name: string }>({
+                  type: 'export-obsidian',
+                });
+                const bytes = Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0));
+                downloadText(res.name, new Blob([bytes], { type: 'application/zip' }));
+                toast('success', `${res.count} catatan rapat diekspor ke ${res.name}.`);
+              })
+            }
+          >
+            {busy === 'obsidian' ? 'Mengekspor…' : 'Ekspor ke Obsidian (.zip)'}
+          </button>
+          <button
+            disabled={!!busy}
+            onClick={() =>
+              void run('audit', async () => {
+                const res = await sendMessage<{ count: number; json: string }>({ type: 'export-audit' });
+                downloadText(`companion-audit-${new Date().toISOString().slice(0, 10)}.json`, res.json);
+                toast('success', `${res.count} event audit diunduh (JSON).`);
+              })
+            }
+          >
+            Ekspor log audit (JSON)
           </button>
         </div>
       </fieldset>

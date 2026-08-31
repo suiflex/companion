@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "MeetCC Spike NM Fixture",
+  "version": "0.0.1",
+  "description": "Throwaway fixture for the native messaging installer spike. Not for distribution.",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:17777/*"
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxSJ2k6Gtlh92OnyJFPL7eHQ1mEaCBowaH5OtYUYsELks6TU+aVeGUHYiYnNekfTZT29dzMtfv+x9ncGXMgJUKqFGsmZ9ZSUs4q9kZtodNysSvfdi2ASOdYMlTwAkvauVx65iwT9+BqIJKXSJCuldSDtKhT4sTlSEEpIM/DKFAQ2vquqUUNlNin/xqYhNz4iXgx6icTOzaIg5CpnPIar6uUaGuSDWJBFLJqPa2K0m+wOGAalsrASr0MyWS74rjqxcl7+lYfAuH9e01LS71aHig+7NFG4rW0GWiJfGlm/4+EkbdNEvs4w8sE4giR/9b4XG8EkYYvWRfRbkml10x4BOVQIDAQAB"
+}

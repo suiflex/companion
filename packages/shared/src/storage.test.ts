@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  appendAudit,
+  loadAudit,
   loadDashboard,
   loadSettings,
   matchesPrefixes,
@@ -9,6 +11,8 @@ import {
   saveTitle,
   watchStorage,
   ANALYSIS_PREFIX,
+  AUDIT_KEY,
+  AUDIT_RING_MAX,
   META_PREFIX,
   TITLE_PREFIX,
   TRANSCRIPT_PREFIX,
@@ -163,5 +167,37 @@ describe('loadSettings retention', () => {
   it('keeps a valid window, floored to whole days', async () => {
     store.settings = { ...(RAW.settings as object), retentionDays: 90.7 };
     expect((await loadSettings()).retentionDays).toBe(90);
+  });
+});
+
+describe('audit ring (§32.1 W3)', () => {
+  const ev = (i: number) => ({ time: new Date(i * 1000).toISOString(), event: 'test', detail: String(i) });
+
+  it('keeps 201 events — the old 200-slot ring would have evicted the first export', async () => {
+    for (let i = 0; i < 201; i++) await appendAudit('test', String(i));
+    const log = await loadAudit();
+    expect(log).toHaveLength(201);
+    expect(log[0].detail).toBe('0');
+  });
+
+  it('evicts only the oldest rows past AUDIT_RING_MAX (5.000)', async () => {
+    store[AUDIT_KEY] = Array.from({ length: AUDIT_RING_MAX - 1 }, (_, i) => ev(i));
+    await appendAudit('test', 'second-to-last');
+    await appendAudit('test', 'last');
+    const log = await loadAudit();
+    expect(log).toHaveLength(AUDIT_RING_MAX);
+    expect(log[0].detail).toBe('1'); // seed[0] evicted, seed[1] survives
+    expect(log.at(-1)?.detail).toBe('last');
+  });
+
+  it('holds the whole 14-day gate window at a realistic event rate', async () => {
+    // ~50 events/day of active use (ask, clean, docgen, retention, …) × 14
+    // days = 700 — far below the cap, so export.obsidian rows survive to the
+    // gate review even after weeks of heavy usage (audit F3).
+    store[AUDIT_KEY] = Array.from({ length: 700 }, (_, i) => ev(i));
+    await appendAudit('export.obsidian', 'meetings=3');
+    const log = await loadAudit();
+    expect(log).toHaveLength(701);
+    expect(log.at(-1)?.event).toBe('export.obsidian');
   });
 });

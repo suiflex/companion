@@ -95,10 +95,13 @@ export class SyncStore {
    * Records changed after `since`, oldest first so the client's cursor can
    * only ever move forward.
    *
-   * ponytail: reads every file in the workspace on each poll. A meeting
-   * archive is thousands of files at most and each is a few hundred KB, so
-   * this stays well under a second; add an index file if a workspace ever
-   * grows past that.
+   * ponytail: full-scans every file in the workspace on each poll — a
+   * known, accepted limit, deliberately not fixed here. Measured p95
+   * ~1.5 s at 105 records (~43 MB serialized per full poll; probe
+   * 2026-08-28). Single-user archives stay well below that threshold, so
+   * no index file gets built for the v1 bundle format: sync protocol v2
+   * (ADR-005 — immutable operations + durable server cursor) removes
+   * this scan outright.
    */
   since(workspace: string, cursor: string): StoredRecord[] {
     const dir = this.inside(workspaceDir(this.base, workspace));

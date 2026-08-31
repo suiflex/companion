@@ -115,11 +115,15 @@ function parseRecord(raw: string, sessionId: string): StoredRecord | string {
     return 'Body bukan JSON.';
   }
   if (typeof body.payload !== 'string' || !body.payload) return 'payload wajib diisi.';
-  if (typeof body.updatedAt !== 'string' || Number.isNaN(Date.parse(body.updatedAt))) {
-    return 'updatedAt harus ISO timestamp.';
-  }
+  if (typeof body.updatedAt !== 'string') return 'updatedAt harus ISO timestamp.';
+  const instant = Date.parse(body.updatedAt);
+  if (Number.isNaN(instant)) return 'updatedAt harus ISO timestamp.';
   if (body.sessionId && body.sessionId !== sessionId) return 'sessionId tidak cocok dengan path.';
-  return { sessionId, updatedAt: body.updatedAt, payload: body.payload };
+  // Canonical form (UTC 'Z', millisecond precision) is required here: the
+  // store's LWW, the since() filter and its sort all compare updatedAt as a
+  // raw string, so records in mixed shapes would order by their spelling
+  // instead of their instant and newer pushes could be silently dropped.
+  return { sessionId, updatedAt: new Date(instant).toISOString(), payload: body.payload };
 }
 
 export async function handle(req: IncomingMessage, res: ServerResponse, opts: ServerOptions): Promise<void> {

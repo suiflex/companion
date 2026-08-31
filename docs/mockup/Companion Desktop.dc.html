@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  body { margin:0; background:#07090d; }
+  a { color:#46e394; text-decoration:none; }
+  a:hover { color:#8ff5c2; }
+</style>
+</helmet>
+
+<div style="min-height:100vh; background:#07090d; display:flex; align-items:center; justify-content:flex-start; overflow:auto; padding:28px; font:13px/1.55 'Avenir Next', Avenir, Futura, 'Segoe UI', sans-serif; color:#dbe2ee; -webkit-font-smoothing:antialiased;">
+
+  <div style="width:1420px; height:892px; flex:none; flex-shrink:0; margin:auto; border-radius:12px; overflow:hidden; border:1px solid #1d2434; background:#0a0d12; box-shadow:0 40px 90px rgba(0,0,0,.6); display:flex; flex-direction:column; position:relative;">
+
+    <div style="height:38px; flex:none; display:flex; align-items:center; gap:14px; padding:0 14px; background:linear-gradient(180deg,#131926,#0f131b); border-bottom:1px solid #1d2434;">
+      <div style="display:flex; gap:8px;">
+        <span style="width:11px; height:11px; border-radius:50%; background:#3a4459;"></span>
+        <span style="width:11px; height:11px; border-radius:50%; background:#3a4459;"></span>
+        <span style="width:11px; height:11px; border-radius:50%; background:#3a4459;"></span>
+      </div>
+      <div style="display:flex; align-items:center; gap:7px; margin-left:6px;">
+        <img src="assets/brand/logo-mark.svg" alt="Companion" style="width:17px; height:17px; display:block;" />
+        <span style="font:600 10px/1 ui-monospace,'SF Mono',Menlo,monospace; letter-spacing:.14em; text-transform:uppercase; color:#8b95a9;">Companion</span>
+        <span style="font:400 10px/1 ui-monospace,Menlo,monospace; color:#5c6579;">— ~/Companion</span>
+      </div>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+        <button style="display:flex; align-items:center; gap:7px; padding:5px 10px; border:1px solid #273043; border-radius:7px; background:#0f131b; color:#8b95a9; font:600 10px/1 ui-monospace,Menlo,monospace; letter-spacing:.06em; cursor:pointer;" style-hover="border-color:#46e394; color:#46e394;" onClick="{{ openPalette }}">
+          <span>Cari apa saja</span><span style="color:#5c6579;">⌘K</span>
+        </button>
+        <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:99px; background:rgba(70,227,148,.12); border:1px solid rgba(70,227,148,.4); color:#46e394; font:700 9px/1 ui-monospace,Menlo,monospace; letter-spacing:.12em;">
+          <span style="width:5px; height:5px; border-radius:50%; background:#46e394;"></span>EXT TERSAMBUNG
+        </span>
+      </div>
+    </div>
+
+    <div style="flex:1; min-height:0; display:flex;">
+
+      <div style="width:52px; flex:none; border-right:1px solid #1d2434; background:#0d1119; display:flex; flex-direction:column; align-items:center; padding:10px 0; gap:4px;">
+        <button title="Catatan" style="{{ railNotes }}" onClick="{{ goNotes }}">▤</button>
+        <button title="Rapat masuk" style="{{ railInbox }}" onClick="{{ goInbox }}">◈</button>
+        <button title="Tanya lintas nota" style="{{ railAsk }}" onClick="{{ goAsk }}">✦</button>
+        <span style="flex:1;"></span>
+        <button title="Vault &amp; jembatan" style="{{ railSettings }}" onClick="{{ goSettings }}">⚙</button>
+      </div>
+
+      <div style="width:262px; flex:none; border-right:1px solid #1d2434; background:#0f131b; display:flex; flex-direction:column; min-height:0;">
+        <div style="padding:12px 12px 10px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #1d2434;">
+          <span style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#5c6579;">Vault</span>
+          <span style="margin-left:auto; font:400 10px/1 ui-monospace,Menlo,monospace; color:#5c6579;">128 nota</span>
+          <span style="color:#5c6579; font-size:13px; cursor:pointer;">＋</span>
+        </div>
+
+        <div style="flex:1; overflow-y:auto; padding:10px 8px; display:flex; flex-direction:column; gap:1px;">
+
+          <div style="display:flex; align-items:center; gap:7px; padding:5px 7px; font:400 12.5px/1.4 'Avenir Next',sans-serif; color:#8b95a9;">
+            <span style="color:#5c6579; width:9px;">▾</span><span style="color:#5c6579;">🗀</span><span style="font-weight:600;">Rapat</span><span style="margin-left:auto; font:400 10px/1 ui-monospace,Menlo,monospace; color:#3a4459;">96</span>
+          </div>
+          <button style="{{ treeGate }}" onClick="{{ openGate }}"><span style="color:#5c6579; font:400 10px/1 ui-monospace,Menlo,monospace; width:26px; flex:none;">28/08</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Gate review §32.1</span><span style="margin-left:auto; width:5px; height:5px; border-radius:50%; background:#46e394; flex:none;"></span></button>
+          <button style="{{ treeStandup }}" onClick="{{ openStandup }}"><span style="color:#5c6579; font:400 10px/1 ui-monospace,Menlo,monospace; width:26px; flex:none;">27/08</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Standup — installer spike</span></button>
+          <button style="{{ treeAsk }}" onClick="{{ openAskNote }}"><span style="color:#5c6579; font:400 10px/1 ui-monospace,Menlo,monospace; width:26px; flex:none;">26/08</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Review Ask v2 dengan Rani</span></button>
+          <div style="display:flex; align-items:center; gap:7px; padding:5px 7px 5px 30px; font-size:12.5px; color:#3a4459;">… 93 lainnya</div>
+
+          <div style="display:flex; align-items:center; gap:7px; padding:5px 7px; margin-top:8px; font:400 12.5px/1.4 'Avenir Next',sans-serif; color:#8b95a9;">
+            <span style="color:#5c6579; width:9px;">▾</span><span style="color:#5c6579;">🗀</span><span style="font-weight:600;">Nota</span><span style="margin-left:auto; font:400 10px/1 ui-monospace,Menlo,monospace; color:#3a4459;">24</span>
+          </div>
+          <button style="{{ treePeta }}" onClick="{{ openPeta }}"><span style="width:26px; flex:none;"></span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Peta produk Companion</span></button>
+          <button style="{{ treeIdent }}" onClick="{{ openIdent }}"><span style="width:26px; flex:none;"></span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Identitas &amp; UUIDv7</span></button>
+          <div style="display:flex; align-items:center; gap:7px; padding:5px 7px 5px 30px; font-size:12.5px; color:#3a4459;">… 22 lainnya</div>
+
+          <div style="display:flex; align-items:center; gap:7px; padding:5px 7px; margin-top:8px; font:400 12.5px/1.4 'Avenir Next',sans-serif; color:#8b95a9;">
+            <span style="color:#5c6579; width:9px;">▸</span><span style="color:#5c6579;">🗀</span><span style="font-weight:600;">Proyek</span><span style="margin-left:auto; font:400 10px/1 ui-monospace,Menlo,monospace; color:#3a4459;">6</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:7px; padding:5px 7px; font:400 12.5px/1.4 'Avenir Next',sans-serif; color:#8b95a9;">
+            <span style="color:#5c6579; width:9px;">▸</span><span style="color:#5c6579;">🗀</span><span style="font-weight:600;">Impor</span><span style="margin-left:auto; font:400 10px/1 ui-monospace,Menlo,monospace; color:#3a4459;">2</span>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #1d2434; padding:10px 12px; display:flex; flex-wrap:wrap; gap:5px;">
+          <span style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#5c6579; width:100%; margin-bottom:3px;">Tag</span>
+          <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#8b95a9; border:1px solid #273043; border-radius:5px; padding:4px 7px;">#rapat</span>
+          <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#8b95a9; border:1px solid #273043; border-radius:5px; padding:4px 7px;">#gate</span>
+          <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#8b95a9; border:1px solid #273043; border-radius:5px; padding:4px 7px;">#ask-v2</span>
+          <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#8b95a9; border:1px solid #273043; border-radius:5px; padding:4px 7px;">#identitas</span>
+        </div>
+      </div>
+
+      <div style="flex:1; min-width:0; display:flex; flex-direction:column; background:#0a0d12;">
+
+        <div style="height:36px; flex:none; display:flex; align-items:stretch; border-bottom:1px solid #1d2434; background:#0d1119;">
+          <div style="display:flex; align-items:center; gap:8px; padding:0 14px; border-right:1px solid #1d2434; background:#0a0d12; box-shadow:inset 0 2px 0 #46e394; font:600 12px/1 'Avenir Next',sans-serif; color:#dbe2ee;">
+            <span style="width:5px; height:5px; border-radius:50%; background:#46e394;"></span>{{ tabTitle }}<span style="color:#3a4459; margin-left:4px;">✕</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; padding:0 14px; border-right:1px solid #1d2434; font:400 12px/1 'Avenir Next',sans-serif; color:#5c6579;">{{ tab2Title }}<span style="color:#273043;">✕</span></div>
+          <div style="display:flex; align-items:center; gap:8px; padding:0 14px; border-right:1px solid #1d2434; font:400 12px/1 'Avenir Next',sans-serif; color:#5c6579;">Transcript — 28/08<span style="color:#273043;">✕</span></div>
+          <div style="display:flex; align-items:center; padding:0 12px; color:#3a4459; font-size:14px;">＋</div>
+        </div>
+
+        <sc-if value="{{ isNotes }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1; min-height:0; display:flex;">
+
+            <div style="flex:1; min-width:0; overflow-y:auto; padding:34px 0 60px;">
+              <div style="max-width:720px; margin:0 auto; padding:0 40px;">
+
+                <div style="font:400 10.5px/1 ui-monospace,Menlo,monospace; color:#5c6579; margin-bottom:16px;">{{ breadcrumb }}</div>
+
+                <sc-if value="{{ isGate }}" hint-placeholder-val="{{ true }}">
+                  <div>
+                    <h1 style="margin:0 0 14px; font:600 30px/1.25 'Avenir Next',Avenir,sans-serif; letter-spacing:-.015em;">Gate review §32.1</h1>
+
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; padding-bottom:16px; border-bottom:1px solid #1d2434; margin-bottom:26px;">
+                      <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#46e394; border:1px solid rgba(70,227,148,.4); background:rgba(70,227,148,.1); border-radius:5px; padding:5px 8px;">#rapat</span>
+                      <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#46e394; border:1px solid rgba(70,227,148,.4); background:rgba(70,227,148,.1); border-radius:5px; padding:5px 8px;">#gate</span>
+                      <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#5c6579; border:1px solid #273043; border-radius:5px; padding:5px 8px;">28 Agu 2026 · 14:00</span>
+                      <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#5c6579; border:1px solid #273043; border-radius:5px; padding:5px 8px;">4 peserta · 612 baris</span>
+                      <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#5c6579; border:1px solid #273043; border-radius:5px; padding:5px 8px;">Google Meet</span>
+                    </div>
+
+                    <p style="margin:0 0 26px; font-size:15.5px; line-height:1.75; color:#c3ccdb; text-wrap:pretty;">Rapat menutup pertanyaan apakah vault desktop dibangun sebagai aplikasi utama atau sekadar pelengkap extension. Jawabannya: aplikasi utama. Nota, rapat, dan dokumen tinggal di satu vault berkas lokal milik pengguna, dan extension turun peran jadi alat tangkap yang menyetor ke sana.</p>
+
+                    <h2 style="margin:0 0 12px; font:600 11px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#46e394;">Keputusan</h2>
+                    <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:30px;">
+                      <div style="padding-left:14px; border-left:2px solid #273043;">
+                        <div style="font-size:15px; color:#dbe2ee; margin-bottom:4px;">Phase 1 desktop ditahan sampai verdict gate turun.</div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                          <span style="font-size:13px; color:#8b95a9;">Alasan: kesiapan engineering bukan bukti permintaan.</span>
+                          <sc-if value="{{ showEvidence }}" hint-placeholder-val="{{ true }}">
+                            <button style="{{ chipGate1 }}" onClick="{{ pickEv1 }}">bukti ×3</button>
+                          </sc-if>
+                        </div>
+                      </div>
+                      <div style="padding-left:14px; border-left:2px solid #273043;">
+                        <div style="font-size:15px; color:#dbe2ee; margin-bottom:4px;">Dua sprint dialihkan ke Ask v2, dinilai ulang tiap batas sprint.</div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                          <span style="font-size:13px; color:#8b95a9;">Menggantikan rencana 24 Agu.</span>
+                          <sc-if value="{{ showEvidence }}" hint-placeholder-val="{{ true }}">
+                            <button style="{{ chipGate2 }}" onClick="{{ pickEv2 }}">bukti ×2</button>
+                          </sc-if>
+                        </div>
+                      </div>
+                      <div style="padding-left:14px; border-left:2px solid #eec26a;">
+                        <div style="font-size:15px; color:#dbe2ee; margin-bottom:4px;">Ambang G1 tidak diutak-atik lagi setelah probe rilis.</div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                          <span style="font:400 10px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#eec26a; border:1px solid #eec26a; border-radius:4px; padding:4px 6px;">menggantikan 24/08</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <h2 style="margin:0 0 12px; font:600 11px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#46e394;">Aksi</h2>
+                    <div style="display:flex; flex-direction:column; gap:2px; margin-bottom:30px;">
+                      <label style="display:flex; align-items:center; gap:11px; padding:8px 9px; border-radius:8px; cursor:pointer;" style-hover="background:#0f131b;">
+                        <input type="checkbox" checked="{{ a1 }}" onChange="{{ toggleA1 }}" style="accent-color:#46e394; width:14px; height:14px;" />
+                        <span style="{{ a1style }}">Kunci format berkas vault (.md + frontmatter) sebelum editor rilis</span>
+                        <span style="margin-left:auto; font:400 10.5px/1 ui-monospace,Menlo,monospace; color:#5c6579;">Andi · 3 Sep</span>
+                      </label>
+                      <label style="display:flex; align-items:center; gap:11px; padding:8px 9px; border-radius:8px; cursor:pointer;" style-hover="background:#0f131b;">
+                        <input type="checkbox" checked="{{ a2 }}" onChange="{{ toggleA2 }}" style="accent-color:#46e394; width:14px; height:14px;" />
+                        <span style="{{ a2style }}">Ubah audit ask.global jadi terstruktur (meetingsCited)</span>
+                        <span style="margin-left:auto; font:400 10.5px/1 ui-monospace,Menlo,monospace; color:#5c6579;">Rani · 5 Sep</span>
+                      </label>
+                      <label style="display:flex; align-items:center; gap:11px; padding:8px 9px; border-radius:8px; cursor:pointer;" style-hover="background:#0f131b;">
+                        <input type="checkbox" checked="{{ a3 }}" onChange="{{ toggleA3 }}" style="accent-color:#46e394; width:14px; height:14px;" />
+                        <span style="{{ a3style }}">Siapkan log audit mingguan G1' sampai review 24 Sep</span>
+                        <span style="margin-left:auto; font:400 10.5px/1 ui-monospace,Menlo,monospace; color:#5c6579;">Dewi · tiap Jumat</span>
+                      </label>
+                    </div>
+
+                    <h2 style="margin:0 0 12px; font:600 11px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#eec26a;">Pertanyaan terbuka</h2>
+                    <ul style="margin:0 0 30px; padding-left:18px; display:flex; flex-direction:column; gap:7px; font-size:14.5px; color:#c3ccdb;">
+                      <li>Kalau G1 dan G3 sama-sama gagal, versi kecil Phase 1 mana yang tetap dikerjakan?</li>
+                      <li>SQLCipher atau enkripsi disk OS untuk basis data lokal — masih menunggu §34.</li>
+                    </ul>
+
+                    <p style="margin:0; padding-top:20px; border-top:1px solid #1d2434; font-size:14.5px; color:#8b95a9;">Lanjutan dari <a href="#">[[Standup — installer spike]]</a> · sumber mentah <a href="#">[[Transcript — 2026-08-28]]</a> · konteks <a href="#">[[Peta produk Companion]]</a></p>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ isPeta }}" hint-placeholder-val="{{ false }}">
+                  <div>
+                    <h1 style="margin:0 0 14px; font:600 30px/1.25 'Avenir Next',Avenir,sans-serif; letter-spacing:-.015em;">Peta produk Companion</h1>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; padding-bottom:16px; border-bottom:1px solid #1d2434; margin-bottom:26px;">
+                      <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#46e394; border:1px solid rgba(70,227,148,.4); background:rgba(70,227,148,.1); border-radius:5px; padding:5px 8px;">#nota</span>
+                      <span style="font:400 11px/1 ui-monospace,Menlo,monospace; color:#5c6579; border:1px solid #273043; border-radius:5px; padding:5px 8px;">disunting 2 jam lalu</span>
+                    </div>
+                    <p style="margin:0 0 22px; font-size:15.5px; line-height:1.75; color:#c3ccdb; text-wrap:pretty;">Nota tulisan sendiri — bukan hasil AI. Tempat menaruh alur pikir yang menghubungkan rapat-rapat, dan yang membuat vault ini bukan sekadar arsip notulen.</p>
+                    <h2 style="margin:0 0 12px; font:600 11px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#46e394;">Urutan taruhan</h2>
+                    <ol style="margin:0 0 26px; padding-left:20px; display:flex; flex-direction:column; gap:9px; font-size:14.5px; color:#c3ccdb;">
+                      <li>Rasa sakit pengguna dulu — Ask v2 dan Phase 0 jalan paralel.</li>
+                      <li>Permukaan baru harus dibayar permintaan terukur, lihat <a href="#">[[Gate review §32.1]]</a>.</li>
+                      <li>Identitas pintu satu arah — detail di <a href="#">[[Identitas &amp; UUIDv7]]</a>.</li>
+                    </ol>
+                    <p style="margin:0; font-size:14.5px; color:#8b95a9;">Yang masih mengganjal: orang sudah punya kebiasaan menulis di tempat lain. Vault ini menang hanya kalau bukti transcript dan pencarian lintas rapat terasa mustahil ditiru di aplikasi nota biasa.</p>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+
+            <sc-if value="{{ showRight }}" hint-placeholder-val="{{ true }}">
+              <div style="width:296px; flex:none; border-left:1px solid #1d2434; background:#0f131b; overflow-y:auto; padding:16px 14px; display:flex; flex-direction:column; gap:22px;">
+
+                <div>
+                  <div style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#5c6579; margin-bottom:10px;">Bukti terpilih</div>
+                  <div style="border:1px solid #273043; border-radius:9px; background:#131926; padding:11px 12px; display:flex; flex-direction:column; gap:7px;">
+                    <div style="display:flex; align-items:baseline; gap:8px;">
+                      <span style="font:600 10.5px/1 ui-monospace,Menlo,monospace; color:#46e394;">{{ evSpeaker }}</span>
+                      <span style="font:400 10px/1 ui-monospace,Menlo,monospace; color:#5c6579;">{{ evTime }}</span>
+                    </div>
+                    <p style="margin:0; font-size:13px; color:#c3ccdb; text-wrap:pretty;">{{ evText }}</p>
+                    <div style="display:flex; align-items:center; gap:8px; padding-top:6px; border-top:1px solid #1d2434;">
+                      <span style="font:400 9.5px/1 ui-monospace,Menlo,monospace; color:#5c6579;">{{ evRef }}</span>
+                      <span style="margin-left:auto; font:600 9px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#46e394; border:1px solid rgba(70,227,148,.4); border-radius:4px; padding:4px 6px;">raw</span>
+                    </div>
+                  </div>
+                  <div style="font-size:11.5px; color:#5c6579; margin-top:8px;">{{ evHint }}</div>
+                </div>
+
+                <div>
+                  <div style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#5c6579; margin-bottom:10px;">Kerangka</div>
+                  <div style="display:flex; flex-direction:column; gap:1px;">
+                    <div style="padding:5px 7px; border-radius:6px; font-size:12.5px; color:#8b95a9; border-left:2px solid #46e394;">Ringkasan</div>
+                    <div style="padding:5px 7px; border-radius:6px; font-size:12.5px; color:#8b95a9; border-left:2px solid #1d2434;">Keputusan</div>
+                    <div style="padding:5px 7px; border-radius:6px; font-size:12.5px; color:#8b95a9; border-left:2px solid #1d2434;">Aksi</div>
+                    <div style="padding:5px 7px; border-radius:6px; font-size:12.5px; color:#8b95a9; border-left:2px solid #1d2434;">Pertanyaan terbuka</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                    <span style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#5c6579;">Tautan balik</span>
+                    <span style="font:400 10px/1 ui-monospace,Menlo,monospace; color:#3a4459;">4</span>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="border-left:2px solid #273043; padding-left:10px;">
+                      <div style="font-size:12.5px; color:#dbe2ee;">Peta produk Companion</div>
+                      <div style="font-size:11.5px; color:#5c6579;">“…harus dibayar permintaan terukur, lihat…”</div>
+                    </div>
+                    <div style="border-left:2px solid #273043; padding-left:10px;">
+                      <div style="font-size:12.5px; color:#dbe2ee;">Standup — installer spike</div>
+                      <div style="font-size:11.5px; color:#5c6579;">“…spike ditunda sampai verdict…”</div>
+                    </div>
+                    <div style="border-left:2px solid #273043; padding-left:10px;">
+                      <div style="font-size:12.5px; color:#dbe2ee;">Log G1' mingguan</div>
+                      <div style="font-size:11.5px; color:#5c6579;">“…mengikuti keputusan rapat 28/08…”</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="margin-top:auto; display:flex; flex-direction:column; gap:7px;">
+                  <button style="width:100%; padding:9px; border:1px solid #46e394; border-radius:8px; background:rgba(70,227,148,.12); color:#46e394; font:600 11px/1 'Avenir Next',sans-serif; cursor:pointer;" style-hover="background:#46e394; color:#0a0d12;">Buat nota tindak lanjut</button>
+                  <button style="width:100%; padding:9px; border:1px solid #273043; border-radius:8px; background:#0f131b; color:#8b95a9; font:600 11px/1 'Avenir Next',sans-serif; cursor:pointer;" style-hover="border-color:#46e394; color:#dbe2ee;">Bagikan · PDF, Markdown, ICS</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isInbox }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1; min-height:0; overflow-y:auto; padding:34px 40px 60px;">
+            <div style="max-width:860px;">
+              <h1 style="margin:0 0 8px; font:600 26px/1.25 'Avenir Next',Avenir,sans-serif; letter-spacing:-.015em;">Rapat masuk</h1>
+              <p style="margin:0 0 26px; font-size:14.5px; color:#8b95a9; max-width:70ch;">Hasil tangkapan extension menunggu ditempatkan. Selama belum ditautkan, isinya tetap utuh di arsip extension — desktop tidak pernah jadi satu-satunya salinan.</p>
+
+              <div style="display:flex; flex-direction:column; gap:1px; border:1px solid #1d2434; border-radius:10px; overflow:hidden;">
+                <div style="display:grid; grid-template-columns:1fr 130px 150px 132px; gap:16px; padding:11px 16px; background:#131926; font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.14em; text-transform:uppercase; color:#5c6579;">
+                  <span>Rapat</span><span>Ditangkap</span><span>Status</span><span></span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 130px 150px 132px; gap:16px; align-items:center; padding:14px 16px; background:#0f131b; border-top:1px solid #1d2434;">
+                  <div><div style="font-size:14px; color:#dbe2ee;">Sync sprint — packages/store</div><div style="font:400 11px/1.4 ui-monospace,Menlo,monospace; color:#5c6579; margin-top:3px;">Meet · 214 baris · 32 mnt</div></div>
+                  <span style="font:400 11.5px/1 ui-monospace,Menlo,monospace; color:#8b95a9;">hari ini 09:12</span>
+                  <span style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#46e394; border:1px solid #46e394; background:rgba(70,227,148,.1); border-radius:5px; padding:5px 7px; justify-self:start;">analisis selesai</span>
+                  <button style="padding:8px 12px; border:1px solid #46e394; border-radius:7px; background:rgba(70,227,148,.12); color:#46e394; font:600 11px/1 'Avenir Next',sans-serif; cursor:pointer;" style-hover="background:#46e394; color:#0a0d12;">Tautkan ke vault</button>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 130px 150px 132px; gap:16px; align-items:center; padding:14px 16px; background:#0d1119; border-top:1px solid #1d2434;">
+                  <div><div style="font-size:14px; color:#dbe2ee;">1:1 dengan Dewi</div><div style="font:400 11px/1.4 ui-monospace,Menlo,monospace; color:#5c6579; margin-top:3px;">Teams · 96 baris · 18 mnt</div></div>
+                  <span style="font:400 11.5px/1 ui-monospace,Menlo,monospace; color:#8b95a9;">kemarin 16:40</span>
+                  <span style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#eec26a; border:1px solid #eec26a; border-radius:5px; padding:5px 7px; justify-self:start;">menganalisis…</span>
+                  <button disabled="{{ true }}" style="padding:8px 12px; border:1px solid #273043; border-radius:7px; background:#0f131b; color:#3a4459; font:600 11px/1 'Avenir Next',sans-serif;">Tautkan ke vault</button>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 130px 150px 132px; gap:16px; align-items:center; padding:14px 16px; background:#0f131b; border-top:1px solid #1d2434;">
+                  <div><div style="font-size:14px; color:#dbe2ee;">Diskusi vendor — caption mati di tengah</div><div style="font:400 11px/1.4 ui-monospace,Menlo,monospace; color:#5c6579; margin-top:3px;">Meet · 41 baris · terputus</div></div>
+                  <span style="font:400 11.5px/1 ui-monospace,Menlo,monospace; color:#8b95a9;">27 Agu 11:05</span>
+                  <span style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#ff6b74; border:1px solid #ff6b74; border-radius:5px; padding:5px 7px; justify-self:start;">tidak lengkap</span>
+                  <button style="padding:8px 12px; border:1px solid #273043; border-radius:7px; background:#0f131b; color:#8b95a9; font:600 11px/1 'Avenir Next',sans-serif; cursor:pointer;" style-hover="border-color:#46e394; color:#dbe2ee;">Tinjau dulu</button>
+                </div>
+              </div>
+
+              <div style="margin-top:18px; display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px solid #273043; border-radius:9px; background:#0d1119;">
+                <span style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.1em; text-transform:uppercase; color:#5c6579;">Aturan</span>
+                <span style="font-size:13px; color:#8b95a9;">Rapat baru masuk ke <span style="font:400 12px/1 ui-monospace,Menlo,monospace; color:#dbe2ee;">Rapat/2026/Agustus</span>, dinamai dari ringkasan AI, dan tetap bisa dipindah seperti berkas biasa.</span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isAsk }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1; min-height:0; display:flex; flex-direction:column;">
+            <div style="flex:1; overflow-y:auto; padding:34px 0 30px;">
+              <div style="max-width:760px; margin:0 auto; padding:0 40px; display:flex; flex-direction:column; gap:20px;">
+
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <h1 style="margin:0; font:600 22px/1.25 'Avenir Next',Avenir,sans-serif; letter-spacing:-.01em;">Tanya lintas nota</h1>
+                  <span style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.1em; text-transform:uppercase; color:#5c6579; border:1px solid #273043; border-radius:5px; padding:5px 7px;">128 nota · 96 rapat</span>
+                </div>
+
+                <div style="align-self:flex-end; max-width:78%; padding:11px 14px; border-radius:12px 12px 4px 12px; background:rgba(70,227,148,.12); border:1px solid rgba(70,227,148,.35); font-size:14px;">gimana caranya solusi dari beberapa aplikasi yang terdampak?</div>
+
+                <div style="align-self:flex-start; max-width:88%; padding:14px 16px; border-radius:12px 12px 12px 4px; background:#0f131b; border:1px solid #273043; display:flex; flex-direction:column; gap:12px;">
+                  <p style="margin:0; font-size:14.5px; line-height:1.7; color:#dbe2ee; text-wrap:pretty;">Tiga aplikasi yang terdampak diselesaikan lewat jalur yang sama: hentikan tulis ganda ke indeks turunan, lalu bangun ulang indeks dari arsip kanonik setelah migrasi ID selesai. Untuk aplikasi ketiga, timnya sepakat menunda sampai pemindai integritas jalan, karena ID lama masih dipetakan manual.</p>
+
+                  <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
+                    <span style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#46e394; border:1px solid #46e394; background:rgba(70,227,148,.12); border-radius:5px; padding:5px 7px;">explicit</span>
+                    <span style="font:400 10.5px/1 ui-monospace,Menlo,monospace; color:#5c6579;">mengutip 3 rapat · 5 baris terverifikasi</span>
+                  </div>
+
+                  <div style="padding-top:11px; border-top:1px solid #1d2434;">
+                    <div style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.1em; text-transform:uppercase; color:#5c6579; margin-bottom:9px;">Bukti</div>
+                    <div style="display:flex; flex-direction:column; gap:9px;">
+                      <div style="border-left:2px solid #273043; padding-left:10px;">
+                        <div style="font:600 10.5px/1 ui-monospace,Menlo,monospace; color:#46e394; margin-bottom:3px;">Andi · Gate review §32.1 · 00:14:22</div>
+                        <div style="font-size:13px; color:#8b95a9;">“…jangan tulis ke dua tempat, indeksnya kita bangun ulang saja setelah ID-nya beres.”</div>
+                      </div>
+                      <div style="border-left:2px solid #273043; padding-left:10px;">
+                        <div style="font:600 10.5px/1 ui-monospace,Menlo,monospace; color:#46e394; margin-bottom:3px;">Rani · Review Ask v2 · 00:31:07</div>
+                        <div style="font-size:13px; color:#8b95a9;">“…yang ketiga tunggu scanner, ID lamanya masih dipetakan tangan.”</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; gap:6px; flex-wrap:wrap; padding-top:4px;">
+                    <span style="font-size:12px; color:#8b95a9; border:1px solid #273043; border-radius:99px; padding:6px 11px; cursor:pointer;" style-hover="color:#46e394; border-color:#46e394;">Siapa yang pegang aplikasi ketiga?</span>
+                    <span style="font-size:12px; color:#8b95a9; border:1px solid #273043; border-radius:99px; padding:6px 11px; cursor:pointer;" style-hover="color:#46e394; border-color:#46e394;">Kapan scanner integritas jalan?</span>
+                    <span style="font-size:12px; color:#8b95a9; border:1px solid #273043; border-radius:99px; padding:6px 11px; cursor:pointer;" style-hover="color:#46e394; border-color:#46e394;">Simpan jawaban ke nota</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="flex:none; border-top:1px solid #1d2434; background:#0f131b; padding:14px 40px;">
+              <div style="max-width:760px; margin:0 auto; display:flex; gap:9px; align-items:flex-end;">
+                <div style="flex:1; border:1px solid #273043; border-radius:10px; background:#131926; padding:10px 13px; font-size:13.5px; color:#5c6579;">Tanya apa saja tentang 128 nota…</div>
+                <button style="padding:11px 18px; border:1px solid #46e394; border-radius:9px; background:rgba(70,227,148,.12); color:#46e394; font:600 12px/1 'Avenir Next',sans-serif; cursor:pointer;" style-hover="background:#46e394; color:#0a0d12;">Tanya</button>
+              </div>
+              <div style="max-width:760px; margin:8px auto 0; font:400 10.5px/1 ui-monospace,Menlo,monospace; color:#3a4459;">Pencarian leksikal lokal · tidak ada embedding · hanya prompt yang dikirim ke provider pilihan Anda</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1; min-height:0; overflow-y:auto; padding:34px 40px 60px;">
+            <div style="max-width:940px;">
+              <h1 style="margin:0 0 8px; font:600 26px/1.25 'Avenir Next',Avenir,sans-serif; letter-spacing:-.015em;">Vault &amp; jembatan Meet</h1>
+              <p style="margin:0 0 30px; font-size:14.5px; color:#8b95a9; max-width:74ch; text-wrap:pretty;">Vault adalah folder berkas biasa di disk Anda. Caption dari Meet berakhir sebagai berkas <span style="font:400 13px/1 ui-monospace,Menlo,monospace; color:#dbe2ee;">.md</span> di dalamnya — bukan di basis data tersembunyi.</p>
+
+              <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid #273043; border-radius:10px; background:#0f131b; margin-bottom:28px;">
+                <span style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.14em; text-transform:uppercase; color:#5c6579;">Folder vault</span>
+                <span style="font:400 13.5px/1 ui-monospace,Menlo,monospace; color:#dbe2ee;">~/Companion</span>
+                <span style="font:400 11.5px/1 ui-monospace,Menlo,monospace; color:#5c6579;">128 berkas · 41 MB · dapat dibaca editor apa pun</span>
+                <button style="margin-left:auto; padding:8px 13px; border:1px solid #273043; border-radius:7px; background:#0d1119; color:#8b95a9; font:600 11px/1 'Avenir Next',sans-serif; cursor:pointer;" style-hover="border-color:#46e394; color:#dbe2ee;">Pindahkan…</button>
+              </div>
+
+              <div style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#5c6579; margin-bottom:14px;">Perjalanan satu rapat</div>
+              <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:34px;">
+                <div style="border:1px solid #1d2434; border-radius:10px; background:#0f131b; padding:16px;">
+                  <div style="font:600 10px/1 ui-monospace,Menlo,monospace; color:#46e394; margin-bottom:9px;">1 · Tangkap</div>
+                  <div style="font-size:13.5px; color:#dbe2ee; margin-bottom:6px;">Extension membaca caption</div>
+                  <p style="margin:0; font-size:12.5px; color:#8b95a9;">Baris caption Meet/Teams masuk antrean lokal extension beserta nama pembicara dan cap waktu.</p>
+                </div>
+                <div style="border:1px solid #1d2434; border-radius:10px; background:#0f131b; padding:16px;">
+                  <div style="font:600 10px/1 ui-monospace,Menlo,monospace; color:#46e394; margin-bottom:9px;">2 · Kirim</div>
+                  <div style="font-size:13.5px; color:#dbe2ee; margin-bottom:6px;">Native messaging</div>
+                  <p style="margin:0; font-size:12.5px; color:#8b95a9;">Batch dikirim ke app desktop lewat pipa lokal, bukan internet. Setiap batch punya ID operasi supaya tidak dobel.</p>
+                </div>
+                <div style="border:1px solid #1d2434; border-radius:10px; background:#0f131b; padding:16px;">
+                  <div style="font:600 10px/1 ui-monospace,Menlo,monospace; color:#46e394; margin-bottom:9px;">3 · Tulis berkas</div>
+                  <div style="font-size:13.5px; color:#dbe2ee; margin-bottom:6px;">Nota + transcript sidecar</div>
+                  <p style="margin:0; font-size:12.5px; color:#8b95a9;">App menulis dua berkas: nota rapat yang dibaca manusia, dan transcript mentah yang tidak pernah disunting.</p>
+                </div>
+                <div style="border:1px solid #1d2434; border-radius:10px; background:#0f131b; padding:16px;">
+                  <div style="font:600 10px/1 ui-monospace,Menlo,monospace; color:#46e394; margin-bottom:9px;">4 · Indeks</div>
+                  <div style="font-size:13.5px; color:#dbe2ee; margin-bottom:6px;">SQLite/FTS5 turunan</div>
+                  <p style="margin:0; font-size:12.5px; color:#8b95a9;">Pencarian dan tautan balik dibangun dari berkas. Hapus indeksnya, ia bisa dibangun ulang; hapus berkasnya, hilang betulan.</p>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:340px 1fr; gap:20px;">
+                <div>
+                  <div style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#5c6579; margin-bottom:12px;">Isi folder</div>
+                  <div style="border:1px solid #1d2434; border-radius:10px; background:#0d1119; padding:16px; font:400 12.5px/2 ui-monospace,Menlo,monospace; color:#8b95a9;">
+                    <div style="color:#dbe2ee;">~/Companion</div>
+                    <div>├── Rapat/2026/Agustus/</div>
+                    <div style="color:#c3ccdb;">│   ├── 2026-08-28 Gate review §32.1.md</div>
+                    <div>│   └── .transcript/</div>
+                    <div style="color:#c3ccdb;">│       └── 2026-08-28 Gate review §32.1.jsonl</div>
+                    <div>├── Nota/</div>
+                    <div>├── Proyek/</div>
+                    <div>└── .companion/</div>
+                    <div style="color:#5c6579;">    └── index.sqlite <span style="color:#3a4459;">(turunan)</span></div>
+                  </div>
+                  <p style="margin:12px 0 0; font-size:12.5px; color:#5c6579; text-wrap:pretty;">Transcript mentah dipisah ke sidecar supaya nota tetap enak dibaca, tapi buktinya tetap ada di folder yang sama dan ikut kalau foldernya dipindah.</p>
+                </div>
+
+                <div>
+                  <div style="font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; color:#5c6579; margin-bottom:12px;">Yang mengikat rapat ke berkas</div>
+                  <div style="border:1px solid #1d2434; border-radius:10px; background:#0d1119; padding:18px 20px; font:400 12.5px/1.9 ui-monospace,Menlo,monospace; color:#8b95a9;">
+                    <div style="color:#3a4459;">---</div>
+                    <div><span style="color:#46e394;">id:</span> 0191f3c2-8a41-7a2e-9c33-1b7d5e0a4f21</div>
+                    <div><span style="color:#46e394;">session_key:</span> meet/abc-defg-hij#2026-08-28T14:00</div>
+                    <div><span style="color:#46e394;">platform:</span> google-meet</div>
+                    <div><span style="color:#46e394;">mulai:</span> 2026-08-28T14:00:12+07:00</div>
+                    <div><span style="color:#46e394;">peserta:</span> [Andi, Rani, Dewi, Bima]</div>
+                    <div><span style="color:#46e394;">transcript:</span> .transcript/2026-08-28 Gate review §32.1.jsonl</div>
+                    <div><span style="color:#46e394;">tags:</span> [rapat, gate]</div>
+                    <div style="color:#3a4459;">---</div>
+                    <div style="color:#5c6579;"># Gate review §32.1</div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+                    <div style="display:flex; gap:11px; align-items:flex-start;">
+                      <span style="font:600 9px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#46e394; border:1px solid #46e394; border-radius:4px; padding:5px 6px; flex:none; margin-top:2px;">id</span>
+                      <span style="font-size:13px; color:#8b95a9;">UUIDv7 dari extension. Berkas boleh diganti nama atau dipindah folder — kaitannya ke rapat tidak putus.</span>
+                    </div>
+                    <div style="display:flex; gap:11px; align-items:flex-start;">
+                      <span style="font:600 9px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#46e394; border:1px solid #46e394; border-radius:4px; padding:5px 6px; flex:none; margin-top:2px;">key</span>
+                      <span style="font-size:13px; color:#8b95a9;">Kombinasi ruang Meet + waktu mulai. Ini yang mencegah satu rapat ditulis dua kali saat jembatan sempat putus lalu menyusul.</span>
+                    </div>
+                    <div style="display:flex; gap:11px; align-items:flex-start;">
+                      <span style="font:600 9px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#46e394; border:1px solid #46e394; border-radius:4px; padding:5px 6px; flex:none; margin-top:2px;">ref</span>
+                      <span style="font-size:13px; color:#8b95a9;">Chip “bukti ×3” menunjuk nomor baris di sidecar — itulah jembatan dari kalimat AI ke ucapan asli.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:14px; margin-top:30px; padding:14px 16px; border:1px solid #273043; border-radius:10px; background:#0f131b;">
+                <span style="display:inline-flex; align-items:center; gap:7px; font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.1em; text-transform:uppercase; color:#46e394;"><span style="width:6px; height:6px; border-radius:50%; background:#46e394;"></span>Jembatan aktif</span>
+                <span style="font-size:13px; color:#8b95a9;">Extension v1.8 · batch terakhir 4 menit lalu · antrean kosong</span>
+                <span style="font-size:12.5px; color:#5c6579; margin-left:auto;">Kalau app ditutup, extension menyimpan sendiri dan menyusul saat app dibuka lagi.</span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="height:26px; flex:none; display:flex; align-items:center; gap:14px; padding:0 14px; border-top:1px solid #1d2434; background:#0d1119; font:400 10.5px/1 ui-monospace,Menlo,monospace; color:#5c6579;">
+          <span style="display:inline-flex; align-items:center; gap:6px; color:#46e394;"><span style="width:5px; height:5px; border-radius:50%; background:#46e394;"></span>Lokal · tanpa sinkron</span>
+          <span>indeks FTS5 siap</span>
+          <span>{{ statusMid }}</span>
+          <span style="margin-left:auto;">{{ statusRight }}</span>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ paletteOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; background:rgba(4,7,12,.62); display:flex; justify-content:center; align-items:flex-start; padding-top:14vh;" onClick="{{ closePalette }}">
+        <div style="width:640px; border:1px solid #273043; border-radius:14px; background:#0f131b; box-shadow:0 30px 70px rgba(0,0,0,.6); overflow:hidden;">
+          <div style="padding:15px 18px; border-bottom:1px solid #1d2434; font-size:14.5px; color:#8b95a9;">gate<span style="display:inline-block; width:7px; height:15px; background:#46e394; vertical-align:-3px; margin-left:2px;"></span></div>
+          <div style="padding:8px;">
+            <div style="margin:6px 8px 4px; font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.12em; text-transform:uppercase; color:#5c6579;">Nota</div>
+            <div style="display:grid; grid-template-columns:auto 1fr auto; gap:9px; align-items:baseline; padding:8px 10px; border-radius:8px; background:#131926; font-size:12.5px;">
+              <span style="font:600 9px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#46e394; border:1px solid #46e394; border-radius:4px; padding:4px 6px;">rapat</span>
+              <span style="color:#dbe2ee;">Gate review §32.1</span>
+              <span style="font:400 10px/1 ui-monospace,Menlo,monospace; color:#5c6579;">28 Agu</span>
+            </div>
+            <div style="display:grid; grid-template-columns:auto 1fr auto; gap:9px; align-items:baseline; padding:8px 10px; border-radius:8px; font-size:12.5px;">
+              <span style="font:600 9px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#eec26a; border:1px solid #eec26a; border-radius:4px; padding:4px 6px;">aksi</span>
+              <span style="color:#dbe2ee;">Siapkan log audit mingguan G1'</span>
+              <span style="font:400 10px/1 ui-monospace,Menlo,monospace; color:#5c6579;">Dewi</span>
+            </div>
+            <div style="margin:12px 8px 4px; font:600 9.5px/1 ui-monospace,Menlo,monospace; letter-spacing:.12em; text-transform:uppercase; color:#5c6579;">Baris transcript</div>
+            <div style="display:grid; grid-template-columns:auto 1fr auto; gap:9px; align-items:baseline; padding:8px 10px; border-radius:8px; font-size:12.5px;">
+              <span style="font:600 9px/1 ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:#5c6579; border:1px solid #273043; border-radius:4px; padding:4px 6px;">raw</span>
+              <span style="color:#8b95a9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">“…gate-nya belum turun, jadi desktop kita tahan dulu…”</span>
+              <span style="font:400 10px/1 ui-monospace,Menlo,monospace; color:#5c6579;">#418</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:14px; padding:10px 16px; border-top:1px solid #1d2434; font:400 10.5px/1 ui-monospace,Menlo,monospace; color:#5c6579;">
+            <span>↵ buka</span><span>⇧↵ buka di panel kanan</span><span>esc tutup</span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1476,&quot;height&quot;:948},&quot;showRightPanel&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Tata letak&quot;},&quot;showEvidenceChips&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Tata letak&quot;}}">
+class Component extends DCLogic {
+  state = {
+    view: 'notes',
+    note: 'gate',
+    ev: 1,
+    a1: true, a2: false, a3: false,
+    palette: false,
+  };
+
+  rail(active) {
+    return 'width:34px; height:32px; border-radius:8px; font-size:14px; cursor:pointer; border:1px solid ' +
+      (active ? '#46e394' : 'transparent') + '; background:' + (active ? 'rgba(70,227,148,.14)' : 'transparent') +
+      '; color:' + (active ? '#46e394' : '#5c6579') + ';';
+  }
+
+  tree(active) {
+    return 'display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:5px 7px; border:0; border-radius:7px; font:400 12.5px/1.4 "Avenir Next", sans-serif; cursor:pointer; background:' +
+      (active ? '#131926' : 'transparent') + '; color:' + (active ? '#dbe2ee' : '#8b95a9') +
+      (active ? '; box-shadow:inset 2px 0 0 #46e394;' : ';');
+  }
+
+  chip(active) {
+    return 'font:600 9.5px/1 ui-monospace, Menlo, monospace; letter-spacing:.06em; padding:5px 7px; border-radius:5px; cursor:pointer; color:#46e394; border:1px solid ' +
+      (active ? '#46e394' : 'rgba(70,227,148,.35)') + '; background:' + (active ? 'rgba(70,227,148,.18)' : 'transparent') + ';';
+  }
+
+  strike(done) {
+    return 'font-size:14.5px; ' + (done ? 'color:#5c6579; text-decoration:line-through;' : 'color:#c3ccdb;');
+  }
+
+  renderVals() {
+    const s = this.state;
+    const isGate = s.note === 'gate';
+    const evidence = {
+      1: { speaker: 'Andi', time: '00:14:22', ref: 'entry #418 · sesi 28/08', hint: 'Klik chip bukti lain untuk menukar kutipan di sini.',
+           text: '“Gate-nya belum turun, jadi desktop kita tahan dulu. Kesiapan kode bukan alasan mulai.”' },
+      2: { speaker: 'Rani', time: '00:22:05', ref: 'entry #503 · sesi 28/08', hint: 'Dua baris lain mendukung keputusan ini.',
+           text: '“Dua sprint itu kita lempar ke Ask v2, nanti dinilai lagi tiap akhir sprint.”' },
+    }[s.ev];
+
+    return {
+      isNotes: s.view === 'notes',
+      isInbox: s.view === 'inbox',
+      isAsk: s.view === 'ask',
+      isSettings: s.view === 'settings',
+      railSettings: this.rail(s.view === 'settings'),
+      goSettings: () => this.setState({ view: 'settings' }),
+      isGate, isPeta: s.note === 'peta',
+      showRight: this.props.showRightPanel ?? true,
+      showEvidence: this.props.showEvidenceChips ?? true,
+      paletteOpen: s.palette,
+
+      railNotes: this.rail(s.view === 'notes'),
+      railInbox: this.rail(s.view === 'inbox'),
+      railAsk: this.rail(s.view === 'ask'),
+      treeGate: this.tree(s.view === 'notes' && s.note === 'gate'),
+      treeStandup: this.tree(false),
+      treeAsk: this.tree(false),
+      treePeta: this.tree(s.view === 'notes' && s.note === 'peta'),
+      treeIdent: this.tree(false),
+
+      tabTitle: isGate ? 'Gate review §32.1' : 'Peta produk Companion',
+      tab2Title: isGate ? 'Peta produk Companion' : 'Gate review §32.1',
+      breadcrumb: isGate ? 'Rapat / 2026 / Agustus / Gate review §32.1.md' : 'Nota / Peta produk Companion.md',
+      statusMid: isGate ? '612 baris transcript · varian raw utuh' : 'nota tulisan sendiri',
+      statusRight: isGate ? '4 tautan balik · 412 kata' : '3 tautan balik · 260 kata',
+
+      evSpeaker: evidence.speaker, evTime: evidence.time, evText: evidence.text,
+      evRef: evidence.ref, evHint: evidence.hint,
+      chipGate1: this.chip(s.ev === 1), chipGate2: this.chip(s.ev === 2),
+
+      a1: s.a1, a2: s.a2, a3: s.a3,
+      a1style: this.strike(s.a1), a2style: this.strike(s.a2), a3style: this.strike(s.a3),
+      toggleA1: () => this.setState(p => ({ a1: !p.a1 })),
+      toggleA2: () => this.setState(p => ({ a2: !p.a2 })),
+      toggleA3: () => this.setState(p => ({ a3: !p.a3 })),
+
+      goNotes: () => this.setState({ view: 'notes' }),
+      goInbox: () => this.setState({ view: 'inbox' }),
+      goAsk: () => this.setState({ view: 'ask' }),
+      openGate: () => this.setState({ view: 'notes', note: 'gate' }),
+      openPeta: () => this.setState({ view: 'notes', note: 'peta' }),
+      openStandup: () => this.setState({ view: 'notes', note: 'gate' }),
+      openAskNote: () => this.setState({ view: 'notes', note: 'gate' }),
+      openIdent: () => this.setState({ view: 'notes', note: 'peta' }),
+      pickEv1: () => this.setState({ ev: 1 }),
+      pickEv2: () => this.setState({ ev: 2 }),
+      openPalette: () => this.setState({ palette: true }),
+      closePalette: () => this.setState({ palette: false }),
+      true: true,
+    };
+  }
+}
+</script>
+</body>
+</html>
