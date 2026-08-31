@@ -516,6 +516,96 @@ if (TOP) {
   })
 }
 
+// --- carry-over nudge ---
+// What is still open from earlier meetings in this room is only useful while
+// the meeting is running; the dashboard shows it after the fact. The index is
+// rebuilt by the minute sweep, so a just-started session is not queryable yet
+// — poll a few times, then give up quietly.
+if (TOP) {
+  let carryTries = 0
+  let carryShown = false
+
+  const carryLines = (data) =>
+    [
+      ...data.openActions.map(
+        (a) => `☐ ${a.task}${a.owner ? ` — ${a.owner}` : ''}`,
+      ),
+      ...data.openQuestions.map((q) => `? ${q.question}`),
+    ].filter(Boolean)
+
+  function showCarryOver(lines, total) {
+    carryShown = true
+    const box = document.createElement('div')
+    box.style.cssText =
+      'position:fixed;top:36px;right:8px;z-index:2147483646;max-width:320px;' +
+      'background:#0f131b;color:#dbe2ee;border:1px solid #273043;border-radius:10px;' +
+      'font:11px/1.5 "Avenir Next","Segoe UI",sans-serif;padding:8px 10px;opacity:.95;' +
+      'box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:pointer'
+    box.title = 'Klik: buka meeting ini di dashboard'
+    const head = document.createElement('div')
+    head.style.cssText =
+      'color:#46e394;font-weight:600;font-size:10px;letter-spacing:.1em;' +
+      'text-transform:uppercase;margin-bottom:4px'
+    head.textContent = `${total} item dari rapat sebelumnya masih terbuka`
+    box.append(head)
+    for (const line of lines) {
+      const row = document.createElement('div')
+      row.textContent = line
+      row.style.cssText =
+        'overflow:hidden;text-overflow:ellipsis;white-space:nowrap'
+      box.append(row)
+    }
+    if (total > lines.length) {
+      const more = document.createElement('div')
+      more.style.color = '#8b95a9'
+      more.textContent = `+${total - lines.length} lainnya`
+      box.append(more)
+    }
+    const close = document.createElement('span')
+    close.textContent = '×'
+    close.style.cssText =
+      'position:absolute;top:4px;right:8px;color:#8b95a9;font-size:14px'
+    close.onclick = (e) => {
+      e.stopPropagation()
+      box.remove()
+    }
+    box.append(close)
+    box.onclick = () => {
+      try {
+        chrome.runtime.sendMessage(
+          { type: 'meeting-started', meetingId },
+          () => void chrome.runtime.lastError,
+        )
+      } catch {
+        die()
+      }
+      box.remove()
+    }
+    document.documentElement.appendChild(box)
+  }
+
+  timers.push(
+    setInterval(() => {
+      if (dead || carryShown || !announced || !meetingId) return
+      if (++carryTries > 8) return // index never caught up — stay silent
+      try {
+        chrome.runtime.sendMessage(
+          { type: 'db', op: 'carry-over', args: { sessionId: meetingId } },
+          (res) => {
+            void chrome.runtime.lastError
+            const data = res && res.ok ? res.data : null
+            if (!data || carryShown) return
+            const lines = carryLines(data)
+            if (lines.length) showCarryOver(lines.slice(0, 3), lines.length)
+          },
+        )
+      } catch {
+        die()
+      }
+    }, 30_000),
+  )
+}
+
 // tab closes / navigates away mid-meeting: nudge background to sweep soon
 addEventListener('pagehide', () => {
   if (!announced || !meetingId) return
