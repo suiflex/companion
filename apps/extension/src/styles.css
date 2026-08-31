@@ -1438,3 +1438,5 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
 }
 .talk-fill { display: block; height: 100%; background: var(--phosphor); }
 .talk-pct { font: 500 10px/1 var(--font-mono); color: var(--text-dim); }
+
+.kb-digest { display: flex; justify-content: flex-end; padding: 0 16px 8px; }
