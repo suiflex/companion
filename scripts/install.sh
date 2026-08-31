@@ -23,16 +23,18 @@ FETCH_DIST="${COMPANION_FETCH_DIST:-1}"
 
 mkdir -p "$COMPANION_HOME" "$BIN_DIR"
 
-# 1. companion.mjs
-SCRIPT_SRC="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/companion.mjs" || true
-if [ -n "$SCRIPT_SRC" ] && [ -f "$SCRIPT_SRC" ]; then
-  install -m 755 "$SCRIPT_SRC" "$COMPANION_HOME/companion.mjs"
-  echo "Using local scripts/companion.mjs"
-else
-  echo "Downloading companion.mjs..."
-  curl -fsSL "$SRC_BASE/scripts/companion.mjs" -o "$COMPANION_HOME/companion.mjs"
-  chmod +x "$COMPANION_HOME/companion.mjs"
-fi
+# 1. the CLI and the modules it imports
+HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd)" || HERE=""
+for f in companion.mjs unzip.mjs; do
+  if [ -n "$HERE" ] && [ -f "$HERE/$f" ]; then
+    install -m 755 "$HERE/$f" "$COMPANION_HOME/$f"
+    echo "Using local scripts/$f"
+  else
+    echo "Downloading $f..."
+    curl -fsSL "$SRC_BASE/scripts/$f" -o "$COMPANION_HOME/$f"
+    chmod +x "$COMPANION_HOME/$f"
+  fi
+done
 
 # 2. wrapper that pins COMPANION_HOME and execs node
 cat > "$BIN_DIR/companion" <<EOF
