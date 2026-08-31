@@ -80,14 +80,29 @@ profile** (`~/.meetcc/browser-profiles/<browser>`), so it never touches your
 everyday windows (`%USERPROFILE%\.meetcc\browser-profiles\<browser>` on
 Windows). The picker is an interactive **select box**: arrow keys move,
 **Space** toggles a browser on/off, **Enter** confirms — select several or all
-detected Chromium browsers (Chrome, Edge, Brave, Arc, Vivaldi, Opera, Canary…).
+detected browsers (Chrome, Edge, Brave, Arc, Vivaldi, Opera, Canary, Firefox).
 Sign-ins (AI provider, trackers) persist in each profile across runs. Everyday
 profile sign-ins do not carry over, by design. Inside the repo you can
 equivalently run `node scripts/companion.mjs install --preview`.
 
+For Chromium browsers the same `--load-extension` / dedicated-profile mechanism
+is what the manual Developer-mode load does, minus the manual
+extract-and-click steps.
 
-The same `--load-extension` / dedicated-profile mechanism is what the manual
-Developer-mode load does, minus the manual extract-and-click steps.
+### Firefox
+
+Firefox has no `--load-extension`, so it gets the signed `.xpi` from the
+release instead of an unpacked folder. The installer downloads it, opens it in
+the dedicated profile, and Firefox asks you to click **Add** once — after that
+it persists, and Firefox keeps the add-on up to date on its own rather than
+waiting for `companion update`.
+
+In a repo checkout there is no signed `.xpi` (signing needs AMO credentials —
+see [docs/firefox-signing.md](docs/firefox-signing.md)), so `companion install`
+skips Firefox and tells you to run `npm run pack -- firefox` and load
+`apps/extension/dist-firefox` from `about:debugging` → **Load Temporary
+Add-on**. A temporary add-on is gone on the next Firefox restart, which is
+fine for development and not fine for daily use.
 
 ## Connecting an AI provider
 

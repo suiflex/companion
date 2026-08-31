@@ -24,10 +24,12 @@ chose — and which provider that is, is yours to pick, including a local one.
 ## Install from the terminal
 
 Prefer a prompt over Developer-mode clicks? The `companion` CLI installs the
-latest release and launches it in a Chromium browser (Chrome, Edge, Brave, Arc,
-Vivaldi, Opera, …), each in its own dedicated profile so your everyday windows
-are untouched. An interactive select box lets you arrow-key through browsers,
-Space to toggle, and Enter to launch — one or several at once.
+latest release and launches it in Chrome, Edge, Brave, Arc, Vivaldi, Opera or
+Firefox, each in its own dedicated profile so your everyday windows are
+untouched. An interactive select box lets you arrow-key through browsers, Space
+to toggle, and Enter to launch — one or several at once. Firefox gets the
+signed add-on and asks you to click **Add** once; Chromium browsers start ready
+to use.
 
 ```bash
 # macOS / Linux
