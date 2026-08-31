@@ -1416,3 +1416,25 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
   color: var(--text);
 }
 .mh-agenda:hover, .mh-agenda:focus { border-color: var(--hairline-2); background: var(--panel); }
+
+/* ---------- talk-time share ---------- */
+
+.talk-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--hairline);
+}
+.talk-item { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.talk-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.talk-bar {
+  width: 56px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--hairline-2);
+  overflow: hidden;
+}
+.talk-fill { display: block; height: 100%; background: var(--phosphor); }
+.talk-pct { font: 500 10px/1 var(--font-mono); color: var(--text-dim); }

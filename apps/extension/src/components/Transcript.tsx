@@ -11,6 +11,7 @@ import {
   type Meeting,
 } from '@meetcc/shared'
 import { useToast } from '../toast'
+import { speakerStats } from '@meetcc/meeting'
 import { db, listHighlights } from '../lib/db'
 
 // Teams avatar URLs need the Teams session cookies; from the extension page
@@ -154,6 +155,9 @@ export function Transcript({ meeting, live, onClear }: Props) {
     if (el && stick.current) el.scrollTop = el.scrollHeight
   }, [entries])
 
+  // who actually talked — derived from the lines already on screen, no query
+  const talk = useMemo(() => speakerStats(entries), [entries])
+
   const onScroll = () => {
     const el = ref.current
     if (!el) return
@@ -262,6 +266,24 @@ export function Transcript({ meeting, live, onClear }: Props) {
               }}>
               {HIGHLIGHT_LABEL[h.kind] ?? h.kind}: {h.text.slice(0, 48)}
             </button>
+          ))}
+        </div>
+      )}
+
+      {talk.length > 1 && (
+        <div className='talk-strip'>
+          <span className='section-label'>Porsi bicara</span>
+          {talk.slice(0, 6).map((t) => (
+            <span
+              key={t.speaker}
+              className='talk-item'
+              title={`${t.turns} giliran · ${t.words} kata`}>
+              <span className='talk-name'>{t.speaker}</span>
+              <span className='talk-bar'>
+                <span className='talk-fill' style={{ width: `${Math.round(t.share * 100)}%` }} />
+              </span>
+              <span className='talk-pct'>{Math.round(t.share * 100)}%</span>
+            </span>
           ))}
         </div>
       )}
