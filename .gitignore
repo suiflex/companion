@@ -16,3 +16,4 @@ coverage/
 web-ext-artifacts/
 meetcc-extension-*.zip
 meetcc-extension-*.xpi
+meetcc-source-*.zip

@@ -10,6 +10,7 @@
   "scripts": {
     "build": "npm run typecheck && npm run build -w apps/extension && npm run build -w @meetcc/mcp && npm run build -w @meetcc/sync-server",
     "pack": "node scripts/pack.mjs",
+    "pack:source": "node scripts/pack-source.mjs",
     "zip": "npm run build && npm run pack",
     "sign:firefox": "npm run pack -- firefox && web-ext sign --channel=unlisted --source-dir apps/extension/dist-firefox --artifacts-dir web-ext-artifacts",
     "lint:firefox": "npm run pack -- firefox && web-ext lint --source-dir apps/extension/dist-firefox",
