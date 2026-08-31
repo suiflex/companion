@@ -52,24 +52,34 @@ export function SettingsView({
   /** The sign-in flow persists across an await, and the user can keep typing in
    *  the form meanwhile — writing back a render-old copy would drop that edit. */
   const latest = useRef<Settings | null>(null);
-  latest.current = settings;
+  useEffect(() => {
+    latest.current = settings;
+  });
 
   useEffect(() => {
     void loadSettings().then(setSettings);
   }, []);
 
+  const stillOn = (next: Settings) => (latest.current ?? next).provider === next.provider;
+
   /** Ask the provider what it serves. Falls back to the preset's hand-kept list
    *  rather than leaving the field with no suggestions at all. */
   const loadModels = async (next: Settings) => {
     setLoadingModels(true);
+    setModels([]);
     setModelsNote('');
     try {
-      setModels(await listModels(next));
+      const found = await listModels(next);
+      // switching twice in a row leaves two requests in flight; the slower one
+      // must not answer for a provider that is no longer selected
+      if (stillOn(next)) setModels(found);
     } catch (e) {
+      if (!stillOn(next)) return;
       setModels(PROVIDER_PRESETS[next.provider]?.models ?? []);
       setModelsNote(`Daftar model tidak bisa diambil (${(e as Error).message}) — ketik manual.`);
     } finally {
-      setLoadingModels(false);
+      // a stale request must not clear the spinner the newer one owns
+      if (stillOn(next)) setLoadingModels(false);
     }
   };
 
