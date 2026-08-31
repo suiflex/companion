@@ -445,16 +445,19 @@ export async function resolveCodeAssistAccount(
   }
   const raw = await body(load, 'LOAD_FAILED');
 
-  const known = projectOf(raw.cloudaicompanionProject) || given;
-  // An account already onboarded reports the tier it sits on. Sending it back
-  // through provisioning is at best a no-op and at worst the reason onboarding
-  // answers `done` without naming a project.
+  // The tier the account already sits on, when it reports one; it names the
+  // real tier rather than the guess `allowedTiers` has to fall back to.
   const current = tierOf(raw.currentTier);
-  if (current && known) return { projectId: known, tierId: current.id };
-
   const tier = current ?? defaultTier(raw.allowedTiers);
-  if (known) return { projectId: known, tierId: tier.id };
-  if (tier.userDefined) {
+
+  // A project echoed back by loadCodeAssist is one already provisioned, so
+  // there is nothing to onboard. A project the *user* supplied is not: it still
+  // has to be associated, or completions fail on a project Code Assist never
+  // heard about.
+  const provisioned = projectOf(raw.cloudaicompanionProject);
+  if (provisioned) return { projectId: provisioned, tierId: tier.id };
+
+  if (tier.userDefined && !given) {
     throw new OAuthError(
       'PROJECT_REQUIRED',
       `Akun ini pada tier "${tier.id}" yang mewajibkan project Google Cloud milikmu sendiri — ` +

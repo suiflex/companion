@@ -226,15 +226,21 @@ describe('resolveCodeAssistAccount', () => {
     expect(calls[1].body.tierId).toBe('free-tier');
   });
 
-  it('skips onboarding for an account already on a tier', async () => {
+  it('reports the tier the account is already on rather than guessing one', async () => {
     const calls = stubFetch([
-      { json: { currentTier: { id: 'standard-tier' }, cloudaicompanionProject: 'proj-4' } },
+      {
+        json: {
+          currentTier: { id: 'standard-tier' },
+          allowedTiers: [{ id: 'free-tier', isDefault: true }],
+          cloudaicompanionProject: 'proj-4',
+        },
+      },
     ]);
     expect(await resolveCodeAssistAccount('tok')).toEqual({
       projectId: 'proj-4',
       tierId: 'standard-tier',
     });
-    expect(calls).toHaveLength(1);
+    expect(calls).toHaveLength(1); // already provisioned, nothing to onboard
   });
 
   it('reads a project the operation reports at the top level', async () => {
@@ -259,7 +265,7 @@ describe('resolveCodeAssistAccount', () => {
     expect(calls).toHaveLength(1); // onboarding that cannot succeed is not attempted
   });
 
-  it('passes a project the user supplied through to both calls', async () => {
+  it('still onboards a project the user supplied, rather than trusting it blind', async () => {
     const calls = stubFetch([
       {
         json: {
@@ -268,12 +274,17 @@ describe('resolveCodeAssistAccount', () => {
           ],
         },
       },
+      { json: { done: true, response: { cloudaicompanionProject: 'my-proj' } } },
     ]);
     expect(await resolveCodeAssistAccount('tok', ' my-proj ')).toEqual({
       projectId: 'my-proj',
       tierId: 'legacy-tier',
     });
+    // a project Code Assist was never told about would fail at the first
+    // completion, so it goes to both calls
+    expect(calls).toHaveLength(2);
     expect(calls[0].body.cloudaicompanionProject).toBe('my-proj');
+    expect(calls[1].body.cloudaicompanionProject).toBe('my-proj');
   });
 
   it('names the tier when onboarding settles without a project', async () => {
