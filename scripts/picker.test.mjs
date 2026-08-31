@@ -5,8 +5,12 @@ const browsers = [{ name: 'Google Chrome' }, { name: 'Brave Browser' }, { name: 
 const frame = (over = {}) =>
   pickerFrame({ browsers, cursor: 0, selected: new Set(), ...over });
 
-/** The rows as written, minus the leading move-up. */
-const body = (out) => out.replace(/^\x1b\[\d+A/, '').split('\n');
+/** The rows as written, minus the move-up prepended to the first one. */
+const body = (out) => {
+  const rows = out.split('\n');
+  rows[0] = rows[0].slice(rows[0].indexOf('\r')); // every row opens with \r
+  return rows;
+};
 
 describe('pickerFrame', () => {
   it('counts every row it draws, so the next frame can move back over all of them', () => {
