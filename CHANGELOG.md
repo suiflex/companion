@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.6.0](https://github.com/suiflex/companion/compare/v1.5.1...v1.6.0) (2026-08-31)
+
+
+### Features
+
+* **ai:** add a send-ready recap document type ([08fa7ab](https://github.com/suiflex/companion/commit/08fa7ab3cd0b9acab5af0cb1edd03df7b3a66119))
+* **extension:** add a copy button for the weekly digest ([d43942e](https://github.com/suiflex/companion/commit/d43942e4b3ee3360af215093a8d32cf1f84a1796))
+* **extension:** list detected action items while the meeting runs ([00cccc5](https://github.com/suiflex/companion/commit/00cccc5f1b8319eeca2083b85649fa085c22dd53))
+* **extension:** pin the extension id across installs ([fdea5c9](https://github.com/suiflex/companion/commit/fdea5c971a5f380973a50b947a458a4415b05996))
+* **extension:** show the talk-share strip above the transcript ([0d097f5](https://github.com/suiflex/companion/commit/0d097f5c907d99eb226b8ecfb1456d8a363d1321))
+* **extension:** surface carry-over items while the meeting runs ([79c84e3](https://github.com/suiflex/companion/commit/79c84e3022eca9c62303527120c9e0a59bdf8ad2))
+* **extension:** surface when a newer release is out ([a81ff16](https://github.com/suiflex/companion/commit/a81ff160c16f4edd3380ff3e54ec59fec2eddca1))
+* **installer:** offer firefox in the browser picker ([92079b7](https://github.com/suiflex/companion/commit/92079b753ccea875d85aad6c08620104eaa10a8a))
+* **installer:** send firefox to the add-on page instead of an xpi ([fba76e3](https://github.com/suiflex/companion/commit/fba76e3d348a058bea8f2463b739387d17ac1487))
+* meeting insights bundle — live nudges, recap, digest, talk share ([997371c](https://github.com/suiflex/companion/commit/997371cb298176fadbc702b0f110a90446a8280d))
+* **meeting:** compute per-speaker talk share from captions ([dc1c663](https://github.com/suiflex/companion/commit/dc1c66350c536ae72501e398dc700af7311f66f1))
+* **meeting:** render a weekly digest from the chronology ([8f7fd75](https://github.com/suiflex/companion/commit/8f7fd75da920ba1771fdaa8f4f4cc1e59207f659))
+* **meeting:** turn live action cues into provisional items ([b214759](https://github.com/suiflex/companion/commit/b214759fe6d8e4bc9ce78b26337ade007966e07d))
+* ship to firefox, pin the extension id, and automate releases ([8f7027e](https://github.com/suiflex/companion/commit/8f7027e243eba8967a87dd7bd150935353ca0b35))
+
+
+### Bug Fixes
+
+* **ai:** keep exact BM25 matches at full weight beside a prefix hit ([0c045ce](https://github.com/suiflex/companion/commit/0c045ce9fc4204301a08acaa8aad9bc9907cbb42))
+* **extension:** give the toolbar button a real icon in firefox ([dae0266](https://github.com/suiflex/companion/commit/dae02666184ad4b5c03cd4410130bc16c66d5428))
+* **installer:** skip firefox instead of aborting when no xpi exists ([6244753](https://github.com/suiflex/companion/commit/624475318c520edb894f787bd0b3df79f56bb0d0))
+* **meeting:** anchor an imported transcript to an epoch startedAt ([2b78135](https://github.com/suiflex/companion/commit/2b781359ebee08c423d5b906b6a14d0246a241c4))
+* title the release pr without the workspace package name ([4db838e](https://github.com/suiflex/companion/commit/4db838e8bb3f698e22e838e1c79d8cdc9d712e69))
+
 ## [1.5.1](https://github.com/suiflex/companion/compare/v1.5.0...v1.5.1) (2026-08-31)
 
 
