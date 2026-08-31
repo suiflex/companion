@@ -21,9 +21,8 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { mkdir, rm, readdir, stat, copyFile, writeFile } from 'node:fs/promises';
 import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { join, dirname, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { homedir, platform } from 'node:os';
 import { extractZip } from './unzip.mjs';
 import { pickerFrame } from './picker.mjs';
@@ -236,28 +235,49 @@ async function resolveChromiumDist(opts) {
   return distDir;
 }
 
+/**
+ * Locate the signed add-on, or explain why there isn't one.
+ *
+ * Never throws: a release without an .xpi is the normal state until signing is
+ * live, and picking Firefox alongside Chrome must not stop Chrome launching.
+ *
+ * @returns {Promise<{ path: string | null, reason: string | null }>}
+ */
 async function resolveXpi() {
   if (!COMPANION_HOME) {
-    // In-repo there is no signed .xpi to hand Firefox — signing needs AMO
-    // credentials (docs/firefox-signing.md). Point at the unsigned tree the
-    // packer produces and let about:debugging load it temporarily.
-    return null;
+    // In-repo there is no signed .xpi — signing needs AMO credentials. The
+    // packer's unsigned tree can still be loaded temporarily.
+    return {
+      path: null,
+      reason: 'a repo checkout has no signed .xpi.\n'
+        + '  Run `npm run pack -- firefox`, then load apps/extension/dist-firefox\n'
+        + '  from about:debugging → Load Temporary Add-on. See docs/firefox-signing.md.',
+    };
   }
+
   const xpiPath = join(COMPANION_HOME, 'companion.xpi');
-  if (!existsSync(xpiPath)) {
-    const yes = await confirm(`No Firefox add-on at ${xpiPath} — download the latest release? (Y/n): `, true);
-    if (!yes) throw new Error('Aborted — nothing to run.');
+  if (existsSync(xpiPath)) return { path: xpiPath, reason: null };
+
+  const yes = await confirm(`No Firefox add-on at ${xpiPath} — download the latest release? (Y/n): `, true);
+  if (!yes) return { path: null, reason: 'download declined.' };
+  try {
     await downloadLatestXpi(xpiPath);
+    return { path: xpiPath, reason: null };
+  } catch (e) {
+    return { path: null, reason: e.message };
   }
-  return xpiPath;
 }
 
 /** Resolve one source per engine the picked browsers actually need. */
-async function resolveSources(opts, browsers) {
+export async function resolveSources(opts, browsers) {
   const engines = new Set(browsers.map((b) => b.engine));
-  const sources = {};
+  const sources = { chromium: null, gecko: null, geckoReason: null };
   if (engines.has('chromium')) sources.chromium = await resolveChromiumDist(opts);
-  if (engines.has('gecko')) sources.gecko = await resolveXpi();
+  if (engines.has('gecko')) {
+    const { path, reason } = await resolveXpi();
+    sources.gecko = path;
+    sources.geckoReason = reason;
+  }
   return sources;
 }
 
@@ -467,14 +487,16 @@ async function cmdInstall(opts) {
     return;
   }
 
-  // Without a signed .xpi (an in-repo run) Firefox can only load the add-on
-  // temporarily, so say what to do rather than launching into a dead end.
+  // No signed .xpi means Firefox is skipped, not that the run failed — the
+  // Chromium browsers picked alongside it still launch.
   const gecko = selected.filter((b) => b.engine === 'gecko');
   const launchable = sources.gecko ? selected : selected.filter((b) => b.engine !== 'gecko');
   if (gecko.length > 0 && !sources.gecko) {
-    console.log(`\nSkipping ${gecko.map((b) => b.name).join(', ')}: no signed .xpi in a repo checkout.`);
-    console.log('  Run `npm run pack -- firefox`, then load apps/extension/dist-firefox');
-    console.log('  from about:debugging → Load Temporary Add-on. See docs/firefox-signing.md.');
+    console.log(`\nSkipping ${gecko.map((b) => b.name).join(', ')}: ${sources.geckoReason}`);
+  }
+  if (launchable.length === 0) {
+    console.log('\nNothing left to launch.\n');
+    return;
   }
 
   console.log(`\nLaunching ${launchable.length} Companion instance(s)...`);

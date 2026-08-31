@@ -29,3 +29,16 @@ describe('launchArgs', () => {
     expect(args.some((a) => a.startsWith('--user-data-dir'))).toBe(false);
   });
 });
+
+describe('resolveSources', () => {
+  it('reports a missing add-on instead of failing the whole run', async () => {
+    // A release with no .xpi is the normal state until signing is live. Picking
+    // Firefox alongside Chrome must not stop Chrome launching.
+    const { resolveSources } = await import('./companion.mjs');
+    const picked = [{ engine: 'gecko', name: 'Firefox' }];
+    const sources = await resolveSources({ dir: null }, picked);
+    expect(sources.gecko).toBeNull();
+    expect(sources.geckoReason).toContain('repo checkout');
+    expect(sources.chromium).toBeNull();
+  });
+});
