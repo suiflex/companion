@@ -43,7 +43,7 @@ function seq(outputs: Array<string | Error>) {
 
 describe('DOC_META', () => {
   it('defines brd, prd, notulen with rubric + grounding rules', () => {
-    expect(Object.keys(DOC_META).sort()).toEqual(['brd', 'notulen', 'prd'])
+    expect(Object.keys(DOC_META).sort()).toEqual(['brd', 'notulen', 'prd', 'recap'])
     expect(DOC_META.prd.system).toContain('Acceptance criteria')
     expect(DOC_META.brd.system).toContain('_[belum dibahas]_')
   })
