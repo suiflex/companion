@@ -3,7 +3,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.svg">
-    <img src="assets/brand/logo-light.svg" alt="Meet Companion" width="380">
+    <img src="assets/brand/logo-light.svg" alt="Meet Companion" width="425">
   </picture>
 </p>
 
@@ -20,6 +20,35 @@
 Everything stays on the machine: capture, the searchable archive, and the notes.
 The only thing that leaves is the transcript you send to the AI provider you
 chose — and which provider that is, is yours to pick, including a local one.
+
+## Install from the terminal
+
+Prefer a prompt over Developer-mode clicks? The `companion` CLI installs the
+latest release and launches it in a Chromium browser (Chrome, Edge, Brave, Arc,
+Vivaldi, Opera, …), each in its own dedicated profile so your everyday windows
+are untouched. An interactive select box lets you arrow-key through browsers,
+Space to toggle, and Enter to launch — one or several at once.
+
+```bash
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/suiflex/companion/develop/scripts/install.sh | bash
+```
+
+```powershell
+# Windows
+irm https://raw.githubusercontent.com/suiflex/companion/develop/scripts/install.ps1 | iex
+```
+
+```bash
+companion install          # TTY-pick browser(s), then launches
+companion install --preview # see the picker without launching
+companion update           # re-download the latest release dist
+```
+
+`companion` lives in `~/.local/bin` (`%USERPROFILE%\.local\bin` on Windows —
+add it to your `PATH`) with the release `dist` in `~/.companion`. Node 20+ is
+the only prerequisite. From a checkout, `node scripts/companion.mjs install` is
+equivalent. Full steps: **[INSTALL.md](INSTALL.md)**.
 
 ## Monorepo
 
@@ -69,6 +98,9 @@ model, no vector database, and no external retrieval service.
   decisions, and the action-item list with mark-done and tracker push.
 - Each meeting header shows date, duration, participants, platform and project,
   plus what is still open from earlier meetings in the same room or project.
+- The same carry-over appears **during** the call: a dismissible strip under the
+  in-page badge lists what is still open from earlier meetings in that room, so
+  it can be raised while everyone is there.
 
 The database lives in the service worker only (OPFS is single-writer); the
 dashboard reaches it through runtime messages.

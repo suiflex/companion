@@ -394,35 +394,77 @@ export interface CodeAssistAccount {
   tierId: string;
 }
 
+interface Tier {
+  id: string;
+  /** The tier expects a Google Cloud project the user owns; Code Assist will
+   *  not provision one on their behalf. */
+  userDefined: boolean;
+}
+
+function tierOf(raw: unknown): Tier | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const t = raw as Record<string, unknown>;
+  const id = typeof t.id === 'string' ? t.id.trim() : '';
+  return id ? { id, userDefined: t.userDefinedCloudaicompanionProject === true } : null;
+}
+
+function defaultTier(raw: unknown): Tier {
+  for (const entry of Array.isArray(raw) ? raw : []) {
+    if ((entry as Record<string, unknown> | null)?.isDefault) {
+      const tier = tierOf(entry);
+      if (tier) return tier;
+    }
+  }
+  return { id: DEFAULT_TIER, userDefined: false };
+}
+
 /**
  * The account's Code Assist project, provisioning one when it has none.
  *
  * This is what makes signing in ask the user for nothing: Vertex would need a
  * GCP project up front, here the account's own is discovered or created.
+ *
+ * `projectId` is the escape hatch for the one case that cannot be automated —
+ * a tier whose project the user has to bring themselves.
  */
-export async function resolveCodeAssistAccount(accessToken: string): Promise<CodeAssistAccount> {
+export async function resolveCodeAssistAccount(
+  accessToken: string,
+  projectId = '',
+): Promise<CodeAssistAccount> {
+  const given = projectId.trim();
   const load = await request(`${CLOUDCODE_ENDPOINT}/v1internal:loadCodeAssist`, {
     method: 'POST',
     headers: codeAssistHeaders(accessToken),
-    body: JSON.stringify({ metadata: clientMetadata() }),
+    body: JSON.stringify({
+      ...(given ? { cloudaicompanionProject: given } : {}),
+      metadata: clientMetadata(),
+    }),
   });
   if (load.status >= 400) {
     throw new OAuthError('LOAD_FAILED', `loadCodeAssist gagal (HTTP ${load.status})`);
   }
   const raw = await body(load, 'LOAD_FAILED');
 
-  let tierId = DEFAULT_TIER;
-  for (const entry of Array.isArray(raw.allowedTiers) ? raw.allowedTiers : []) {
-    const tier = entry as Record<string, unknown> | null;
-    if (tier?.isDefault && typeof tier.id === 'string') {
-      tierId = tier.id.trim();
-      break;
-    }
-  }
+  // The tier the account already sits on, when it reports one; it names the
+  // real tier rather than the guess `allowedTiers` has to fall back to.
+  const current = tierOf(raw.currentTier);
+  const tier = current ?? defaultTier(raw.allowedTiers);
 
-  const existing = projectOf(raw.cloudaicompanionProject);
-  if (existing) return { projectId: existing, tierId };
-  return { projectId: await onboardUser(accessToken, tierId), tierId };
+  // A project echoed back by loadCodeAssist is one already provisioned, so
+  // there is nothing to onboard. A project the *user* supplied is not: it still
+  // has to be associated, or completions fail on a project Code Assist never
+  // heard about.
+  const provisioned = projectOf(raw.cloudaicompanionProject);
+  if (provisioned) return { projectId: provisioned, tierId: tier.id };
+
+  if (tier.userDefined && !given) {
+    throw new OAuthError(
+      'PROJECT_REQUIRED',
+      `Akun ini pada tier "${tier.id}" yang mewajibkan project Google Cloud milikmu sendiri — ` +
+        'Code Assist tidak membuatkannya. Isi Project ID di bawah lalu masuk lagi.',
+    );
+  }
+  return { projectId: await onboardUser(accessToken, tier.id, given), tierId: tier.id };
 }
 
 /**
@@ -432,26 +474,39 @@ export async function resolveCodeAssistAccount(accessToken: string): Promise<Cod
  * is re-issued until it settles. Treating the first reply as final would hand
  * back an empty project id and fail at the first completion instead.
  */
-async function onboardUser(accessToken: string, tierId: string): Promise<string> {
+async function onboardUser(accessToken: string, tierId: string, projectId: string): Promise<string> {
   for (let attempt = 0; attempt < ONBOARD_ATTEMPTS; attempt++) {
     const res = await request(`${CLOUDCODE_ENDPOINT}/v1internal:onboardUser`, {
       method: 'POST',
       headers: codeAssistHeaders(accessToken),
-      body: JSON.stringify({ tierId, metadata: clientMetadata() }),
+      body: JSON.stringify({
+        tierId,
+        ...(projectId ? { cloudaicompanionProject: projectId } : {}),
+        metadata: clientMetadata(),
+      }),
     });
     if (res.status >= 400) {
       throw new OAuthError('ONBOARD_FAILED', `onboardUser gagal (HTTP ${res.status})`);
     }
     const raw = await body(res, 'ONBOARD_FAILED');
     if (raw.done === true) {
+      // the project rides in the operation's response, but some replies carry
+      // it at the top level instead
       const inner = raw.response;
-      const project = projectOf(
-        inner && typeof inner === 'object'
-          ? (inner as Record<string, unknown>).cloudaicompanionProject
-          : null,
-      );
+      const project =
+        projectOf(
+          inner && typeof inner === 'object'
+            ? (inner as Record<string, unknown>).cloudaicompanionProject
+            : null,
+        ) ||
+        projectOf(raw.cloudaicompanionProject) ||
+        projectId;
       if (!project) {
-        throw new OAuthError('ONBOARD_NO_PROJECT', 'Onboarding selesai tanpa menyebut project');
+        throw new OAuthError(
+          'ONBOARD_NO_PROJECT',
+          `Onboarding tier "${tierId}" selesai tanpa menyebut project. ` +
+            'Isi Project ID Google Cloud di bawah lalu masuk lagi.',
+        );
       }
       return project;
     }

@@ -986,6 +986,24 @@ body[data-theme='light'] .bubble-assistant {
   font: 13px var(--font-body);
 }
 
+/* input + its action button on one line; the input takes what is left */
+.field-row { display: flex; gap: 6px; align-items: stretch; }
+.field-row input { flex: 1; min-width: 0; }
+
+/* A datalist field looks like plain text until you happen to click it. Chrome
+   draws a picker arrow for it, but the glyph is near-black and disappears into
+   the dark ground, so tint it there and leave the text room to breathe. */
+.field-row input[list] { padding-right: 26px; }
+.field-row input[list]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+  filter: invert(1);
+}
+.field-row input[list]::-webkit-calendar-picker-indicator:hover { opacity: 0.9; }
+body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+
 .hint { font-size: 11px; color: var(--text-faint); }
 
 /* ── states / toasts ── */
@@ -1398,3 +1416,35 @@ body[data-theme='light'] .bubble-assistant {
   color: var(--text);
 }
 .mh-agenda:hover, .mh-agenda:focus { border-color: var(--hairline-2); background: var(--panel); }
+
+/* ---------- talk-time share ---------- */
+
+.talk-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--hairline);
+}
+.talk-item { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.talk-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.talk-bar {
+  width: 56px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--hairline-2);
+  overflow: hidden;
+}
+.talk-fill { display: block; height: 100%; background: var(--phosphor); }
+.talk-pct { font: 500 10px/1 var(--font-mono); color: var(--text-dim); }
+
+.kb-digest { display: flex; justify-content: flex-end; padding: 0 16px 8px; }
+
+/* ---------- live action nudge ---------- */
+
+.todo-strip { padding: 8px 16px; border-bottom: 1px solid var(--hairline); }
+.todo-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.todo-list li { display: flex; gap: 8px; align-items: baseline; font-size: 11.5px; }
+.todo-task { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo-note { display: block; margin-top: 5px; font-size: 10px; }

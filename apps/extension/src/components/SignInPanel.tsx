@@ -13,7 +13,7 @@ import {
   resolveCodeAssistAccount,
   type DeviceCode,
 } from '@meetcc/ai';
-import { DEFAULT_OAUTH, saveSettings, type OAuthSettings, type Settings } from '@meetcc/shared';
+import { DEFAULT_OAUTH, type OAuthSettings, type Settings } from '@meetcc/shared';
 import { useToast } from '../toast';
 
 /** A device code stops being approvable after 15 minutes. */
@@ -38,15 +38,18 @@ const ORIGINS: Record<'chatgpt' | 'google-codeassist', string[]> = {
 export function SignInPanel({
   provider,
   settings,
-  onChange,
+  onPersist,
 }: {
   provider: 'chatgpt' | 'google-codeassist';
   settings: Settings;
-  onChange: (patch: Partial<Settings>) => void;
+  /** Owns both the state update and the write; sign-in must not save a copy of
+   *  the form it captured before the user went off to the consent page. */
+  onPersist: (oauth: OAuthSettings) => Promise<void>;
 }) {
   const [busy, setBusy] = useState('');
   const [device, setDevice] = useState<DeviceCode | null>(null);
   const [pasted, setPasted] = useState('');
+  const [projectId, setProjectId] = useState('');
   const pending = useRef<{ verifier: string; state: string } | null>(null);
   const toast = useToast();
 
@@ -54,10 +57,7 @@ export function SignInPanel({
 
   /** Persist immediately: a token the user has to fetch again is worse than a
    *  setting they forgot to save. */
-  const store = async (oauth: OAuthSettings) => {
-    onChange({ oauth });
-    await saveSettings({ ...settings, oauth });
-  };
+  const store = (oauth: OAuthSettings) => onPersist(oauth);
 
   const grant = async (): Promise<boolean> => {
     const origins = ORIGINS[provider];
@@ -133,7 +133,7 @@ export function SignInPanel({
       const code = parseCallbackUrl(pasted, started.state);
       const tokens = await googleExchangeCode(code, started.verifier);
       setBusy('Menyiapkan project Code Assist…');
-      const account = await resolveCodeAssistAccount(tokens.accessToken);
+      const account = await resolveCodeAssistAccount(tokens.accessToken, projectId);
       await store({
         ...DEFAULT_OAUTH,
         provider: 'google-codeassist',
@@ -141,6 +141,7 @@ export function SignInPanel({
         refreshToken: tokens.refreshToken,
         expiresAt: tokens.expiresAt,
         projectId: account.projectId,
+        tierId: account.tierId,
         email: claimEmail(tokens.idToken),
       });
       pending.current = null;
@@ -217,6 +218,17 @@ export function SignInPanel({
           <button className="primary" onClick={() => void finishGoogle()} disabled={!!busy || !pasted}>
             {busy || 'Selesaikan sign-in'}
           </button>
+          <input
+            type="text"
+            value={projectId}
+            placeholder="Project ID Google Cloud (opsional)"
+            autoComplete="off"
+            onChange={(e) => setProjectId(e.target.value)}
+          />
+          <p className="hint">
+            Kosongkan saja — projectnya dicari otomatis. Isi hanya kalau sign-in mengeluh akun
+            ini butuh project Google Cloud sendiri.
+          </p>
         </>
       )}
     </div>

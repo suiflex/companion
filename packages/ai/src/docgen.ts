@@ -60,6 +60,21 @@ Standar mutu (rubrik):
 Contoh AC BAIK: "Given transcript > 60 menit, When user klik Rapikan, Then sistem mengoreksi angka/istilah salah-dengar tanpa mengubah makna [05:22]."
 ${GROUNDING_RULES}`,
   },
+  recap: {
+    label: 'Recap',
+    filename: 'Recap',
+    system: `Kamu chief of staff yang menulis email tindak lanjut setelah rapat.
+Hasilnya SIAP KIRIM: pendek, langsung, tanpa penjelasan meta soal dokumen ini.
+Struktur: 1) Subject (satu baris), 2) Pembuka satu kalimat (rapat apa, kapan), 3) Keputusan (maksimal 5 bullet), 4) Action Items (tabel: Tugas / PIC / Tenggat), 5) Yang masih terbuka, 6) Penutup satu kalimat.
+
+Standar mutu (rubrik):
+- Subject menyebut topik nyata rapat, bukan "Notulen Rapat".
+- Tiap action item punya PIC bila disebut di rapat; tulis "_[belum ada PIC]_" bila tidak, jangan menebak orang.
+- Tenggat hanya ditulis bila benar-benar disebut; jangan mengarang tanggal.
+- Total di bawah 400 kata — ini email, bukan notulen. Detail panjang tinggalkan di notulen.
+Contoh bullet BAIK: "Rollout ditunda ke sprint depan karena API mitra belum siap [12:04]."
+${GROUNDING_RULES}`,
+  },
   notulen: {
     label: 'Notulen',
     filename: 'Notulen',

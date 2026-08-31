@@ -225,4 +225,73 @@ describe('resolveCodeAssistAccount', () => {
     // The default tier from loadCodeAssist drives onboarding, not a guess.
     expect(calls[1].body.tierId).toBe('free-tier');
   });
+
+  it('reports the tier the account is already on rather than guessing one', async () => {
+    const calls = stubFetch([
+      {
+        json: {
+          currentTier: { id: 'standard-tier' },
+          allowedTiers: [{ id: 'free-tier', isDefault: true }],
+          cloudaicompanionProject: 'proj-4',
+        },
+      },
+    ]);
+    expect(await resolveCodeAssistAccount('tok')).toEqual({
+      projectId: 'proj-4',
+      tierId: 'standard-tier',
+    });
+    expect(calls).toHaveLength(1); // already provisioned, nothing to onboard
+  });
+
+  it('reads a project the operation reports at the top level', async () => {
+    stubFetch([
+      { json: { allowedTiers: [{ id: 'free-tier', isDefault: true }] } },
+      { json: { done: true, cloudaicompanionProject: { id: 'proj-5' } } },
+    ]);
+    expect((await resolveCodeAssistAccount('tok')).projectId).toBe('proj-5');
+  });
+
+  it('says what to do when the tier wants a project the user must bring', async () => {
+    const calls = stubFetch([
+      {
+        json: {
+          allowedTiers: [
+            { id: 'legacy-tier', isDefault: true, userDefinedCloudaicompanionProject: true },
+          ],
+        },
+      },
+    ]);
+    await expect(resolveCodeAssistAccount('tok')).rejects.toThrow(/Project ID/);
+    expect(calls).toHaveLength(1); // onboarding that cannot succeed is not attempted
+  });
+
+  it('still onboards a project the user supplied, rather than trusting it blind', async () => {
+    const calls = stubFetch([
+      {
+        json: {
+          allowedTiers: [
+            { id: 'legacy-tier', isDefault: true, userDefinedCloudaicompanionProject: true },
+          ],
+        },
+      },
+      { json: { done: true, response: { cloudaicompanionProject: 'my-proj' } } },
+    ]);
+    expect(await resolveCodeAssistAccount('tok', ' my-proj ')).toEqual({
+      projectId: 'my-proj',
+      tierId: 'legacy-tier',
+    });
+    // a project Code Assist was never told about would fail at the first
+    // completion, so it goes to both calls
+    expect(calls).toHaveLength(2);
+    expect(calls[0].body.cloudaicompanionProject).toBe('my-proj');
+    expect(calls[1].body.cloudaicompanionProject).toBe('my-proj');
+  });
+
+  it('names the tier when onboarding settles without a project', async () => {
+    stubFetch([
+      { json: { allowedTiers: [{ id: 'free-tier', isDefault: true }] } },
+      { json: { done: true, response: {} } },
+    ]);
+    await expect(resolveCodeAssistAccount('tok')).rejects.toThrow(/free-tier/);
+  });
 });

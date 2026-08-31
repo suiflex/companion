@@ -18,7 +18,12 @@ export default defineConfig({
     // node is the default because the packages are DOM-free by design; the
     // dashboard's own tests opt into jsdom with a `@vitest-environment`
     // docblock so the browser environment is only paid for where it is used.
-    include: ['packages/*/src/**/*.test.ts', 'apps/*/src/**/*.test.{ts,tsx}'],
+    include: [
+      'packages/*/src/**/*.test.ts',
+      'apps/*/src/**/*.test.{ts,tsx}',
+      // the installer ships as plain .mjs, outside any workspace
+      'scripts/**/*.test.mjs',
+    ],
     environment: 'node',
     coverage: {
       provider: 'v8',
