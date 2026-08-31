@@ -1,9 +1,121 @@
-# AMO listing copy
+# AMO listing — what to fill in, in order
 
-Paste-ready text for the listed submission at
-<https://addons.mozilla.org/en-US/developers/addon/f24270123c6340a8a023/edit>.
-Kept in the repo so it is reviewed like anything else and does not drift from
-what the add-on actually does.
+Everything needed to take the add-on from `incomplete` to a published listing.
+Kept in the repo so the copy is reviewed like anything else and does not drift
+from what the add-on actually does.
+
+Two pages you will use:
+
+| | |
+| --- | --- |
+| Edit listing | <https://addons.mozilla.org/en-US/developers/addon/f24270123c6340a8a023/edit> |
+| Manage authors, slug, versions | same page, tabs down the left |
+
+## Current state (checked via the AMO API)
+
+| Field | State |
+| --- | --- |
+| `name` | filled — "Meet Companion", taken from the manifest |
+| `summary` | filled — the manifest description; replace with the copy below |
+| `homepage` | filled — `https://suiflex.dev` |
+| `contributions_url` | filled — GitHub Sponsors |
+| `icon_url` | **placeholder** — resolves once a listed version is published |
+| `description` | **empty** |
+| `categories` | **empty** |
+| `support_url` | **empty** |
+| `privacy_policy` | **empty** |
+| `tags`, `previews` | empty, both optional |
+
+`status` is `incomplete`, which is what an unlisted-only add-on reads as. It
+flips once a listed version is submitted with the listing filled in.
+
+---
+
+## Step 0 — rename the slug (do this first)
+
+The slug is `f24270123c6340a8a023`, auto-generated because the add-on has only
+ever been unlisted. It is in the public URL and in every signed filename.
+
+Edit page → **Add-on Details** → *Edit* → **URL slug** → `meet-companion`.
+
+Nothing in this repo breaks when you change it: the installer addresses the
+add-on by id (`companion@suiflex.dev`), and AMO redirects id → slug. Verified
+against a live add-on: both forms return 200.
+
+## Step 1 — Summary
+
+Replace what is there. AMO limit is 250 characters; this is 196.
+
+## Step 2 — Description
+
+Paste the block below. AMO renders a limited Markdown — plain paragraphs and
+bullet characters survive, headings do not, which is why the block uses
+capitals for section labels.
+
+## Step 3 — Categories
+
+Pick **one** primary. Firefox extension categories on AMO are a fixed list;
+the one that fits is **Productivity & Time Management**. Add **Other** as a
+second if the form lets you.
+
+## Step 4 — Support and homepage
+
+| Field | Value |
+| --- | --- |
+| Homepage | already `https://suiflex.dev` — leave, or change to the repo |
+| Support site | `https://github.com/suiflex/companion/issues` |
+| Support email | leave blank; issues are the channel |
+
+## Step 5 — License
+
+**This is the one decision that is not drafted for you.** The repo currently
+has no LICENSE file, no `license` field in `package.json`, and GitHub reports
+no license — so there is nothing to copy from. AMO requires a choice for a
+listed add-on.
+
+Whatever you pick, add a matching `LICENSE` file to the repo in the same pass,
+so the two do not disagree.
+
+## Step 6 — Privacy policy
+
+The form has a **Privacy Policy** field. Paste the rendered text of
+`PRIVACY.md` into it — AMO wants the text in the field, a link alone is not
+accepted.
+
+Tick the "This add-on has a privacy policy" box first, or the field stays
+hidden.
+
+## Step 7 — Notes for the reviewer
+
+A separate box on the version submission screen, not the listing page. Text is
+at the bottom of this file.
+
+## Step 8 — Submit the version
+
+Do **not** upload by hand. Tag a release and CI does it:
+
+```
+release-please prepares the PR  ->  merge it  ->  tag v1.6.0 pushed
+  ->  build.yml packs the source archive
+  ->  web-ext sign --channel=listed --upload-source-code
+  ->  the version enters Mozilla's review queue
+```
+
+1.5.1 is already spent on the unlisted channel, so the listed submission is
+1.6.0 — which is also the first build with a working toolbar icon.
+
+## Step 9 — After submitting
+
+Watch the versions page. A listed submission is queued for human review; the
+duration is not something anyone can promise. If it is rejected, the reply says
+why, and the fix ships as the next version — a rejected version number cannot
+be reused.
+
+---
+
+# Paste buffer
+
+The exact text each step above refers to.
 
 ## Name
 
