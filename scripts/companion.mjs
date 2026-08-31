@@ -18,12 +18,13 @@
 //   companion --help | -h            this help
 
 import { existsSync, mkdirSync } from 'node:fs';
-import { mkdir, rm, readdir, stat, copyFile, writeFile } from 'node:fs/promises';
+import { mkdir, rm, readdir, stat, copyFile } from 'node:fs/promises';
 import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { join, dirname, basename, resolve } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { homedir, platform } from 'node:os';
+import { extractZip } from './unzip.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const COMPANION_HOME = process.env.COMPANION_HOME || null;
@@ -169,11 +170,7 @@ async function downloadLatestDist(distDir) {
 
   const tmp = `${distDir}.tmp-${process.pid}`;
   await mkdir(tmp, { recursive: true });
-  const zipPath = join(tmp, basename(asset.name));
-  await writeFile(zipPath, buf);
-  const unzip = spawnSync('unzip', ['-q', zipPath, '-d', tmp], { stdio: 'ignore' });
-  if (unzip.status !== 0) throw new Error('Failed to unzip release (is `unzip` installed?).');
-  await rm(zipPath, { force: true });
+  await extractZip(buf, tmp);
 
   // release zip is flat (apps/extension/dist/* at root) -> move entries into distDir
   await mkdir(distDir, { recursive: true });
