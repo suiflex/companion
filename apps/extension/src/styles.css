@@ -1416,3 +1416,5 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
   color: var(--text);
 }
 .mh-agenda:hover, .mh-agenda:focus { border-color: var(--hairline-2); background: var(--panel); }
+
+.kb-digest { display: flex; justify-content: flex-end; padding: 0 16px 8px; }
