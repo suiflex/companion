@@ -4,7 +4,8 @@ name: Build extension
 # dist artifact. `develop` is where the work lands, so it has to be checked
 # here too — otherwise the suite only ever runs on a PR.
 # Pushing a tag like v3.1.0 additionally publishes a GitHub Release with the
-# zip attached — download, extract, load-unpacked. No install/build needed.
+# Chromium zip and the Firefox zip attached — download, extract, load-unpacked.
+# No install/build needed.
 
 on:
   push:
@@ -55,10 +56,10 @@ jobs:
         id: meta
         run: echo "version=$(node -p "require('./apps/extension/public/manifest.json').version")" >> "$GITHUB_OUTPUT"
 
-      - name: Zip dist
-        run: |
-          cd apps/extension/dist
-          zip -qr "../../../meetcc-extension-v${{ steps.meta.outputs.version }}.zip" .
+      # one build, two manifests: Chromium takes dist as-is, Gecko needs an
+      # event page instead of a service worker (see scripts/pack.mjs)
+      - name: Pack the Chromium and Firefox artifacts
+        run: npm run pack
 
       # per-run artifact: grab it from the Actions tab on any push/PR
       - uses: actions/upload-artifact@v4
@@ -72,5 +73,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: meetcc-extension-v*.zip
-          generate_release_notes: true
+          files: |
+            meetcc-extension-v*.zip
+            meetcc-extension-firefox-v*.zip
