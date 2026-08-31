@@ -24,7 +24,16 @@ import {
   transcribeAudio,
   type CalendarEvent,
 } from '@meetcc/meeting';
-import { loadSettings, makeSessionId, withEntryIds, type Entry } from '@meetcc/shared';
+import {
+  isPortableKey,
+  loadSettings,
+  makeBackup,
+  makeSessionId,
+  planRestore,
+  readBackup,
+  withEntryIds,
+  type Entry,
+} from '@meetcc/shared';
 
 // The service worker owns the database. OPFS hands out exclusive file access,
 // so a second context opening it would fail; the dashboard therefore asks the
@@ -288,11 +297,34 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
       const all = await chrome.storage.local.get(null);
       const snapshot: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(all)) {
-        // secrets never travel in a snapshot
-        if (key === 'settings' || key === 'cryptoKey' || key === 'audit') continue;
-        snapshot[key] = value;
+        // secrets never travel in a snapshot — same rule the backup uses
+        if (isPortableKey(key)) snapshot[key] = value;
       }
       return { snapshot };
+    }
+
+    // Every meeting in one file. The extension id is pinned now, but it changed
+    // once, and storage is scoped to it — so anyone upgrading across that change
+    // needs a way to carry their archive over that is not fifty share files.
+    case 'export-backup': {
+      const all = await chrome.storage.local.get(null);
+      return { backup: makeBackup(all, chrome.runtime.getManifest().version) };
+    }
+
+    // Additive: a meeting already in this profile wins over the copy in the
+    // file, because the live one may carry notes the backup predates. Restoring
+    // the same file twice therefore changes nothing.
+    case 'import-backup': {
+      const backup = readBackup(str(a.text));
+      const existing = await chrome.storage.local.get(null);
+      const plan = planRestore(existing, backup);
+      if (plan.added > 0) {
+        await chrome.storage.local.set(plan.writes);
+        // chrome.storage is the source of truth; the SQLite index is derived,
+        // so it has to be rebuilt or the restored meetings stay unsearchable.
+        await syncIndex();
+      }
+      return { added: plan.added, skipped: plan.skipped, meetings: backup.meetings };
     }
 
     // P2.5 — Google Calendar with the *user's* OAuth client id. launchWebAuthFlow

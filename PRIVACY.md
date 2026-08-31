@@ -89,6 +89,16 @@ those hosts in advance. It is used only to reach the endpoint you entered.
 Granted or not, sites other than your meeting platform are never read, and no
 content script runs anywhere but Meet and Teams.
 
+## Backups you make yourself
+
+**Settings → Cadangan** writes your meetings to a file you choose the location
+of. It contains transcripts, notes, chat and documents, and deliberately
+excludes your API key, integration tokens, the encryption key and the audit log
+— so the file cannot leak a credential, and a restore never replaces the
+encryption key of the profile it lands in.
+
+Nothing about that file is sent anywhere. Where it goes afterwards is up to you.
+
 ## Retention and deletion
 
 Nothing is deleted automatically unless you ask for it. Settings → **Simpan

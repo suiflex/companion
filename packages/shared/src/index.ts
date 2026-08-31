@@ -7,3 +7,4 @@ export * from './crypto';
 export * from './migrate';
 export * from './aggregate';
 export * from './update';
+export * from './backup';

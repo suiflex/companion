@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { IntegrationSettings, Settings } from '@meetcc/shared';
+import type { BackupFile, IntegrationSettings, Settings } from '@meetcc/shared';
 import { db } from '../lib/db';
 import { useToast } from '../toast';
 
@@ -356,6 +356,7 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
   const transcriptFile = useRef<HTMLInputElement>(null);
   const icsFile = useRef<HTMLInputElement>(null);
   const shareFile = useRef<HTMLInputElement>(null);
+  const backupFile = useRef<HTMLInputElement>(null);
 
   const run = async (label: string, fn: () => Promise<void>) => {
     setBusy(label);
@@ -479,6 +480,57 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
             }
           >
             Impor berkas share
+          </button>
+        </div>
+      </fieldset>
+
+      <fieldset className="field-group">
+        <legend>Cadangan</legend>
+        <p className="hint">
+          Semua rapat dalam satu berkas: transkrip, notulen, chat dan dokumen. API key,
+          token dan audit log <b>tidak</b> ikut — jadi berkas ini aman disimpan, dan
+          setelah memulihkan kamu perlu memasang ulang provider AI-mu.
+        </p>
+        <p className="hint">
+          Memulihkan bersifat menambah: rapat yang sudah ada di profil ini tidak
+          ditimpa, jadi memulihkan berkas yang sama dua kali tidak mengubah apa pun.
+        </p>
+        <div className="subbar">
+          <button
+            disabled={!!busy}
+            onClick={() =>
+              void run('backup', async () => {
+                const res = await db<{ backup: BackupFile }>('export-backup');
+                const stamp = new Date().toISOString().slice(0, 10);
+                downloadText(`companion-backup-${stamp}.json`, JSON.stringify(res.backup));
+                toast('success', `Cadangan ${res.backup.meetings} rapat diunduh.`);
+              })
+            }
+          >
+            Unduh cadangan
+          </button>
+          <input ref={backupFile} type="file" accept=".json" aria-label="Berkas cadangan" />
+          <button
+            disabled={!!busy}
+            onClick={() =>
+              void run('restore', async () => {
+                const file = backupFile.current?.files?.[0];
+                if (!file) return toast('error', 'Pilih berkas cadangan dulu.');
+                const res = await db<{ added: number; skipped: number; meetings: number }>(
+                  'import-backup',
+                  { text: await file.text() },
+                );
+                toast(
+                  'success',
+                  res.added
+                    ? `Dipulihkan: ${res.added} entri baru dari ${res.meetings} rapat` +
+                        (res.skipped ? `, ${res.skipped} sudah ada` : '')
+                    : 'Semua isi cadangan sudah ada di profil ini.',
+                );
+              })
+            }
+          >
+            Pulihkan dari cadangan
           </button>
         </div>
       </fieldset>

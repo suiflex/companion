@@ -102,6 +102,33 @@ In a repo checkout, load your own build instead: `npm run pack -- firefox`, then
 temporary add-on is gone on the next Firefox restart, which is fine for
 development and not fine for daily use.
 
+## Upgrading from a version before 1.6.0
+
+Your meetings live in `chrome.storage.local`, which the browser scopes to the
+extension id. Before 1.6.0 that id was a hash of the folder the extension was
+loaded from, so it changed whenever the install moved. 1.6.0 pins it for good —
+but the pinned id is not the old one, so an archive captured before the upgrade
+does not follow you across it, and the dashboard opens empty.
+
+Once, before you remove the old install:
+
+1. Load the **old** version, open **Settings → Cadangan → Unduh cadangan**. One
+   file, every meeting.
+2. Upgrade (`companion update`, or install the Firefox add-on).
+3. Open the new one, **Settings → Cadangan → Pulihkan dari cadangan**, pick that
+   file.
+
+The backup carries transcripts, notes, chat and documents. It carries **no API
+key, no token and no audit log**, so it is safe to keep on disk — and you will
+need to set your AI provider up again afterwards.
+
+Restoring only adds: a meeting already in the profile is never overwritten, so
+restoring the same file twice does nothing and you cannot lose work by trying.
+
+Already upgraded and staring at an empty dashboard? The old data is not gone —
+it is under the old extension id. Load the previous build from its original
+folder, take the backup, then restore it into the new one.
+
 ## Connecting an AI provider
 
 Settings (⚙) → **AI Provider**. Two ways to pay for the completions, and the

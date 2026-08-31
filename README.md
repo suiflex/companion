@@ -151,6 +151,17 @@ AI rewrote shows what was actually said, with a one-click **Pakai versi asli**.
 That decision is what downstream AI reads — a wrong correction cannot quietly
 travel cleanup → summary → decisions → Ask → PRD (roadmap §26).
 
+## Backup
+
+**Settings → Cadangan** writes every meeting to one JSON file and restores it
+into any profile. Secrets stay out of it — no API key, no token, no audit log —
+so the file is safe to keep, and the provider has to be set up again after a
+restore. Restoring is additive and never overwrites a meeting that is already
+there.
+
+This is also the upgrade path across 1.6.0, which pinned the extension id; see
+[INSTALL.md](INSTALL.md).
+
 ## Data retention
 
 Everything stays in `chrome.storage.local` under the `unlimitedStorage` permission, so transcripts are not capped at the default 10 MB quota.
