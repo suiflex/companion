@@ -1,0 +1,3 @@
+Turns the captions Google Meet and Microsoft Teams already show into AI meeting
+notes: summary, decisions, action items, risks. Everything stays local except
+what you send to your own AI provider.

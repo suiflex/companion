@@ -33,6 +33,18 @@ npm run smoke -w @meetcc/sync-server  # the built sync bin answers over HTTP
 Load: `chrome://extensions` → Developer mode → **Load unpacked** → **`apps/extension/dist/`**.
 After every build: reload the extension, then refresh the Meet tab.
 
+The manifest carries a `key`, so the extension id is the same wherever it is
+loaded from:
+
+| browser  | id                                 |
+| -------- | ---------------------------------- |
+| Chromium | `pkgpllhlmhhocidmipbokpigndoeiemb` |
+| Firefox  | `companion@suiflex.dev`            |
+
+That matters because your meetings live in `chrome.storage.local`, which is
+scoped to the id — without the pinned key, loading the same build from a
+different folder would hand you an empty dashboard.
+
 ### Terminal installer (no npm, no manual load)
 
 For a quicker path — especially on a machine that just wants to run the
@@ -68,14 +80,27 @@ profile** (`~/.meetcc/browser-profiles/<browser>`), so it never touches your
 everyday windows (`%USERPROFILE%\.meetcc\browser-profiles\<browser>` on
 Windows). The picker is an interactive **select box**: arrow keys move,
 **Space** toggles a browser on/off, **Enter** confirms — select several or all
-detected Chromium browsers (Chrome, Edge, Brave, Arc, Vivaldi, Opera, Canary…).
+detected browsers (Chrome, Edge, Brave, Arc, Vivaldi, Opera, Canary, Firefox).
 Sign-ins (AI provider, trackers) persist in each profile across runs. Everyday
 profile sign-ins do not carry over, by design. Inside the repo you can
 equivalently run `node scripts/companion.mjs install --preview`.
 
+For Chromium browsers the same `--load-extension` / dedicated-profile mechanism
+is what the manual Developer-mode load does, minus the manual
+extract-and-click steps.
 
-The same `--load-extension` / dedicated-profile mechanism is what the manual
-Developer-mode load does, minus the manual extract-and-click steps.
+### Firefox
+
+Firefox has no `--load-extension`, and its add-ons must be signed by Mozilla to
+survive a restart. So the installer opens Firefox on the add-on's page at
+addons.mozilla.org in the dedicated profile, and one click on **Add to Firefox**
+installs it. From then on Firefox keeps it up to date by itself — no
+`companion update`, no banner.
+
+In a repo checkout, load your own build instead: `npm run pack -- firefox`, then
+`about:debugging` → **Load Temporary Add-on** → `apps/extension/dist-firefox`. A
+temporary add-on is gone on the next Firefox restart, which is fine for
+development and not fine for daily use.
 
 ## Connecting an AI provider
 

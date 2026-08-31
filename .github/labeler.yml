@@ -72,3 +72,23 @@
       - any-glob-to-any-file:
           - "assets/brand/**"
           - "scripts/gen-icons.mjs"
+
+# The installer and packaging scripts ship to users without going through a
+# build, so a change here reaches people the moment it lands on develop.
+"area: installer":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "scripts/companion.mjs"
+          - "scripts/install.sh"
+          - "scripts/install.ps1"
+          - "scripts/pack.mjs"
+          - "scripts/zip.mjs"
+          - "scripts/unzip.mjs"
+          - "scripts/picker.mjs"
+
+"area: release":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "release-please-config.json"
+          - ".release-please-manifest.json"
+          - "CHANGELOG.md"

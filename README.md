@@ -24,10 +24,12 @@ chose — and which provider that is, is yours to pick, including a local one.
 ## Install from the terminal
 
 Prefer a prompt over Developer-mode clicks? The `companion` CLI installs the
-latest release and launches it in a Chromium browser (Chrome, Edge, Brave, Arc,
-Vivaldi, Opera, …), each in its own dedicated profile so your everyday windows
-are untouched. An interactive select box lets you arrow-key through browsers,
-Space to toggle, and Enter to launch — one or several at once.
+latest release and launches it in Chrome, Edge, Brave, Arc, Vivaldi, Opera or
+Firefox, each in its own dedicated profile so your everyday windows are
+untouched. An interactive select box lets you arrow-key through browsers, Space
+to toggle, and Enter to launch — one or several at once. Chromium browsers start
+ready to use; Firefox opens on the add-on's page at addons.mozilla.org, where one
+click installs it and Firefox handles updates from then on.
 
 ```bash
 # macOS / Linux
@@ -155,3 +157,8 @@ Everything stays in `chrome.storage.local` under the `unlimitedStorage` permissi
 
 Nothing is deleted automatically by default. Settings → **Simpan riwayat** opts into a retention window (30 / 90 / 365 days); the minute sweep then removes meetings whose last activity is older than that, including their transcript, notulen, chat and documents. There is no undo — enabling it asks for confirmation, as does deleting a single meeting.
 
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE). Privacy: [PRIVACY.md](PRIVACY.md).
+Found a vulnerability? [SECURITY.md](SECURITY.md) — please do not open a public
+issue.

@@ -6,7 +6,7 @@ Status: documentation set complete, 2026-08-28. Evidence baseline: branch `devel
 |---|---|
 | Product | [00 vision](00-vision.md), [01 product requirements](01-product-requirements.md), [09 glossary](09-glossary.md) |
 | Architecture | [02 system architecture](02-system-architecture.md), [03 data and identity](03-data-and-identity.md), [04 AI ask engine](04-ai-ask-engine.md) |
-| Roadmap and operations | [05 distribution and installer](05-distribution-and-installer.md), [06 roadmap](06-roadmap.md), [07 risk register](07-risk-register.md), [08 operations](08-operations.md), [gate G1' log](gate-g1-prime-log.md) |
+| Roadmap and operations | [05 distribution and installer](05-distribution-and-installer.md), [Firefox signing](firefox-signing.md), [06 roadmap](06-roadmap.md), [07 risk register](07-risk-register.md), [08 operations](08-operations.md), [gate G1' log](gate-g1-prime-log.md) |
 | ADR | [ADR process](ADR/README.md), [0001 identity model — UUIDv7](ADR/0001-identity-model-uuidv7.md), [0014 Phase 1 demand gate — NO-DECISION](ADR/0014-phase1-demand-gate-nodecision.md), [0015 identity core stays capture-native; Phase 1 schema gates](ADR/0015-identity-core-capture-native-and-phase1-schema-gates.md) |
 
 Document status: 00-09 and ADR/0001 complete (2026-08-28); 01 passed PM review (docs/reviews/prd-review-01-product-requirements.md). G1' weekly self-audit log live since 2026-08-28 ([gate-g1-prime-log.md](gate-g1-prime-log.md)), filling weekly until the 24 Sep gate review. Authoritative detail not yet restated here lives in COMPANION_UNIFIED_ARCHITECTURE.md (§9, §32.1, §36–§37).

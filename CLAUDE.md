@@ -19,7 +19,9 @@ After every build: reload the extension at `chrome://extensions`, then refresh
 the meeting tab. Load unpacked from `apps/extension/dist/`.
 
 The brand mark is `assets/brand/logo-mark.svg`; `scripts/gen-icons.mjs`
-re-renders it into the extension's PNGs and has to be re-run when it changes.
+re-renders it into the extension's PNGs (16/32/48/96/128) and has to be re-run
+when it changes. 32 and 96 exist for Firefox, which uses them for the toolbar
+button and the add-ons list; Chromium ignores them.
 
 ## Layout
 

@@ -6,3 +6,4 @@ export * from './storage';
 export * from './crypto';
 export * from './migrate';
 export * from './aggregate';
+export * from './update';

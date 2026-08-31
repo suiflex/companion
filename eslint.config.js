@@ -7,7 +7,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 // same pipeline and is the authority on types, so lint only covers what the
 // compiler does not — unused vars, unreachable branches, hook rules.
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', 'coverage/**'] },
+  { ignores: ['**/dist/**', '**/dist-firefox/**', '**/node_modules/**', 'coverage/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
 

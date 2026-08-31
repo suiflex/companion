@@ -97,7 +97,9 @@ function png(size) {
 
 const dir = new URL('../apps/extension/public/icons/', import.meta.url);
 mkdirSync(dir, { recursive: true });
-for (const size of [16, 48, 128]) {
+// 32 and 96 are Firefox's steps: 32 for the toolbar button and the add-ons
+// list, 96 for those at 2x. Chromium ignores the extra sizes.
+for (const size of [16, 32, 48, 96, 128]) {
   writeFileSync(new URL(`icon${size}.png`, dir), png(size));
 }
 console.log('icons written');

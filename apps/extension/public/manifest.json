@@ -2,7 +2,19 @@
   "manifest_version": 3,
   "name": "Meet Companion",
   "version": "1.5.1",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtXHYz0+efibjEeBMX5mT8qk4xiQIxcSL6fD6NlByabEIveIkcowensi+ie0I/kiZRns5KAbV5NRBCkBnVPGMdHhazMGLRFZ4HYTDnL27rYftRtegUTizLbiPsx7ZfIOgqavNczefZ3pKBKKsUtEE32OnAC613rduidqF8tznRJpaozv6b6ul48RA65UqpM4pcsaToHIAfhM6k7L0IoPwedmB0soKVcoksxOAMuyzPLvYuP5dvlax3wI01peJYKbkeaUpKaf2dsfDEsFxeHRVEq4oPsZgU0BHPWr0oVScRlaL/zwLltlYQhec0nvX2xSahUbzkaKzEkB2z5noEV8uFwIDAQAB",
   "description": "AI meeting assistant: captures Google Meet & Microsoft Teams captions, generates summaries, action items and meeting notes",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "companion@suiflex.dev",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": [
+          "personalCommunications"
+        ]
+      }
+    }
+  },
   "permissions": [
     "storage",
     "unlimitedStorage",
@@ -37,11 +49,19 @@
     }
   ],
   "action": {
-    "default_title": "Buka dashboard Meet CC"
+    "default_title": "Buka dashboard Meet CC",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "icons": {
     "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
     "48": "icons/icon48.png",
+    "96": "icons/icon96.png",
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
