@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0](https://github.com/suiflex/companion/compare/v1.6.0...v1.7.0) (2026-08-31)
+
+
+### Features
+
+* back up and restore the whole meeting archive ([4c74c6e](https://github.com/suiflex/companion/commit/4c74c6ed350ed638854dd923185cc6cbedc9062f))
+* **extension:** back up and restore the whole archive ([f3ccfe4](https://github.com/suiflex/companion/commit/f3ccfe4b0c8b9af482ce3b916dea6d7a36dd6e7d))
+
 ## [1.6.0](https://github.com/suiflex/companion/compare/v1.5.1...v1.6.0) (2026-08-31)
 
 
