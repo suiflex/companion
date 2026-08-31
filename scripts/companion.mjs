@@ -18,12 +18,13 @@
 //   companion --help | -h            this help
 
 import { existsSync, mkdirSync } from 'node:fs';
-import { mkdir, rm, readdir, stat, copyFile, writeFile } from 'node:fs/promises';
+import { mkdir, rm, readdir, stat, copyFile } from 'node:fs/promises';
 import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { join, dirname, basename, resolve } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { homedir, platform } from 'node:os';
+import { extractZip } from './unzip.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const COMPANION_HOME = process.env.COMPANION_HOME || null;
@@ -110,16 +111,23 @@ function detectBrowsers() {
       if (bin) found.push({ name, binary: bin, tag });
     }
   } else if (p === 'win32') {
-    const pf = process.env.PROGRAMFILES || 'C:\\Program Files';
-    const pf86 = process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)';
-    for (const [name, paths, tag] of [
-      ['Google Chrome', [`${pf}\\Google\\Chrome\\Application\\chrome.exe`, `${pf86}\\Google\\Chrome\\Application\\chrome.exe`], 'chrome'],
-      ['Microsoft Edge', [`${pf}\\Microsoft\\Edge\\Application\\msedge.exe`, `${pf86}\\Microsoft\\Edge\\Application\\msedge.exe`], 'edge'],
-      ['Brave Browser', [`${pf}\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`, `${pf86}\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`], 'brave'],
-      ['Vivaldi', [`${pf}\\Vivaldi\\Application\\vivaldi.exe`, `${pf86}\\Vivaldi\\Application\\vivaldi.exe`], 'vivaldi'],
-      ['Opera', [`${pf}\\Opera\\Application\\opera.exe`, `${pf86}\\Opera\\Application\\opera.exe`], 'opera'],
+    // Chrome, Brave, Vivaldi and Opera all default to a *per-user* install, so
+    // looking only under Program Files misses the common case entirely.
+    const roots = [
+      process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'),
+      process.env.PROGRAMFILES || 'C:\\Program Files',
+      process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)',
+    ];
+    for (const [name, rels, tag] of [
+      ['Google Chrome', ['Google\\Chrome\\Application\\chrome.exe'], 'chrome'],
+      ['Google Chrome Canary', ['Google\\Chrome SxS\\Application\\chrome.exe'], 'chrome-canary'],
+      ['Chromium', ['Chromium\\Application\\chrome.exe'], 'chromium'],
+      ['Microsoft Edge', ['Microsoft\\Edge\\Application\\msedge.exe'], 'edge'],
+      ['Brave Browser', ['BraveSoftware\\Brave-Browser\\Application\\brave.exe'], 'brave'],
+      ['Vivaldi', ['Vivaldi\\Application\\vivaldi.exe'], 'vivaldi'],
+      ['Opera', ['Programs\\Opera\\opera.exe', 'Opera\\Application\\opera.exe'], 'opera'],
     ]) {
-      const bin = paths.find(existsSync);
+      const bin = roots.flatMap((r) => rels.map((rel) => `${r}\\${rel}`)).find(existsSync);
       if (bin) found.push({ name, binary: bin, tag });
     }
   }
@@ -162,11 +170,7 @@ async function downloadLatestDist(distDir) {
 
   const tmp = `${distDir}.tmp-${process.pid}`;
   await mkdir(tmp, { recursive: true });
-  const zipPath = join(tmp, basename(asset.name));
-  await writeFile(zipPath, buf);
-  const unzip = spawnSync('unzip', ['-q', zipPath, '-d', tmp], { stdio: 'ignore' });
-  if (unzip.status !== 0) throw new Error('Failed to unzip release (is `unzip` installed?).');
-  await rm(zipPath, { force: true });
+  await extractZip(buf, tmp);
 
   // release zip is flat (apps/extension/dist/* at root) -> move entries into distDir
   await mkdir(distDir, { recursive: true });

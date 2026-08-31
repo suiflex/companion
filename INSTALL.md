@@ -42,18 +42,31 @@ released extension without a checkout — run the curl installer. It puts the
 there). Nothing is published to npm.
 
 ```bash
-# from a raw GitHub URL (replace <branch> with main or develop):
-curl -fsSL https://raw.githubusercontent.com/suiflex/companion/<branch>/scripts/install.sh | bash
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/suiflex/companion/develop/scripts/install.sh | bash
+```
 
-# then:
+```powershell
+# Windows (PowerShell 5.1 or 7+)
+irm https://raw.githubusercontent.com/suiflex/companion/develop/scripts/install.ps1 | iex
+```
+
+```bash
+# then, on either platform:
 companion install              # TTY-pick one or several browsers, launch each
 companion install --preview    # see the TTY flow without launching anything
 companion update               # re-downloads the latest release dist
 ```
 
+Node 20+ is the only prerequisite — the release zip is unpacked by the CLI
+itself, so there is no `unzip` or `tar` to install first. On Windows the shim
+is `%USERPROFILE%\.local\bin\companion.cmd`; the installer prints the command
+that puts it on your `PATH` rather than editing the environment for you.
+
 `companion install` launches each chosen browser in its own **dedicated
 profile** (`~/.meetcc/browser-profiles/<browser>`), so it never touches your
-everyday windows. The picker is an interactive **select box**: arrow keys move,
+everyday windows (`%USERPROFILE%\.meetcc\browser-profiles\<browser>` on
+Windows). The picker is an interactive **select box**: arrow keys move,
 **Space** toggles a browser on/off, **Enter** confirms — select several or all
 detected Chromium browsers (Chrome, Edge, Brave, Arc, Vivaldi, Opera, Canary…).
 Sign-ins (AI provider, trackers) persist in each profile across runs. Everyday

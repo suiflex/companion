@@ -30,15 +30,25 @@ are untouched. An interactive select box lets you arrow-key through browsers,
 Space to toggle, and Enter to launch — one or several at once.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/suiflex/companion/<branch>/scripts/install.sh | bash
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/suiflex/companion/develop/scripts/install.sh | bash
+```
+
+```powershell
+# Windows
+irm https://raw.githubusercontent.com/suiflex/companion/develop/scripts/install.ps1 | iex
+```
+
+```bash
 companion install          # TTY-pick browser(s), then launches
 companion install --preview # see the picker without launching
 companion update           # re-download the latest release dist
 ```
 
-`companion` lives in `~/.local/bin` (add it to your `PATH`) with the release
-`dist` in `~/.companion`. From a checkout, `node scripts/companion.mjs install`
-is equivalent. Full steps: **[INSTALL.md](INSTALL.md)**.
+`companion` lives in `~/.local/bin` (`%USERPROFILE%\.local\bin` on Windows —
+add it to your `PATH`) with the release `dist` in `~/.companion`. Node 20+ is
+the only prerequisite. From a checkout, `node scripts/companion.mjs install` is
+equivalent. Full steps: **[INSTALL.md](INSTALL.md)**.
 
 ## Monorepo
 
