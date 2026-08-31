@@ -11,6 +11,7 @@ import {
   type Meeting,
 } from '@meetcc/shared'
 import { useToast } from '../toast'
+import { liveActions } from '@meetcc/meeting'
 import { db, listHighlights } from '../lib/db'
 
 // Teams avatar URLs need the Teams session cookies; from the extension page
@@ -95,6 +96,13 @@ export function Transcript({ meeting, live, onClear }: Props) {
     const t = setInterval(() => setNow(Date.now()), 8000)
     return () => clearInterval(t)
   }, [])
+
+  // P2.2 follow-on: the flagged "action" lines, with whatever PIC and deadline
+  // the sentence itself gave — something to raise before everyone leaves.
+  const todo = useMemo(
+    () => (live ? liveActions(highlights, meeting.entries) : []),
+    [live, highlights, meeting.entries],
+  )
 
   const bySeq = useMemo(
     () => new Map(highlights.map((h) => [h.seq, h.kind])),
@@ -263,6 +271,26 @@ export function Transcript({ meeting, live, onClear }: Props) {
               {HIGHLIGHT_LABEL[h.kind] ?? h.kind}: {h.text.slice(0, 48)}
             </button>
           ))}
+        </div>
+      )}
+
+      {todo.length > 0 && view === 'raw' && (
+        <div className='todo-strip'>
+          <span className='section-label'>Action terdeteksi</span>
+          <ul className='todo-list'>
+            {todo.slice(-5).map((t) => (
+              <li key={t.seq}>
+                <span className='todo-task'>{t.task}</span>
+                <span className='dim'>
+                  {t.owner || 'PIC belum disebut'}
+                  {t.due ? ` · ${t.due}` : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <span className='dim todo-note'>
+            Dugaan dari kata kunci — daftar final dibuat AI setelah rapat selesai.
+          </span>
         </div>
       )}
 
