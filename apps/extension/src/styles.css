@@ -986,6 +986,10 @@ body[data-theme='light'] .bubble-assistant {
   font: 13px var(--font-body);
 }
 
+/* input + its action button on one line; the input takes what is left */
+.field-row { display: flex; gap: 6px; align-items: stretch; }
+.field-row input { flex: 1; min-width: 0; }
+
 .hint { font-size: 11px; color: var(--text-faint); }
 
 /* ── states / toasts ── */

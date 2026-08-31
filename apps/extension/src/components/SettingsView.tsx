@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   createClient,
+  listModels,
   PROVIDER_PRESETS,
   requiredOrigins,
   resolveConfig,
@@ -10,6 +11,8 @@ import {
   RETENTION_OPTIONS,
   loadSettings,
   saveSettings,
+  switchProvider,
+  type OAuthSettings,
   type ProviderId,
   type Settings,
 } from '@meetcc/shared';
@@ -41,11 +44,54 @@ export function SettingsView({
   const [settings, setSettings] = useState<Settings | null>(null);
   const [testing, setTesting] = useState(false);
   const [panel, setPanel] = useState<Panel>('provider');
+  const [models, setModels] = useState<string[]>([]);
+  const [modelsNote, setModelsNote] = useState('');
+  const [loadingModels, setLoadingModels] = useState(false);
   const toast = useToast();
+
+  /** The sign-in flow persists across an await, and the user can keep typing in
+   *  the form meanwhile — writing back a render-old copy would drop that edit. */
+  const latest = useRef<Settings | null>(null);
+  latest.current = settings;
 
   useEffect(() => {
     void loadSettings().then(setSettings);
   }, []);
+
+  /** Ask the provider what it serves. Falls back to the preset's hand-kept list
+   *  rather than leaving the field with no suggestions at all. */
+  const loadModels = async (next: Settings) => {
+    setLoadingModels(true);
+    setModelsNote('');
+    try {
+      setModels(await listModels(next));
+    } catch (e) {
+      setModels(PROVIDER_PRESETS[next.provider]?.models ?? []);
+      setModelsNote(`Daftar model tidak bisa diambil (${(e as Error).message}) — ketik manual.`);
+    } finally {
+      setLoadingModels(false);
+    }
+  };
+
+  // Only automatic once the origin is already granted: chrome.permissions
+  // .request needs a user gesture, and changing a <select> is not one Chrome
+  // accepts. Without the grant the user presses "Muat model", which is.
+  useEffect(() => {
+    const current = settings;
+    if (!current) return;
+    void (async () => {
+      const origins = requiredOrigins(current);
+      if (origins.length && !(await chrome.permissions.contains({ origins }))) {
+        setModels(PROVIDER_PRESETS[current.provider]?.models ?? []);
+        setModelsNote('');
+        return;
+      }
+      await loadModels(current);
+    })();
+    // provider and sign-in are what change the catalogue; a key edit waits for
+    // the button, so a half-typed key does not fire a request per keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings?.provider, settings?.oauth.provider]);
 
   if (!settings) {
     return (
@@ -78,6 +124,20 @@ export function SettingsView({
     }
   };
 
+  /** The click is the gesture Chrome wants before it will grant the origin. */
+  const refreshModels = async () => {
+    await grantOrigins(settings);
+    await loadModels(settings);
+  };
+
+  /** Sign-in persists its own tokens; it reads the newest form state so an edit
+   *  made while the browser was on the consent page is not written back stale. */
+  const persistOAuth = async (oauth: OAuthSettings) => {
+    const next = { ...(latest.current ?? settings), oauth };
+    setSettings(next);
+    await saveSettings(next);
+  };
+
   const save = async () => {
     const problem = validateSettings(settings);
     if (problem) return toast('error', problem);
@@ -90,7 +150,9 @@ export function SettingsView({
       if (!ok) return;
     }
     await grantOrigins(settings);
-    await saveSettings(settings);
+    // identity for the provider, but it folds the current model/baseUrl into
+    // `byProvider` so coming back to this provider later restores them
+    await saveSettings(switchProvider(settings, settings.provider));
     toast('success', 'Settings tersimpan.');
     onClose();
   };
@@ -149,7 +211,7 @@ export function SettingsView({
           <span>Provider</span>
           <select
             value={settings.provider}
-            onChange={(e) => set({ provider: e.target.value as ProviderId, model: '', baseUrl: '' })}
+            onChange={(e) => setSettings(switchProvider(settings, e.target.value as ProviderId))}
           >
             {PROVIDERS.map(([id, p]) => (
               <option key={id} value={id}>
@@ -170,7 +232,7 @@ export function SettingsView({
           <SignInPanel
             provider={settings.provider as 'chatgpt' | 'google-codeassist'}
             settings={settings}
-            onChange={set}
+            onPersist={persistOAuth}
           />
         )}
 
@@ -209,12 +271,29 @@ export function SettingsView({
         {settings.provider !== 'builtin' && (
           <label className="field">
             <span>Model</span>
-            <input
-              type="text"
-              value={settings.model}
-              placeholder={preset.model || 'nama model / deployment'}
-              onChange={(e) => set({ model: e.target.value })}
-            />
+            <div className="field-row">
+              <input
+                type="text"
+                list="model-options"
+                value={settings.model}
+                placeholder={preset.model || 'nama model / deployment'}
+                onChange={(e) => set({ model: e.target.value })}
+              />
+              <button onClick={refreshModels} disabled={loadingModels}>
+                {loadingModels ? 'Memuat…' : 'Muat model'}
+              </button>
+            </div>
+            <datalist id="model-options">
+              {models.map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
+            <span className="hint">
+              {modelsNote ||
+                (models.length
+                  ? `${models.length} model tersedia — klik kolom untuk memilih, atau ketik sendiri.`
+                  : 'Klik "Muat model" untuk mengambil daftar dari provider.')}
+            </span>
           </label>
         )}
 
