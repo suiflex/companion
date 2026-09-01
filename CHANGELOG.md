@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.1](https://github.com/suiflex/companion/compare/v1.7.0...v1.7.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* **ai:** drop the port from requested origin patterns ([1d24417](https://github.com/suiflex/companion/commit/1d2441759c89b78a413763c0c11f9a548f00464d))
+* **ai:** drop the port from requested origin patterns ([4aca706](https://github.com/suiflex/companion/commit/4aca706d3f147513cf5f12c528cd9aa07077d300))
+
 ## [1.7.0](https://github.com/suiflex/companion/compare/v1.6.0...v1.7.0) (2026-08-31)
 
 
