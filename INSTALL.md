@@ -215,6 +215,56 @@ Tools: `list_meetings`, `search_meetings`, `get_meeting`, `get_transcript`,
 `get_open_questions`. The `ask_*` tools return grounded evidence windows rather
 than a generated answer — the calling agent does the reasoning.
 
+
+## The two deliveries: extension, and Companion Desktop
+
+This repo now builds two independent products that share the same capture
+core. Neither depends on the other at runtime.
+
+1. **Extension (Chrome/Mozilla)** — capture + AI notes, distributed through the
+   official stores (Chrome Web Store, Mozilla Add-ons). Uses the extension only
+   and needs nothing else installed.
+2. **Companion Desktop (Windows/Linux/macOS)** — a Tauri 2 app that owns a
+   local vault of Markdown notes (the `.md` files are canonical; search is a
+   rebuildable FTS index). Installing the desktop app also registers a
+   **native-messaging host**, which lets the extension push caption batches
+   straight into the vault.
+
+The bridge is strictly additive: if the desktop host is not installed the
+extension's `bridge-send` simply fails silently and the extension keeps working
+exactly as before.
+
+### Companion Desktop
+
+```bash
+npm install
+npm run build -w @meetcc/desktop   # frontend (tsc + vite)
+cd apps/desktop && npx tauri build --no-bundle   # or `make tauri` from repo root
+```
+
+`make tauri-dev` (from the repo root) runs the app in dev mode. See
+[README.md](README.md) for the architecture.
+
+### Registering the native-messaging host
+
+The host must be installed and allowlisted with the extension id the browser
+loads the build under:
+
+```bash
+# macOS / Linux (Chrome, or pass `firefox` for Firefox)
+apps/desktop/scripts/install-native-host.sh pkgpllhlmhhocidmipbokpigndoeiemb chrome
+apps/desktop/scripts/install-native-host.sh companion@suiflex.dev firefox
+
+# Windows (PowerShell, from the repo root)
+powershell -ExecutionPolicy Bypass -File apps/desktop/scripts/install-native-host.ps1 -ExtensionId pkgpllhlmhhocidmipbokpigndoeiemb -Channel chrome
+```
+
+The installer bundles the host, copies it to a stable user path per OS
+(`~/Library/Application Support/Companion` on macOS, `~/.local/share/companion`
+on Linux, `%LOCALAPPDATA%\Companion` on Windows — never the Downloads folder),
+and writes the browser manifest (registry key on Windows Chrome). Re-run it any
+time the extension id or build changes.
+
 ## When capture breaks
 
 Meet rotates obfuscated class names every few months. Console (filter `MeetCC`) dumps the caption container when nothing matches. Update `KNOWN` at the top of `apps/extension/public/content.js` (2026-07: block `.nMcdL`, speaker `.KcIKyf`, text `.ygicle`). The avatar-anchored heuristic usually keeps capture alive meanwhile.

@@ -54,14 +54,15 @@ equivalent. Full steps: **[INSTALL.md](INSTALL.md)**.
 
 ## Monorepo
 
-```
 apps/
   extension/            # MV3 extension: React UI, service worker, content script
+  desktop/              # Tauri 2 desktop app (Windows/macOS/Linux): vault + FTS editor
 packages/
   shared/               # domain types, storage layer, crypto (AES-GCM), audit log
   ai/                   # provider adapters (strategy), prompt + parsing, rate limit
   meeting/              # pipeline, global Ask, continuity, import, sync, trackers
   store/                # SQLite WASM + OPFS + FTS5 index, structured meeting memory
+  vault/                # file-backed desktop vault: identity, notes, bridge, FTS index
   mcp/                  # read-only MCP server over an exported snapshot
   sync-server/          # optional sync endpoint you run on your own machine
   exporters/            # markdown + pdf generators (pure)
@@ -71,6 +72,23 @@ scripts/gen-icons.mjs   # icon generation
 One repository, one build — no microservices. UI is React 18 + TypeScript + Vite; capture and orchestration stay framework-free.
 
 > Build, test and load instructions: **[INSTALL.md](INSTALL.md)**.
+
+### Companion Desktop (Tauri 2)
+
+Beyond the extension, this repo ships a **Companion Desktop** app
+(Windows/macOS/Linux, Tauri 2 + React). Where the extension captures and
+summarises in the browser, the desktop app owns a local **vault** — a plain
+folder of Markdown `.md` files that stay the canonical source. Search and
+backlinks run on a derived SQLite/FTS5 index that is rebuilt from the files, so
+deleting the index never loses a note.
+
+The two talk over a **native-messaging bridge**: when the desktop app (and its
+registered host) is installed, the extension pushes caption batches into the
+vault through `@meetcc/vault` (`applyBatch`, deduped by `operation_id`, merged by
+`session_key`), writing each meeting as a note plus an append-only transcript
+sidecar. Installing the desktop is optional and purely additive — with no host,
+the extension works exactly as before. Build and native-host setup:
+**[INSTALL.md](INSTALL.md#the-two-deliveries-extension-and-companion-desktop)**.
 
 ## How it works
 
