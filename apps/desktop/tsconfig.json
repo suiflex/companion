@@ -1,12 +1,12 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "types": ["node"],
     "paths": {
       "@meetcc/shared": ["../../packages/shared/src"],
       "@meetcc/ai": ["../../packages/ai/src"],
       "@meetcc/meeting": ["../../packages/meeting/src"],
-      "@meetcc/store": ["../../packages/store/src"]
+      "@meetcc/store": ["../../packages/store/src"],
+      "@meetcc/vault": ["../../packages/vault/src"]
     }
   },
   "include": ["src"]

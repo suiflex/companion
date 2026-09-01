@@ -19,10 +19,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@meetcc/shared': p('../../packages/shared/src'),
-      '@meetcc/ai': p('../../packages/ai/src'),
-      '@meetcc/meeting': p('../../packages/meeting/src'),
       '@meetcc/store': p('../../packages/store/src'),
+      '@meetcc/vault': p('../../packages/vault/src'),
     },
   },
   build: {
