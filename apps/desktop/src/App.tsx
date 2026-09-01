@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import { Vault, uuidV7, type VaultNote } from '@meetcc/vault'
+import { openDatabase, type SqlDriver } from '@meetcc/store'
+import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
 
 interface NoteHeader {
@@ -16,16 +17,23 @@ function dayOf(iso?: string): string {
 export default function App() {
   const [vault, setVault] = useState<Vault | null>(null)
   const [notes, setNotes] = useState<NoteHeader[]>([])
+  const [driver, setDriver] = useState<SqlDriver | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [note, setNote] = useState<VaultNote | null>(null)
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const driverRef = useRef<SqlDriver | null>(null)
 
   useEffect(() => {
     const init = async () => {
       try {
         const root = await invoke<string>('vault_root')
         const v = new Vault({ io: tauriVaultIo(root) })
+        // Derived index is disposable and session-scoped: an in-memory SQLite
+        // rebuilt from the .md files is all the UI needs for search.
+        const { driver } = await openDatabase()
+        driverRef.current = driver
+        setDriver(driver)
         setVault(v)
         await refresh(v)
       } catch (e) {
@@ -45,6 +53,7 @@ export default function App() {
       }),
     )
     setNotes(heads)
+    if (driverRef.current) await createIndex(driverRef.current, v)
   }
 
   async function open(rel: string) {
@@ -91,13 +100,30 @@ export default function App() {
     await refresh(vault)
   }
 
-  const filtered = useMemo(
-    () =>
-      notes.filter((n) =>
-        query ? n.title.toLowerCase().includes(query.toLowerCase()) : true,
-      ),
-    [notes, query],
-  )
+  const filtered = useMemo(() => {
+    if (!query.trim()) return notes
+    const q = query.trim().toLowerCase()
+    // FTS hits carry a vault-relative `path` (and match the note body too);
+    // title-substring matches on the full list fill any gap. Dedupe by rel.
+    const hits = driver
+      ? search(driver, q).map((h) => ({ rel: h.path, title: h.title, updatedAt: h.updatedAt }))
+      : []
+    const seen = new Set<string>()
+    const ordered: NoteHeader[] = []
+    for (const h of hits) {
+      if (!h.rel) continue
+      if (seen.has(h.rel)) continue
+      seen.add(h.rel)
+      ordered.push(h)
+    }
+    for (const n of notes) {
+      if (n.title.toLowerCase().includes(q) && !seen.has(n.rel)) {
+        seen.add(n.rel)
+        ordered.push(n)
+      }
+    }
+    return ordered
+  }, [notes, driver, query])
 
   return (
     <div className="shell">
@@ -131,15 +157,21 @@ export default function App() {
         />
         <ul className="note-list">
           {filtered.map((n) => (
-            <li key={n.rel}>
-              <button
-                type="button"
-                className={selected === n.rel ? 'note-item active' : 'note-item'}
-                onClick={() => open(n.rel)}
-              >
-                <span className="note-title">{n.title}</span>
-                <span className="note-date">{dayOf(n.updatedAt)}</span>
-              </button>
+            <li key={n.rel || n.title}>
+              {n.rel ? (
+                <button
+                  type="button"
+                  className={selected === n.rel ? 'note-item active' : 'note-item'}
+                  onClick={() => open(n.rel)}
+                >
+                  <span className="note-title">{n.title}</span>
+                  <span className="note-date">{dayOf(n.updatedAt)}</span>
+                </button>
+              ) : (
+                <span className="note-title muted" title="hasil pencarian isi tubuh nota">
+                  {n.title}
+                </span>
+              )}
             </li>
           ))}
           {filtered.length === 0 && <li className="empty-hint">Belum ada nota.</li>}

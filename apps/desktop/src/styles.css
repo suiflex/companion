@@ -326,3 +326,9 @@ body {
   color: #ff6b74;
   font: 400 12px/1.4 ui-monospace, Menlo, monospace;
 }
+
+.note-title.muted {
+  color: var(--fg-muted);
+  cursor: default;
+  padding: 7px 9px;
+}

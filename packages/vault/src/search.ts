@@ -13,6 +13,8 @@ export interface VaultIndexRow {
   sessionKey: string
   title: string
   updatedAt: string
+  /** Relative .md path under the vault (e.g. `Rapat/2026-08-28/room.md`). */
+  path: string
 }
 
 const SCHEMA = `
@@ -40,6 +42,7 @@ CREATE TRIGGER IF NOT EXISTS vault_au AFTER UPDATE ON vault_notes BEGIN
   INSERT INTO vault_fts(rowid, title, body) VALUES (new.rowid, new.title, new.body);
 END;
 `
+
 /** Create the derived tables and populate them from the vault. */
 export async function createIndex(db: SqlDriver, vault: Vault): Promise<void> {
   db.exec(SCHEMA)
@@ -66,7 +69,7 @@ interface JoinedRow extends VaultIndexRow {
 export function search(db: SqlDriver, query: string): VaultIndexRow[] {
   const match = ftsQuery(query)
   const rows = db.all<JoinedRow>(
-    `SELECT n.id, n.session_key AS sessionKey, n.title, n.updated_at AS updatedAt, n.rowid
+    `SELECT n.id, n.session_key AS sessionKey, n.title, n.updated_at AS updatedAt, n.path, n.rowid
        FROM vault_fts f JOIN vault_notes n ON n.rowid = f.rowid
       WHERE vault_fts MATCH ? ORDER BY rank`,
     [match],
@@ -74,8 +77,9 @@ export function search(db: SqlDriver, query: string): VaultIndexRow[] {
   return rows.map(({ rowid: _rowid, ...row }) => row)
 }
 
+/** Relative path matching `Vault.notePath`: `Rapat/<day>/<room>.md`. */
 function notePathOf(sessionKey: string, startedAt?: string): string {
-  const room = sessionKey.split('#')[0]
+  const room = sessionKey.split('#')[0].replace(/[^a-zA-Z0-9-]+/g, '-')
   const day = startedAt?.slice(0, 10) ?? 'undated'
-  return `${day}/${room}`
+  return `Rapat/${day}/${room}.md`
 }
