@@ -1,9 +1,10 @@
 // Native-messaging bridge handler — the desktop side of extension ↔ vault.
-import type { SqlDriver } from '@meetcc/store'
+// The FTS index is derived and rebuilt by the desktop app when it scans the
+// vault, not by the bridge, so this module has no SqlDriver dependency and can
+// run in a plain Node native-messaging host without @meetcc/store.
 import { sessionKeyFor, uuidV7 } from './identity'
 import type { Vault } from './vault'
 import type { VaultNote } from './note'
-import { createIndex } from './search'
 
 export interface BatchLine {
   speaker: string
@@ -34,7 +35,6 @@ export interface BridgeState {
 
 export interface BridgeDeps {
   vault: Vault
-  driver: SqlDriver
   now(): string
 }
 
@@ -87,7 +87,6 @@ export async function applyBatch(
     await deps.vault.appendTranscript(note.id, JSON.stringify(line))
   }
   state.seen[batch.operationId] = deps.now()
-  await createIndex(deps.driver, deps.vault)
   return { status: 'ok', applied: true, noteId: note.id }
 }
 

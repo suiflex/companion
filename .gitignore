@@ -18,3 +18,4 @@ meetcc-extension-*.zip
 meetcc-extension-*.xpi
 meetcc-source-*.zip
 **/src-tauri/target/
+apps/desktop/dist-native/

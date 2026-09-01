@@ -441,6 +441,31 @@ async function handleExportObsidian(): Promise<{
   };
 }
 
+// Native-messaging host registered by the desktop installer. Sending to it is
+// best-effort: a missing / uninstalled host must never crash the worker or
+// block capture, so failures resolve to an `ok:false` and the vault is rebuilt
+// from the extension store as before.
+const NATIVE_HOST = 'dev.suiflex.companion';
+
+function handleBridgeSend(
+  batch: object,
+): Promise<{ ok: boolean; data?: unknown; error?: string }> {
+  // lib is ES2022 (no Promise.withResolvers) and sendNativeMessage is
+  // executor-callback-based, so the executor form is required here.
+  return new Promise((resolve) => {
+    chrome.runtime.sendNativeMessage(NATIVE_HOST, batch, (res) => {
+      const err = chrome.runtime.lastError;
+      if (err) resolve({ ok: false, error: err.message ?? 'native-host-error' });
+      else resolve({ ok: true, data: res });
+    });
+  });
+}
+
+
+
+
+
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'db' && typeof msg.op === 'string') {
     handleDb({ op: msg.op, args: msg.args })
@@ -450,6 +475,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg?.type === 'export-obsidian') {
     handleExportObsidian()
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
+    return true; // async response
+  }
+  if (msg?.type === 'bridge-send' && msg.batch && typeof msg.batch === 'object') {
+    handleBridgeSend(msg.batch as object)
       .then(sendResponse)
       .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
     return true; // async response
