@@ -14,14 +14,24 @@ const GOOGLE_TOKEN_HOST = 'https://oauth2.googleapis.com';
 // This lives next to the provider presets so there is one source of truth for
 // where a given provider is reached.
 
-/** `https://host/*` for a URL, or '' when the URL is unusable as a pattern. */
+/**
+ * `https://host/*` for a URL, or '' when the URL is unusable as a pattern.
+ *
+ * The port is dropped. Firefox forbids ports in match patterns — a pattern
+ * carrying one is rejected outright (MDN, Match patterns), so `permissions
+ * .request({ origins: ['http://localhost:11434/*'] })` for Ollama fails in
+ * Gecko and the completion call dies with a network error. Dropping the port
+ * is safe in Chromium: a pattern without a port matches any port, which is a
+ * superset of what was requested and what Gecko needed anyway.
+ */
 export function originPattern(url: string): string {
   const trimmed = url.trim();
   if (!trimmed) return '';
   try {
     const parsed = new URL(trimmed);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
-    return `${parsed.protocol}//${parsed.host}/*`;
+    // hostname, not host: host carries the port, hostname never does
+    return `${parsed.protocol}//${parsed.hostname}/*`;
   } catch {
     return '';
   }
