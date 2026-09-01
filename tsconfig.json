@@ -20,6 +20,7 @@
       "@meetcc/meeting": ["packages/meeting/src"],
       "@meetcc/store": ["packages/store/src"],
       "@meetcc/mcp": ["packages/mcp/src"],
+      "@meetcc/vault": ["packages/vault/src"],
       "@meetcc/exporters": ["packages/exporters/src"],
       "@meetcc/exporters/*": ["packages/exporters/src/*"]
     }
