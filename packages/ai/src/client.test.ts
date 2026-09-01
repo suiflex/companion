@@ -65,8 +65,10 @@ describe('requiredOrigins (§8.3)', () => {
 
   it('asks only for the provider the user picked', () => {
     expect(requiredOrigins({ ...base, provider: 'openai' })).toEqual(['https://api.openai.com/*']);
+    // the port never reaches the pattern: Firefox rejects match patterns with
+    // a port, and Chromium treats a portless pattern as any-port
     expect(requiredOrigins({ ...base, provider: 'ollama', baseUrl: 'http://localhost:11434/v1' })).toEqual([
-      'http://localhost:11434/*',
+      'http://localhost/*',
     ]);
   });
 
@@ -105,5 +107,10 @@ describe('requiredOrigins (§8.3)', () => {
     expect(originPattern('not a url')).toBe('');
     expect(originPattern('javascript:alert(1)')).toBe('');
     expect(originPattern('https://api.openai.com/v1/chat')).toBe('https://api.openai.com/*');
+    // explicit and default ports both come out: Gecko forbids ports in match
+    // patterns, Chromium reads a portless pattern as any-port
+    expect(originPattern('http://127.0.0.1:45789/x')).toBe('http://127.0.0.1/*');
+    expect(originPattern('https://api.openai.com:443/v1')).toBe('https://api.openai.com/*');
+    expect(originPattern('http://api.openai.com:80/v1')).toBe('http://api.openai.com/*');
   });
 });

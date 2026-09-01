@@ -1,0 +1,53 @@
+name: CI
+
+# Verification for every push and pull request: typecheck, lint, tests, and a
+# full build of the extension plus the MCP and sync servers. Failures here
+# block a merge; nothing is published.
+#
+# The release machinery lives in release.yml (tag pushes): artifacts, the
+# GitHub Release and the AMO submission stay out of the PR loop, so a Mozilla
+# rate limit can never turn a green branch red.
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npx vitest run
+
+      - name: Build
+        run: npm run build -w apps/extension
+
+      # both bins are bundled TypeScript; the smoke tests prove they start
+      # under plain node and answer over stdio / HTTP
+      - name: Build and smoke-test the MCP and sync servers
+        run: |
+          npm run build -w @meetcc/mcp
+          npm run smoke -w @meetcc/mcp
+          npm run build -w @meetcc/sync-server
+          npm run smoke -w @meetcc/sync-server
