@@ -3,7 +3,8 @@ import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openDatabase } from '@meetcc/store'
-import { Vault } from './vault'
+import { openNodeVault } from './nodeIo'
+import type { Vault } from './vault'
 import { createIndex, search } from './search'
 import type { VaultNote } from './note'
 
@@ -25,7 +26,7 @@ function note(over: Partial<VaultNote> = {}): VaultNote {
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'vault-'))
-  vault = new Vault({ root: dir })
+  vault = openNodeVault(dir)
 })
 
 afterEach(() => {

@@ -3,7 +3,8 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openDatabase } from '@meetcc/store'
-import { Vault } from './vault'
+import { type Vault } from './vault'
+import { openNodeVault } from './nodeIo'
 import { applyBatch, type BridgeBatch } from './bridge'
 import { search } from './search'
 
@@ -22,7 +23,7 @@ const batch = (over: Partial<BridgeBatch> = {}): BridgeBatch => ({
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'bridge-'))
-  vault = new Vault({ root: dir })
+  vault = openNodeVault(dir)
 })
 
 afterEach(() => {
