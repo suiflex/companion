@@ -32,7 +32,7 @@ afterEach(() => {
 
 it('applies a batch once and writes note + transcript, with caption searchable', async () => {
   const { driver } = await openDatabase()
-  const result = applyBatch(
+  const result = await applyBatch(
     { vault, driver, now: () => '2026-09-01T10:00:00Z' },
     batch({ markdown: '# Gate review\n\nKeputusan rapat soal vault.' }),
   )
@@ -40,11 +40,11 @@ it('applies a batch once and writes note + transcript, with caption searchable',
   if (result.status !== 'ok') return
   expect(result.noteId).toBeTruthy()
 
-  const notes = vault.readAll()
+  const notes = await vault.readAll()
   expect(notes).toHaveLength(1)
   expect(notes[0].sessionKey).toContain('meet/abc#')
   // raw caption goes to the sidecar, not the note body
-  expect(vault.readTranscript(notes[0].id)).toHaveLength(1)
+  expect(await vault.readTranscript(notes[0].id)).toHaveLength(1)
   // note body is searchable
   const hits = search(driver, 'Keputusan')
   expect(hits.map((h) => h.id)).toContain(notes[0].id)
@@ -54,39 +54,39 @@ it('dedupes a redelivered operation_id', async () => {
   const { driver } = await openDatabase()
   const now = () => '2026-09-01T10:00:00Z'
   const state = { seen: {} }
-  const first = applyBatch({ vault, driver, now }, batch(), state)
+  const first = await applyBatch({ vault, driver, now }, batch(), state)
   expect(first.status).toBe('ok')
-  const second = applyBatch({ vault, driver, now }, batch(), state)
+  const second = await applyBatch({ vault, driver, now }, batch(), state)
   expect(second.status).toBe('duplicate')
-  expect(vault.readAll()).toHaveLength(1)
+  expect(await vault.readAll()).toHaveLength(1)
 })
 
 it('merges two batches of the same meeting into one note (by session_key)', async () => {
   const { driver } = await openDatabase()
   const now = () => '2026-09-01T10:00:00Z'
   const state = { seen: {} }
-  applyBatch(
+  await applyBatch(
     { vault, driver, now },
     batch({ operationId: 'op-1', entries: [{ speaker: 'A', text: 'baris 1', time: 't' }] }),
     state,
   )
-  applyBatch(
+  await applyBatch(
     { vault, driver, now },
     batch({ operationId: 'op-2', entries: [{ speaker: 'B', text: 'baris 2', time: 't' }] }),
     state,
   )
-  const notes = vault.readAll()
+  const notes = await vault.readAll()
   expect(notes).toHaveLength(1)
-  expect(vault.readTranscript(notes[0].id)).toHaveLength(2)
+  expect(await vault.readTranscript(notes[0].id)).toHaveLength(2)
 })
 
 it('fills a first-delivery note body from markdown (title split off)', async () => {
   const { driver } = await openDatabase()
-  applyBatch(
+  await applyBatch(
     { vault, driver, now: () => '2026-09-01T10:00:00Z' },
     batch({ markdown: '# Gate review\n\nDesktop ditahan sampai verdict.' }),
   )
-  const [note] = vault.readAll()
+  const [note] = await vault.readAll()
   expect(note.title).toBe('Gate review')
   expect(note.body).toBe('Desktop ditahan sampai verdict.')
 })

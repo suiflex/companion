@@ -34,46 +34,50 @@ afterEach(() => {
 })
 
 describe('vault file ops', () => {
-  it('writes an atomic .md note and reads it back', () => {
-    const path = vault.writeNote(note())
+  it('writes an atomic .md note and reads it back', async () => {
+    const path = await vault.writeNote(note())
     expect(existsSync(path)).toBe(true)
     expect(readFileSync(path, 'utf8')).toContain('# Gate review')
-    const back = vault.readAll()[0]
-    expect(back.sessionKey).toBe('meet/abc#2026-08-28T14:00')
+    const back = await vault.readAll()
+    expect(back[0].sessionKey).toBe('meet/abc#2026-08-28T14:00')
   })
 
-  it('appends raw transcript lines to a sidecar, never overwriting', () => {
-    vault.writeNote(note())
-    vault.appendTranscript('0191f3c2', '{"speaker":"Andi","text":"a"}')
-    vault.appendTranscript('0191f3c2', '{"speaker":"Rani","text":"b"}')
-    expect(vault.readTranscript('0191f3c2')).toHaveLength(2)
+  it('appends raw transcript lines to a sidecar, never overwriting', async () => {
+    await vault.writeNote(note())
+    await vault.appendTranscript('0191f3c2', '{"speaker":"Andi","text":"a"}')
+    await vault.appendTranscript('0191f3c2', '{"speaker":"Rani","text":"b"}')
+    expect(await vault.readTranscript('0191f3c2')).toHaveLength(2)
   })
 
-  it('moves a note to trash instead of deleting', () => {
-    const path = vault.writeNote(note())
+  it('moves a note to trash instead of deleting', async () => {
+    const path = await vault.writeNote(note())
     const rel = path.replace(dir + '/', '')
-    vault.trash(rel)
+    await vault.trash(rel)
     expect(existsSync(path)).toBe(false)
-    expect(vault.listNotes()).toHaveLength(0)
+    expect(await vault.listNotes()).toHaveLength(0)
     // original content still exists under .trash
     expect(existsSync(join(dir, '.trash'))).toBe(true)
   })
 
-  it('lists notes newest-updated first', () => {
-    vault.writeNote(note({ id: 'a', title: 'Older' }))
-    vault.writeNote(note({ id: 'b', sessionKey: 'meet/x#2026-08-28T14:00', updatedAt: '2026-09-02T10:00:00+07:00', title: 'Newer' }))
-    const list = vault.listNotes()
+  it('lists notes newest-updated first', async () => {
+    await vault.writeNote(note({ id: 'a', title: 'Older' }))
+    await vault.writeNote(
+      note({ id: 'b', sessionKey: 'meet/x#2026-08-28T14:00', updatedAt: '2026-09-02T10:00:00+07:00', title: 'Newer' }),
+    )
+    const list = await vault.listNotes()
     expect(list).toHaveLength(2)
-    expect(vault.readNote(list[0]).title).toBe('Newer')
+    expect((await vault.readNote(list[0])).title).toBe('Newer')
   })
 })
 
 describe('derived index', () => {
   it('rebuilds from source and searches title/body', async () => {
-    vault.writeNote(note())
-    vault.writeNote(note({ id: 'c', sessionKey: 'teams/y#2026-08-28T14:00', title: 'Standup', body: 'Installer spike GO' }))
+    await vault.writeNote(note())
+    await vault.writeNote(
+      note({ id: 'c', sessionKey: 'teams/y#2026-08-28T14:00', title: 'Standup', body: 'Installer spike GO' }),
+    )
     const { driver } = await openDatabase()
-    createIndex(driver, vault)
+    await createIndex(driver, vault)
     const hits = search(driver, 'Installer')
     expect(hits.map((h) => h.title)).toContain('Standup')
     const gate = search(driver, 'Gate')
@@ -81,14 +85,14 @@ describe('derived index', () => {
   })
 
   it('delete + rebuild restores the index from .md source', async () => {
-    vault.writeNote(note())
+    await vault.writeNote(note())
     const { driver } = await openDatabase()
-    createIndex(driver, vault)
+    await createIndex(driver, vault)
     expect(search(driver, 'vault')).toHaveLength(1)
     // wipe and rebuild — the .md files are the source of truth
     driver.exec('DELETE FROM vault_notes')
     expect(search(driver, 'vault')).toHaveLength(0)
-    createIndex(driver, vault)
+    await createIndex(driver, vault)
     expect(search(driver, 'vault')).toHaveLength(1)
   })
 })

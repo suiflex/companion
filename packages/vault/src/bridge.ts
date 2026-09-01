@@ -51,12 +51,17 @@ const emptyState = (): BridgeState => ({ seen: {} })
  * same meeting merge into one note). Caption lines are appended to the raw
  * transcript sidecar, never into the human-editable note body.
  */
-export function applyBatch(deps: BridgeDeps, batch: BridgeBatch, state = emptyState()): BridgeResult {
+export async function applyBatch(
+  deps: BridgeDeps,
+  batch: BridgeBatch,
+  state = emptyState(),
+): Promise<BridgeResult> {
   if (state.seen[batch.operationId]) {
     return { status: 'duplicate', applied: false }
   }
   const sessionKey = batch.sessionKey ?? sessionKeyFor(batch.roomId, batch.startedAt)
-  const existing = deps.vault.readAll().find((n) => n.sessionKey === sessionKey)
+  const all = await deps.vault.readAll()
+  const existing = all.find((n) => n.sessionKey === sessionKey)
   const note: VaultNote = existing ?? {
     id: uuidV7(),
     sessionKey,
@@ -77,12 +82,12 @@ export function applyBatch(deps: BridgeDeps, batch: BridgeBatch, state = emptySt
     note.body = split.body
   }
   note.updatedAt = deps.now()
-  deps.vault.writeNote(note)
+  await deps.vault.writeNote(note)
   for (const line of batch.entries) {
-    deps.vault.appendTranscript(note.id, JSON.stringify(line))
+    await deps.vault.appendTranscript(note.id, JSON.stringify(line))
   }
   state.seen[batch.operationId] = deps.now()
-  createIndex(deps.driver, deps.vault)
+  await createIndex(deps.driver, deps.vault)
   return { status: 'ok', applied: true, noteId: note.id }
 }
 

@@ -4,29 +4,29 @@
 // source of truth.
 //
 // This module is framework-free and I/O-agnostic: it talks to the filesystem
-// through a `VaultIo` so the same logic runs under Node (tests/docs) and in the
-// Tauri WebView (which can only reach the disk through Rust IPC commands).
+// through an async `VaultIo` so the same logic runs under Node (tests/scripts)
+// and in the Tauri WebView (which reaches the disk only through async Rust IPC).
 import { noteFromMarkdown, noteToMarkdown, type VaultNote } from './note'
 
 export interface VaultIo {
   /** Absolute root of the vault (e.g. `~/Companion`). */
   readonly root: string
-  /** Path join for a note/transcript path, absolute. */
+  /** Path join (pure, synchronous). */
   join(...parts: string[]): string
   /** Create a directory (and parents) if missing. */
-  mkdirs(absDir: string): void
-  /** Read a file's UTF-8 text; throws if missing. */
-  readFile(abs: string): string
-  /** Append a single line (plus newline) to a file, creating it if needed. */
-  appendLine(abs: string, line: string): void
+  mkdirs(absDir: string): Promise<void>
+  /** Read a file's UTF-8 text; rejects if missing. */
+  readFile(abs: string): Promise<string>
+  /** Append a single line (plus newline), creating the file if needed. */
+  appendLine(abs: string, line: string): Promise<void>
   /** Atomic write: temp file + rename so a crash never leaves a partial file. */
-  writeFileAtomic(abs: string, content: string): void
+  writeFileAtomic(abs: string, content: string): Promise<void>
   /** Move a file into the vault's `.trash` keeping its basename. */
-  trash(abs: string): void
+  trash(abs: string): Promise<void>
   /** All absolute `.md` paths under the vault, excluding `.trash`/`.transcript`. */
-  listMarkdown(): string[]
+  listMarkdown(): Promise<string[]>
   /** mtime (ms) of a file, for newest-first ordering. */
-  mtimeMs(abs: string): number
+  mtimeMs(abs: string): Promise<number>
 }
 
 const TRASH = '.trash'
@@ -42,7 +42,7 @@ export class Vault {
 
   constructor(options: VaultOptions) {
     this.io = options.io
-    this.io.mkdirs(this.io.join(this.io.root, TRANSCRIPT_DIR))
+    void this.io.mkdirs(this.io.join(this.io.root, TRANSCRIPT_DIR))
   }
 
   transcriptDir(): string {
@@ -57,56 +57,58 @@ export class Vault {
   }
 
   /** Write a note atomically so a crash never leaves a half-written .md. */
-  writeNote(note: VaultNote): string {
+  async writeNote(note: VaultNote): Promise<string> {
     const path = this.notePath(note)
-    this.io.mkdirs(dirname(path))
-    this.io.writeFileAtomic(path, noteToMarkdown(note))
+    await this.io.mkdirs(dirname(path))
+    await this.io.writeFileAtomic(path, noteToMarkdown(note))
     return path
   }
 
   /** Read a note by its relative path under the vault. */
-  readNote(rel: string): VaultNote {
+  async readNote(rel: string): Promise<VaultNote> {
     const abs = this.io.join(this.io.root, rel)
-    return noteFromMarkdown(this.io.readFile(abs), basenameNoExt(rel))
+    return noteFromMarkdown(await this.io.readFile(abs), basenameNoExt(rel))
   }
 
   /** All notes as relative paths, newest-updated first. */
-  listNotes(): string[] {
-    return this.io
-      .listMarkdown()
-      .map((abs) => relative(this.io.root, abs))
-      .sort((a, b) => this.io.mtimeMs(joinAbs(this.io, b)) - this.io.mtimeMs(joinAbs(this.io, a)))
+  async listNotes(): Promise<string[]> {
+    const files = await this.io.listMarkdown()
+    const rel = files.map((abs) => relative(this.io.root, abs))
+    const withMtime = await Promise.all(
+      rel.map(async (r) => ({ r, m: await this.io.mtimeMs(this.io.join(this.io.root, r)) })),
+    )
+    return withMtime.sort((a, b) => b.m - a.m).map((x) => x.r)
   }
 
-  readAll(): VaultNote[] {
-    return this.listNotes().map((rel) => this.readNote(rel))
+  async readAll(): Promise<VaultNote[]> {
+    const rel = await this.listNotes()
+    return Promise.all(rel.map((r) => this.readNote(r)))
   }
 
   /** Append one raw transcript line to the note's sidecar (never edited). */
-  appendTranscript(noteId: string, line: string): string {
+  async appendTranscript(noteId: string, line: string): Promise<string> {
     const path = this.io.join(this.transcriptDir(), `${noteId}.jsonl`)
-    this.io.appendLine(path, line)
+    await this.io.appendLine(path, line)
     return path
   }
 
-  readTranscript(noteId: string): string[] {
+  async readTranscript(noteId: string): Promise<string[]> {
     const path = this.io.join(this.transcriptDir(), `${noteId}.jsonl`)
-    return this.io
-      .readFile(path)
+    return (await this.io.readFile(path))
       .split('\n')
       .filter((l) => l.trim() !== '')
   }
 
   /** Move a note to the trash instead of deleting (non-destructive). */
-  trash(rel: string): void {
+  async trash(rel: string): Promise<void> {
     const from = this.io.join(this.io.root, rel)
     const trashRoot = this.io.join(this.io.root, TRASH)
-    this.io.mkdirs(trashRoot)
-    this.io.trash(from)
+    await this.io.mkdirs(trashRoot)
+    await this.io.trash(from)
   }
 }
 
-/** @internal dirname of an absolute path (also fine for forward slashes). */
+/** @internal dirname of a forward-slash path. */
 function dirname(p: string): string {
   const i = p.lastIndexOf('/')
   return i <= 0 ? p : p.slice(0, i)
@@ -122,9 +124,4 @@ function basenameNoExt(name: string): string {
 function relative(root: string, abs: string): string {
   const r = root.replace(/\/+$/, '')
   return abs.startsWith(r + '/') ? abs.slice(r.length + 1) : abs
-}
-
-/** @internal join for the sort comparator. */
-function joinAbs(io: VaultIo, rel: string): string {
-  return io.join(io.root, rel)
 }

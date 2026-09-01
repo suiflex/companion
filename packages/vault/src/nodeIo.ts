@@ -1,4 +1,5 @@
 // Node implementation of VaultIo (tests + scripts). The browser/WebView build
+// never imports this module, so `node:fs` stays out of the desktop bundle.
 import {
   appendFileSync,
   mkdirSync,
@@ -14,28 +15,30 @@ import { Vault, type VaultIo } from './vault'
 const TRASH = '.trash'
 const TRANSCRIPT_DIR = '.transcript'
 
-/** Node-filesystem VaultIo rooted at `root`. */
+/** Node-filesystem VaultIo rooted at `root`. Methods are async to match VaultIo. */
 export function nodeIo(root: string): VaultIo {
   return {
     root,
     join: (...parts) => join(...parts),
-    mkdirs: (abs) => mkdirSync(abs, { recursive: true }),
-    readFile: (abs) => readFileSync(abs, 'utf8'),
-    appendLine: (abs, line) => appendFileSync(abs, `${line}\n`, { encoding: 'utf8' }),
-    writeFileAtomic: (abs, content) => {
+    mkdirs: async (abs) => {
+      mkdirSync(abs, { recursive: true })
+    },
+    readFile: async (abs) => readFileSync(abs, 'utf8'),
+    appendLine: async (abs, line) => appendFileSync(abs, `${line}\n`, { encoding: 'utf8' }),
+    writeFileAtomic: async (abs, content) => {
       mkdirSync(dirname(abs), { recursive: true })
       const tmp = `${abs}.${process.pid}.tmp`
       writeFileSync(tmp, content, 'utf8')
       renameSync(tmp, abs)
     },
-    trash: (abs) => {
+    trash: async (abs) => {
       const base = abs.split('/').pop() ?? abs
       const trashDir = join(root, TRASH)
       mkdirSync(trashDir, { recursive: true })
       renameSync(abs, join(trashDir, base))
     },
-    listMarkdown: () => walkMd(root),
-    mtimeMs: (abs) => statSync(abs).mtimeMs,
+    listMarkdown: async () => walkMd(root),
+    mtimeMs: async (abs) => statSync(abs).mtimeMs,
   }
 }
 

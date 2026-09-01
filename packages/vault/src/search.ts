@@ -40,17 +40,16 @@ CREATE TRIGGER IF NOT EXISTS vault_au AFTER UPDATE ON vault_notes BEGIN
   INSERT INTO vault_fts(rowid, title, body) VALUES (new.rowid, new.title, new.body);
 END;
 `
-
 /** Create the derived tables and populate them from the vault. */
-export function createIndex(db: SqlDriver, vault: Vault): void {
+export async function createIndex(db: SqlDriver, vault: Vault): Promise<void> {
   db.exec(SCHEMA)
-  rebuild(db, vault)
+  await rebuild(db, vault)
 }
 
 /** Repopulate the index from the vault's current .md files. */
-export function rebuild(db: SqlDriver, vault: Vault): void {
+export async function rebuild(db: SqlDriver, vault: Vault): Promise<void> {
   db.exec('DELETE FROM vault_notes')
-  for (const note of vault.readAll()) {
+  for (const note of await vault.readAll()) {
     const path = notePathOf(note.sessionKey, note.startedAt)
     db.run(
       'INSERT INTO vault_notes(id, session_key, title, body, platform, updated_at, path) VALUES (?,?,?,?,?,?,?)',
