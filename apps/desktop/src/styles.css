@@ -1,0 +1,136 @@
+:root {
+  color-scheme: dark;
+  --bg: #0a0d12;
+  --bg-panel: #0f131b;
+  --border: #1d2434;
+  --fg: #dbe2ee;
+  --fg-muted: #8b95a9;
+  --accent: #46e394;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.5 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.shell {
+  display: flex;
+  height: 100%;
+}
+
+.rail {
+  width: 52px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0;
+  border-right: 1px solid var(--border);
+  background: #0d1119;
+}
+
+.rail .brand {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.rail-btn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.rail-btn:hover {
+  background: #131926;
+  color: var(--fg);
+}
+
+.rail-spacer {
+  margin-top: auto;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  height: 38px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: #0d1119;
+}
+
+.badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 99px;
+  background: rgba(70, 227, 148, 0.12);
+  border: 1px solid rgba(70, 227, 148, 0.4);
+  color: var(--accent);
+  font: 700 9px/1 ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.12em;
+}
+
+.badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.empty h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.empty p {
+  margin: 0;
+  color: var(--fg-muted);
+  max-width: 46ch;
+}
