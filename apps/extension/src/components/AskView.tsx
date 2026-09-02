@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  CHAT_PREFIX,
   clearChat,
   displayMeetingId,
   loadChat,
+  watchStorage,
   type Answerability,
   type AskResult,
   type ChatMessage,
@@ -94,12 +96,18 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
   const scroller = useRef<HTMLDivElement>(null);
   const toast = useToast();
 
-  // reload history when switching meetings
+  // Storage is the transcript of the conversation, not this component. The
+  // service worker writes both turns there — it holds the API key, so it has
+  // to — and this follows along, which is what makes an answer that landed
+  // while the view was unmounted show up on the way back.
   useEffect(() => {
     let alive = true;
-    void loadChat(meeting.id).then((h) => alive && setMessages(h));
+    const reload = () => void loadChat(meeting.id).then((h) => alive && setMessages(h));
+    reload();
+    const stop = watchStorage(reload, [CHAT_PREFIX]);
     return () => {
       alive = false;
+      stop();
     };
   }, [meeting.id]);
 
@@ -116,19 +124,9 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
     setBusy(true);
     try {
       const res = await chrome.runtime.sendMessage({ type: 'ask', meetingId: meeting.id, question });
-      if (res?.ok) {
-        setMessages((m) => [
-          ...m,
-          {
-            role: 'assistant',
-            content: res.answer,
-            time: new Date().toISOString(),
-            result: res.result as AskResult | undefined,
-          },
-        ]);
-      } else {
-        toast('error', `Gagal: ${res?.error ?? 'unknown'}`);
-      }
+      // The answer arrives through storage, like every other turn — appending
+      // it here as well would show it twice.
+      if (!res?.ok) toast('error', `Gagal: ${res?.error ?? 'unknown'}`);
     } catch (e) {
       toast('error', `Gagal: ${(e as Error).message}`);
     } finally {

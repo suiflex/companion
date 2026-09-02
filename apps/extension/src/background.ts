@@ -254,12 +254,18 @@ async function handleAsk(
   if (!meeting) return { ok: false, error: 'Meeting tidak ditemukan.' };
   if (!meeting.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
   const history = await loadChat(id);
+  // Persist the question before asking, not after answering. A failed call
+  // used to take the question with it: the dashboard held it in component
+  // state, so leaving the tab lost what was typed with nothing to retry from.
+  const asked: ChatMessage[] = [
+    ...history,
+    { role: 'user', content: question, time: new Date().toISOString() },
+  ];
+  await saveChat(id, asked);
   const client = await makeInteractiveClient();
   const result = await askMeeting(client, meeting, await analysisOf(id), history, question);
-  const now = new Date().toISOString();
   const turns: ChatMessage[] = [
-    ...history,
-    { role: 'user', content: question, time: now },
+    ...asked,
     { role: 'assistant', content: result.answer, time: new Date().toISOString(), result },
   ];
   await saveChat(id, turns);
