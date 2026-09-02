@@ -355,3 +355,55 @@ body {
 .confirm-bar span {
   flex: 1;
 }
+
+.settings {
+  max-width: 640px;
+  padding: 8px 4px;
+}
+
+.settings h1 {
+  margin: 0 0 20px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.settings h2 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.setting-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+.setting-row > div {
+  min-width: 0;
+}
+
+/* The label is two words; letting it wrap made the button look broken. */
+.setting-row > .btn {
+  flex: none;
+  white-space: nowrap;
+}
+
+.setting-row .hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+/* A path is the one thing here a user may need to copy exactly. */
+.setting-path {
+  margin: 0;
+  font: 400 12px/1.5 ui-monospace, Menlo, monospace;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}

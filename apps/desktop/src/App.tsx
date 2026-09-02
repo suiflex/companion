@@ -1,8 +1,63 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { openDatabase, type SqlDriver } from '@meetcc/store'
 import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
+
+/** Vault & bridge settings. Small on purpose: the only thing here that changes
+ *  state is where the vault lives, and that is a decision worth making explicit
+ *  rather than burying in a preferences tree. */
+function Settings({
+  root,
+  noteCount,
+  onMove,
+}: {
+  root: string
+  noteCount: number
+  onMove: () => void
+}) {
+  return (
+    <div className="settings">
+      <h1>Vault &amp; jembatan</h1>
+
+      <section className="setting-row">
+        <div>
+          <h2>Lokasi vault</h2>
+          <p className="setting-path">{root}</p>
+          <p className="hint">
+            {noteCount} nota. Semua berkas .md biasa — bisa dibuka editor apa pun, dan
+            aman disalin atau di-backup seperti folder lain.
+          </p>
+        </div>
+        <button type="button" className="btn" onClick={onMove}>
+          Pindah folder…
+        </button>
+      </section>
+
+      <section className="setting-row">
+        <div>
+          <h2>Jembatan extension</h2>
+          <p className="hint">
+            Extension mengirim rapat yang selesai ke vault ini lewat native messaging
+            host, kalau host-nya sudah didaftarkan dan togglenya dinyalakan di Settings
+            extension. Pengiriman bersifat opsional — desktop tetap jalan tanpanya.
+          </p>
+        </div>
+      </section>
+
+      <section className="setting-row">
+        <div>
+          <h2>Indeks pencarian</h2>
+          <p className="hint">
+            Dibangun ulang dari berkas .md setiap kali daftar nota disegarkan. Indeks
+            adalah turunan: menghapusnya tidak pernah menghilangkan nota.
+          </p>
+        </div>
+      </section>
+    </div>
+  )
+}
 
 /** The Companion mark from assets/brand/logo-mark.svg, inlined. */
 function BrandMark() {
@@ -37,6 +92,7 @@ export default function App() {
   const [note, setNote] = useState<VaultNote | null>(null)
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [view, setView] = useState<'notes' | 'settings'>('notes')
   const [dirty, setDirty] = useState(false)
   // Leaving a note with unsaved edits used to drop them silently. Hold the
   // action the user asked for until they say what to do with the edits.
@@ -146,6 +202,32 @@ export default function App() {
     }
   }
 
+  /**
+   * Point the vault at another folder.
+   *
+   * `set_vault_root` has existed in the backend since the first commit with
+   * nothing calling it; this is what finally reaches it. The Vault is rebuilt
+   * rather than mutated because its io carries the root, and the derived index
+   * is repopulated from whatever the new folder holds.
+   */
+  async function moveVault() {
+    if (!vault) return
+    try {
+      const picked = await openDialog({ directory: true, title: 'Pilih folder vault' })
+      if (typeof picked !== 'string') return
+      await invoke('set_vault_root', { path: picked })
+      const next = new Vault({ io: tauriVaultIo(picked) })
+      setVault(next)
+      setNote(null)
+      setSelected(null)
+      setDirty(false)
+      await refresh(next)
+      setError(null)
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
   const filtered = useMemo(() => {
     if (!query.trim()) return notes
     const q = query.trim().toLowerCase()
@@ -175,7 +257,14 @@ export default function App() {
     <div className="shell">
       <aside className="rail" aria-label="Navigasi utama">
         <BrandMark />
-        <button type="button" title="Catatan" className="rail-btn rail-active" aria-label="Catatan">
+        <button
+          type="button"
+          title="Catatan"
+          className={view === 'notes' ? 'rail-btn rail-active' : 'rail-btn'}
+          aria-label="Catatan"
+          aria-current={view === 'notes' ? 'page' : undefined}
+          onClick={() => setView('notes')}
+        >
           ▤
         </button>
         {/* Screens that do not exist yet. Disabled rather than removed so the
@@ -193,15 +282,17 @@ export default function App() {
         <span className="rail-spacer" />
         <button
           type="button"
-          title="Vault & jembatan — belum tersedia"
-          className="rail-btn"
-          aria-label="Vault & jembatan (belum tersedia)"
-          disabled
+          title="Vault & jembatan"
+          className={view === 'settings' ? 'rail-btn rail-active' : 'rail-btn'}
+          aria-label="Vault & jembatan"
+          aria-current={view === 'settings' ? 'page' : undefined}
+          onClick={() => setView('settings')}
         >
           ⚙
         </button>
       </aside>
 
+      {view === 'notes' && (
       <aside className="sidebar">
         <div className="sidebar-head">
           <span className="kicker">Vault</span>
@@ -238,6 +329,7 @@ export default function App() {
           {filtered.length === 0 && <li className="empty-hint">Belum ada nota.</li>}
         </ul>
       </aside>
+      )}
 
       <main className="content">
         <header className="topbar">
@@ -250,7 +342,13 @@ export default function App() {
         </header>
 
         <section className="editor-wrap">
-          {note ? (
+          {view === 'settings' ? (
+            <Settings
+              root={vault?.io.root ?? '…'}
+              noteCount={notes.length}
+              onMove={moveVault}
+            />
+          ) : note ? (
             <>
               <input
                 className="title-input"
