@@ -20,3 +20,10 @@ meetcc-source-*.zip
 **/src-tauri/target/
 **/src-tauri/gen/schemas/
 apps/desktop/dist-native/
+
+# Local-only suitest harness: the desktop suite and its config drive a binary
+# built with `--features wdio`, which is a developer's machine, not CI.
+tests/
+suitest.config.json
+suitest-output/
+.suitest/
