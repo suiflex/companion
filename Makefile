@@ -1,5 +1,5 @@
 .PHONY: help install \
-	check-all ci test test-coverage test-vault typecheck typecheck-desktop lint \
+	check-all ci ci-js ci-rust test test-coverage test-vault typecheck typecheck-desktop lint \
 	rust-fmt rust-fmt-fix rust-lint rust-check \
 	build build-extension build-desktop build-host build-mcp build-sync \
 	smoke smoke-mcp smoke-sync \
@@ -33,7 +33,13 @@ check-all: typecheck typecheck-desktop lint rust-fmt rust-lint ## Every linter a
 # Includes the builds and the smokes on purpose: a bundle that fails to build
 # and a native host that stops deduping are both things the type checker and
 # the unit tests are happy to let through.
-ci: check-all test rust-check build-extension smoke smoke-mcp smoke-sync ## Everything CI runs — the gate before a PR
+ci: ci-js ci-rust ## Everything CI runs — the gate before a PR
+
+# Split along the toolchain boundary so CI can run the two halves on separate
+# runners — only one of them needs a Rust toolchain and the Linux WebView
+# libraries — while a developer still runs the whole thing with `make ci`.
+ci-js: typecheck typecheck-desktop lint test build-extension smoke smoke-mcp smoke-sync ## The JS half of the gate
+ci-rust: rust-fmt rust-lint rust-check ## The Rust half of the gate
 
 ## ---- verification ----
 
