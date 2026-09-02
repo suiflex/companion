@@ -43,12 +43,28 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # The tag stays vX.Y.Z (build.yml keys off `v*`); only the GitHub Release
-      # display title gets the product name in front of it.
-      - name: Prefix release title with product name
-        if: ${{ steps.release.outputs.release_created }}
+      # Two products release from this repo on two tag shapes: the extension
+      # keeps vX.Y.Z (release.yml keys off `v*`) and the desktop app uses
+      # companion-desktop-vX.Y.Z (release-desktop.yml). Either or both can be
+      # released in one run, so the display title is chosen per released path
+      # rather than being a constant.
+      - name: Prefix each release title with its product name
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          OUTPUTS: ${{ toJSON(steps.release.outputs) }}
         run: |
-          gh release edit "${{ steps.release.outputs.tag_name }}" \
-            --title "Meet Companion ${{ steps.release.outputs.tag_name }}"
+          set -euo pipefail
+          # The action prefixes an output with its path — except for the root
+          # package, whose outputs stay unprefixed (setPathOutput in
+          # release-please-action). Looking up `.--tag_name` returns null.
+          for path in $(jq -r '.paths_released | fromjson | .[]' <<<"$OUTPUTS"); do
+            if [ "$path" = "." ]; then prefix=""; else prefix="$path--"; fi
+            tag=$(jq -er --arg k "${prefix}tag_name" '.[$k]' <<<"$OUTPUTS")
+            version=$(jq -er --arg k "${prefix}version" '.[$k]' <<<"$OUTPUTS")
+            case "$path" in
+              apps/desktop) name="Companion Desktop" ;;
+              *) name="Meet Companion" ;;
+            esac
+            gh release edit "$tag" --title "$name v$version"
+          done
