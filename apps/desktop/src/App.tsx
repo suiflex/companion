@@ -41,7 +41,6 @@ export default function App() {
       }
     }
     void init()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function refresh(v: Vault) {

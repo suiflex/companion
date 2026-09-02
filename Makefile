@@ -1,10 +1,15 @@
-.PHONY: install test test-vault test-desktop typecheck lint build build-desktop build-host tauri tauri-dev dev dev-extension smoke help
+.PHONY: install test test-vault typecheck typecheck-desktop lint build build-desktop build-host \
+	tauri tauri-dev dev dev-extension native-host-install smoke help
 
 # Companion monorepo convenience targets. Wrap the npm/workspace scripts so
 # there is one surface for the common loops.
 
+## ---- setup ----
+
 install: ## Install all workspace dependencies
 	npm install
+
+## ---- verification ----
 
 test: ## Run the whole vitest suite
 	npm test
@@ -12,14 +17,16 @@ test: ## Run the whole vitest suite
 test-vault: ## Run only the vault package tests
 	npx vitest run packages/vault
 
-test-desktop: ## Typecheck the desktop workspace
-	npx tsc --noEmit -p apps/desktop
-
 typecheck: ## tsc --noEmit for the whole monorepo (the type authority)
 	npm run typecheck
 
+typecheck-desktop: ## Typecheck only the desktop workspace
+	npx tsc --noEmit -p apps/desktop
+
 lint: ## eslint across the repo
 	npm run lint
+
+## ---- build ----
 
 build: ## Full monorepo build (extension + mcp + sync-server)
 	npm run build
@@ -30,17 +37,29 @@ build-desktop: ## Build the desktop frontend (tsc + vite)
 build-host: ## Bundle the native-messaging host
 	npm run build:host -w @meetcc/desktop
 
-tauri: ## Build the desktop app (release, no dmg)
-	cd apps/desktop && npx tauri build --no-bundle
-
-tauri-dev: ## Run the desktop app in dev mode (vite + tauri)
-	cd apps/desktop && npx tauri dev
+## ---- run ----
 
 dev: ## Desktop Vite dev server only (no window)
 	npm run dev -w @meetcc/desktop
 
 dev-extension: ## Extension dev server
 	npm run dev -w @meetcc/extension
+
+tauri: ## Build the desktop app (release, no dmg)
+	cd apps/desktop && npx tauri build --no-bundle
+
+tauri-dev: ## Run the desktop app in dev mode (vite + tauri)
+	cd apps/desktop && npx tauri dev
+
+## ---- native host ----
+
+# Register the native host with Chrome (default) or Firefox. The extension id
+# (Chromium: pkgpllhlmhhocidmipbokpigndoeiemb, Firefox: companion@suiflex.dev)
+# must match the browser's loaded build.
+native-host-install: build-host ## Register the native host (macOS/Linux): make native-host-install ID=... [CHANNEL=chrome]
+	apps/desktop/scripts/install-native-host.sh $(ID) $(CHANNEL)
+
+## ---- smoke ----
 
 smoke: build-host ## Smoke the native host with a framed batch (vault round-trip)
 	@echo "piping a demo batch through the native host"
