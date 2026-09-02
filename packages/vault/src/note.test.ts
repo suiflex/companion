@@ -38,6 +38,27 @@ describe('note frontmatter', () => {
     expect(md).toContain('## Keputusan')
   })
 
+  it('keeps a mid-body heading in the body across repeated saves', () => {
+    const note = { ...NOTE, body: 'Pembuka.\n\n# Bagian dua\n\nIsi.' }
+    const once = noteFromMarkdown(noteToMarkdown(note))
+    const twice = noteFromMarkdown(noteToMarkdown(once))
+    expect(once.title).toBe('Gate review §32.1')
+    expect(once.body).toBe(note.body)
+    expect(twice).toEqual(once)
+    // the title heading plus the body's own — and no more on the next save
+    expect(noteToMarkdown(once).match(/^# /gm)).toHaveLength(2)
+    expect(noteToMarkdown(twice).match(/^# /gm)).toHaveLength(2)
+  })
+
+  it('does not duplicate a heading the body already opens with', () => {
+    const md = noteToMarkdown({ ...NOTE, title: 'Gate review', body: '# Gate review\n\nIsi.' })
+    expect(md.match(/^# Gate review$/gm)).toHaveLength(1)
+    const parsed = noteFromMarkdown(md)
+    expect(parsed.title).toBe('Gate review')
+    expect(parsed.body).toBe('Isi.')
+    expect(noteFromMarkdown(noteToMarkdown(parsed))).toEqual(parsed)
+  })
+
   it('parses a body-only document with the fallback title', () => {
     const parsed = noteFromMarkdown('Just a note without frontmatter.\n', 'From filename')
     expect(parsed.id).toBe('')

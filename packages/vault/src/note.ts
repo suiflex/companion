@@ -73,11 +73,15 @@ export function noteToMarkdown(note: VaultNote): string {
   }
   lines.push('---', '')
   const body = note.body.trim()
-  const h = /^#\s+(.+)$/m.exec(body)
-  const title = h ? h[1].trim() : note.title
-  const doc = title ? `# ${title}\n\n` : ''
+  // The title is written as the document's leading `# Heading`. A body that
+  // already opens with one owns it — synthesizing a second copy on top is what
+  // made a note grow one more heading on every save.
+  const doc = LEAD_HEADING.test(body) || !note.title ? '' : `# ${note.title}\n\n`
   return lines.join('\n') + doc + body + (body ? '\n' : '')
 }
+
+/** A `# Heading` on the document's first line — the title slot. */
+const LEAD_HEADING = /^#\s+(.+)(?:\n|$)/
 
 const FM_RE = /^---\n([\s\S]*?)\n---\n?/
 
@@ -113,10 +117,12 @@ export function noteFromMarkdown(doc: string, fallbackTitle = ''): VaultNote {
     const v = unesc(arr[0].replace(/^"(.*)"$/, '$1'))
     return v ? [v, ...arr.slice(1).map((x) => unesc(x.replace(/^"(.*)"$/, '$1')))] : arr.slice(1).map((x) => unesc(x.replace(/^"(.*)"$/, '$1')))
   }
-  const h = /^#\s+(.+)$/m.exec(body)
-  // The leading `# Heading` is synthesized by the writer; drop it from the body
-  // so a note round-trips to its own body exactly.
-  const bodyCore = body.replace(/^#\s+.+\n+/, '')
+  // Only a heading on the *first* line was synthesized by the writer. Matching
+  // one anywhere promoted a mid-body `# Heading` to the title while leaving it
+  // in the body, so every save re-synthesized it and the note grew a duplicate
+  // heading per round-trip.
+  const h = LEAD_HEADING.exec(body)
+  const bodyCore = h ? body.slice(h[0].length) : body
   return {
     id: first('id') ?? '',
     sessionKey: first('sessionKey') ?? '',
