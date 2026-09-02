@@ -7,18 +7,30 @@ name: Release Desktop
 # Each platform builds on its own runner because Tauri bundles natively: a
 # .dmg needs macOS, an .msi needs Windows. A single runner cannot produce the
 # set, so the matrix is not an optimisation but the only way.
+#
+# One leg per architecture, never a universal build: a per-arch bundle is what
+# an updater manifest has to name, and a failed arch then costs that arch
+# alone. v0.2.0 shipped macOS-only because a shared step failed on two legs.
 
 on:
   push:
     tags: ['companion-desktop-v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build and upload to
+        required: true
+        type: string
 
 permissions:
   contents: write # attach installers to the Release
 
 concurrency:
-  group: release-desktop-${{ github.ref }}
+  group: release-desktop-${{ inputs.tag || github.ref }}
   cancel-in-progress: false
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   bundle:
@@ -28,19 +40,32 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest
-            # Both Apple architectures from one runner.
-            args: --target universal-apple-darwin
-            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+          - os: macos-14
+            target: aarch64-apple-darwin
+          - os: macos-14
+            # Cross-compiled from Apple Silicon: the x86_64 macOS runners are
+            # scarce, and nothing here needs to execute the binary it builds.
+            target: x86_64-apple-darwin
           - os: ubuntu-22.04
-            args: ''
-            rust-targets: ''
+            # Oldest supported glibc/webkit — the binary has to run on distros
+            # older than the runner, so the floor is deliberate.
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            experimental: true
           - os: windows-latest
-            args: ''
-            rust-targets: ''
+            target: x86_64-pc-windows-msvc
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            experimental: true
     runs-on: ${{ matrix.os }}
+    # Best-effort arm legs: the runners are new and their toolchains still
+    # move. A missing arm asset is a gap, not a failed release.
+    continue-on-error: ${{ matrix.experimental || false }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
 
       - uses: actions/setup-node@v4
         with:
@@ -49,18 +74,20 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.rust-targets }}
+          targets: ${{ matrix.target }}
 
       # Cargo's registry and the build dir dominate the runtime here; the Rust
-      # crate is small but Tauri's dependency tree is not.
+      # crate is small but Tauri's dependency tree is not. Keyed per target so
+      # the two macOS legs do not fight over one cache.
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri
+          shared-key: release-${{ matrix.target }}
 
       # webkit2gtk is the Linux WebView; libappindicator and librsvg are what
       # the AppImage bundler links against.
       - name: Install Linux WebView dependencies
-        if: matrix.os == 'ubuntu-22.04'
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev \
@@ -69,27 +96,37 @@ jobs:
       - name: Install
         run: npm ci
 
-      # The tag ships what CI verified; this runs again only as a guard against
-      # a tag pushed from an unverified tree.
-      - name: Typecheck, lint, test
-        run: make check-all-js && make test
-
+      # No test step. `ci.yml` gates every PR, and a tag is cut from a branch
+      # that already passed it; re-running the whole JS suite on six runners
+      # only adds six chances for a platform-flaky test to block a bundle that
+      # would have been fine.
+      #
       # No --features wdio: the WebDriver plugin is test-only and must not be
       # in anything a user installs.
-      # Not `make tauri-bundle`: the matrix passes a per-platform target flag
-      # that the target does not take. The flagless case is the same command.
       - name: Build the desktop bundles
-        run: npx tauri build ${{ matrix.args }}
+        run: npx tauri build --target ${{ matrix.target }}
         working-directory: apps/desktop
 
-      - name: Publish Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            apps/desktop/src-tauri/target/**/release/bundle/dmg/*.dmg
-            apps/desktop/src-tauri/target/**/release/bundle/macos/*.app.tar.gz
-            apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage
-            apps/desktop/src-tauri/target/release/bundle/deb/*.deb
-            apps/desktop/src-tauri/target/release/bundle/rpm/*.rpm
-            apps/desktop/src-tauri/target/release/bundle/msi/*.msi
-            apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+      # release-please has already created the release for this tag. Creating
+      # it here is only a fallback for a hand-pushed tag; the leg that loses
+      # the race fails harmlessly and uploads anyway.
+      - name: Ensure the release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes || true
+
+      # Each leg tops up the same release independently, so re-running one
+      # failed architecture never touches the assets the others uploaded.
+      - name: Upload bundles to the Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        working-directory: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
+        run: |
+          set -euo pipefail
+          find . -type f \( \
+            -name '*.dmg' -o -name '*.app.tar.gz' -o -name '*.AppImage' \
+            -o -name '*.deb' -o -name '*.rpm' -o -name '*.msi' -o -name '*.exe' \
+            -o -name '*.sig' \
+          \) -print0 | xargs -0 -t gh release upload "$TAG" --clobber
