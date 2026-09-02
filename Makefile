@@ -61,14 +61,16 @@ native-host-install: build-host ## Register the native host (macOS/Linux): make 
 
 ## ---- smoke ----
 
-smoke: build-host ## Smoke the native host with a framed batch (vault round-trip)
-	@echo "piping a demo batch through the native host"
+smoke: build-host ## Smoke the native host: two identical frames in one write
+	@echo "piping two identical batches through the native host in one write"
 	@set -e; tmp=$$(mktemp -d); \
-		printf '{"operationId":"op-smoke","roomId":"meet/smoke","platform":"google-meet","startedAt":"2026-08-28T14:00:00+07:00","participants":["A"],"entries":[{"speaker":"A","text":"halo","time":"2026-08-28T14:01:00Z"}]}' > /tmp/cc-batch.json; \
-		node -e 'const fs=require("fs");const m=Buffer.from(fs.readFileSync("/tmp/cc-batch.json","utf8"));const h=Buffer.alloc(4);h.writeUInt32LE(m.length,0);process.stdout.write(Buffer.concat([h,m]))' \
+		node -e 'const b=Buffer.from(JSON.stringify({operationId:"op-smoke",roomId:"meet/smoke",platform:"google-meet",startedAt:"2026-08-28T14:00:00+07:00",participants:["A"],entries:[{speaker:"A",text:"halo",time:"2026-08-28T14:01:00Z"}]}));const h=Buffer.alloc(4);h.writeUInt32LE(b.length,0);const f=Buffer.concat([h,b]);process.stdout.write(Buffer.concat([f,f]))' \
 		  | COMPANION_VAULT=$$tmp node apps/desktop/dist-native/native-host.mjs 2>/dev/null \
-		  | node -e 'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>{const b=Buffer.from(d);const o=JSON.parse(b.slice(4).toString());console.log(o.status==="ok"?"HOST SMOKE OK":("HOST SMOKE FAIL: "+JSON.stringify(o)))})'; \
-		rm -rf $$tmp /tmp/cc-batch.json
+		  | node -e 'const d=[];process.stdin.on("data",c=>d.push(c));process.stdin.on("end",()=>{let b=Buffer.concat(d);const out=[];while(b.length>=4){const n=b.readUInt32LE(0);out.push(JSON.parse(b.slice(4,4+n).toString()));b=b.slice(4+n)}const ok=out[0]?.status==="ok"&&out[1]?.status==="duplicate";console.log(ok?"HOST FRAMING OK":"HOST FRAMING FAIL: "+JSON.stringify(out));process.exit(ok?0:1)})'; \
+		test -n "$$(find $$tmp -name '*.md')" || { echo "HOST SMOKE FAIL: no note written"; exit 1; }; \
+		test "$$(cat $$tmp/.transcript/*.jsonl | wc -l | tr -d ' ')" = "1" || { echo "HOST SMOKE FAIL: transcript not appended exactly once"; exit 1; }; \
+		echo "HOST SMOKE OK"; \
+		rm -rf $$tmp
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS=":.*## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'

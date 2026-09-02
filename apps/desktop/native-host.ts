@@ -47,15 +47,29 @@ process.stdin.on('data', (chunk: Buffer) => {
       continue
     }
     buf = buf.slice(4 + len)
-    void handle(msg)
+    queue(msg)
   }
 })
 
+// Chrome can deliver several batches in one chunk. Each one reads the seen-set,
+// awaits the vault, then writes it back, so running them concurrently lets the
+// later write clobber the earlier one — losing exactly the operation_id that
+// redelivery-after-disconnect depends on. One at a time.
+let pending: Promise<void> = Promise.resolve()
+
+function queue(msg: BridgeBatch): void {
+  pending = pending.then(() => handle(msg)).catch(() => {})
+}
+
 async function handle(msg: BridgeBatch): Promise<void> {
   const state = loadState()
-  const result = await applyBatch({ vault, now: () => new Date().toISOString() }, msg, state)
-  saveState(state)
-  respond(result)
+  try {
+    const result = await applyBatch({ vault, now: () => new Date().toISOString() }, msg, state)
+    saveState(state)
+    respond(result)
+  } catch (e) {
+    respond({ status: 'error', applied: false, error: (e as Error).message })
+  }
 }
 
 function respond(obj: unknown): void {
