@@ -6,7 +6,7 @@
 // roadmap §D4 boundary — Rust owns file I/O and IPC, never the AI/retrieval.
 use parking_lot::Mutex;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use tauri::State;
 
 const TRASH: &str = ".trash";
@@ -42,9 +42,16 @@ fn root(state: &VaultState) -> PathBuf {
     state.root.lock().clone()
 }
 
-fn abs(state: &VaultState, rel: &str) -> PathBuf {
+/// Resolve a vault-relative path. Rejects anything that would climb out of the
+/// vault: these paths originate in the WebView, which in turn takes them from
+/// note frontmatter, so they are data rather than something we control.
+fn abs(state: &VaultState, rel: &str) -> Result<PathBuf, String> {
     let rel = rel.trim_start_matches('/');
-    root(state).join(rel)
+    let path = Path::new(rel);
+    if path.is_absolute() || path.components().any(|c| c == Component::ParentDir) {
+        return Err(format!("path escapes the vault: {rel}"));
+    }
+    Ok(root(state).join(path))
 }
 
 #[tauri::command]
@@ -93,7 +100,7 @@ fn walk_md(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), String>
 
 #[tauri::command]
 pub fn read_vault_file(state: State<'_, VaultState>, rel: String) -> Result<String, String> {
-    fs::read_to_string(abs(&state, &rel)).map_err(|e| e.to_string())
+    fs::read_to_string(abs(&state, &rel)?).map_err(|e| e.to_string())
 }
 
 /// Atomic write: temp file + rename, so a crash never leaves a partial note.
@@ -103,7 +110,7 @@ pub fn write_vault_file(
     rel: String,
     content: String,
 ) -> Result<(), String> {
-    let path = abs(&state, &rel);
+    let path = abs(&state, &rel)?;
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -121,7 +128,7 @@ pub fn append_vault_line(
     line: String,
 ) -> Result<(), String> {
     use std::io::Write;
-    let path = abs(&state, &rel);
+    let path = abs(&state, &rel)?;
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -135,7 +142,7 @@ pub fn append_vault_line(
 
 #[tauri::command]
 pub fn vault_mtime(state: State<'_, VaultState>, rel: String) -> Result<f64, String> {
-    fs::metadata(abs(&state, &rel))
+    fs::metadata(abs(&state, &rel)?)
         .and_then(|m| m.modified())
         .map(|t| {
             t.duration_since(std::time::UNIX_EPOCH)
@@ -147,7 +154,7 @@ pub fn vault_mtime(state: State<'_, VaultState>, rel: String) -> Result<f64, Str
 
 #[tauri::command]
 pub fn trash_vault_file(state: State<'_, VaultState>, rel: String) -> Result<(), String> {
-    let from = abs(&state, &rel);
+    let from = abs(&state, &rel)?;
     let name = from
         .file_name()
         .and_then(|n| n.to_str())
