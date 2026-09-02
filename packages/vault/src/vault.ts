@@ -49,11 +49,24 @@ export class Vault {
     return this.io.join(this.io.root, TRANSCRIPT_DIR)
   }
 
-  /** Absolute path for a note file, derived from `session_key`'s room + date. */
+  /**
+   * Absolute path for a note file, derived from its `session_key`.
+   *
+   * The start time has to be part of the filename: `session_key` identifies a
+   * meeting down to the minute, so keying the file by room + day alone makes
+   * the afternoon retro overwrite the morning standup held in the same room.
+   */
   notePath(note: VaultNote): string {
-    const room = note.sessionKey.split('#')[0].replace(/[^a-zA-Z0-9-]+/g, '-')
-    const day = note.startedAt?.slice(0, 10) ?? 'undated'
-    return this.io.join(this.io.root, 'Rapat', day, `${room}.md`)
+    const [room, stamp] = splitSessionKey(note.sessionKey)
+    const day = stamp?.slice(0, 10) || note.startedAt?.slice(0, 10) || 'undated'
+    const hhmm = stamp?.slice(11, 16).replace(':', '')
+    const name = hhmm ? `${slug(room)}-${hhmm}` : slug(room)
+    return this.io.join(this.io.root, 'Rapat', day, `${name}.md`)
+  }
+
+  /** Vault-relative path for a note — what the derived index stores. */
+  relPath(note: VaultNote): string {
+    return relative(this.io.root, this.notePath(note))
   }
 
   /** Write a note atomically so a crash never leaves a half-written .md. */
@@ -106,6 +119,20 @@ export class Vault {
     await this.io.mkdirs(trashRoot)
     await this.io.trash(from)
   }
+}
+
+/** @internal filesystem-safe segment. */
+function slug(value: string): string {
+  return value.replace(/[^a-zA-Z0-9-]+/g, '-')
+}
+
+/** @internal `room#YYYY-MM-DDTHH:MM` -> `[room, stamp]`; stamp is absent for
+ *  hand-made notes, whose keys carry no meeting start. */
+function splitSessionKey(sessionKey: string): [string, string | undefined] {
+  const hash = sessionKey.lastIndexOf('#')
+  return hash === -1
+    ? [sessionKey, undefined]
+    : [sessionKey.slice(0, hash), sessionKey.slice(hash + 1)]
 }
 
 /** @internal dirname of a forward-slash path. */

@@ -53,7 +53,7 @@ export async function createIndex(db: SqlDriver, vault: Vault): Promise<void> {
 export async function rebuild(db: SqlDriver, vault: Vault): Promise<void> {
   db.exec('DELETE FROM vault_notes')
   for (const note of await vault.readAll()) {
-    const path = notePathOf(note.sessionKey, note.startedAt)
+    const path = vault.relPath(note)
     db.run(
       'INSERT INTO vault_notes(id, session_key, title, body, platform, updated_at, path) VALUES (?,?,?,?,?,?,?)',
       [note.id, note.sessionKey, note.title, note.body, note.platform, note.updatedAt, path],
@@ -75,11 +75,4 @@ export function search(db: SqlDriver, query: string): VaultIndexRow[] {
     [match],
   )
   return rows.map(({ rowid: _rowid, ...row }) => row)
-}
-
-/** Relative path matching `Vault.notePath`: `Rapat/<day>/<room>.md`. */
-function notePathOf(sessionKey: string, startedAt?: string): string {
-  const room = sessionKey.split('#')[0].replace(/[^a-zA-Z0-9-]+/g, '-')
-  const day = startedAt?.slice(0, 10) ?? 'undated'
-  return `Rapat/${day}/${room}.md`
 }

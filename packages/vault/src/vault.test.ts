@@ -59,6 +59,29 @@ describe('vault file ops', () => {
     expect(existsSync(join(dir, '.trash'))).toBe(true)
   })
 
+  it('keeps two meetings in the same room on the same day apart', async () => {
+    // session_key identifies a meeting down to the minute; a file keyed by room
+    // + day alone made the afternoon retro overwrite the morning standup.
+    const morning = await vault.writeNote(
+      note({ id: 'a', sessionKey: 'meet/abc#2026-08-28T09:00', title: 'Standup' }),
+    )
+    const afternoon = await vault.writeNote(
+      note({ id: 'b', sessionKey: 'meet/abc#2026-08-28T14:00', title: 'Retro' }),
+    )
+    expect(morning).not.toBe(afternoon)
+    expect(existsSync(morning)).toBe(true)
+    expect(existsSync(afternoon)).toBe(true)
+    const titles = (await vault.readAll()).map((n) => n.title).sort()
+    expect(titles).toEqual(['Retro', 'Standup'])
+  })
+
+  it('names a hand-made note without a session start', async () => {
+    const path = await vault.writeNote(
+      note({ sessionKey: 'nota/lz4x', startedAt: undefined, title: 'Nota baru' }),
+    )
+    expect(path.endsWith('Rapat/undated/nota-lz4x.md')).toBe(true)
+  })
+
   it('lists notes newest-updated first', async () => {
     await vault.writeNote(note({ id: 'a', title: 'Older' }))
     await vault.writeNote(
