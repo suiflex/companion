@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/suiflex/companion/compare/companion-desktop-v0.2.0...companion-desktop-v0.3.0) (2026-09-02)
+
+
+### Features
+
+* **desktop:** check for updates and install them in place ([49cf7ec](https://github.com/suiflex/companion/commit/49cf7ecb9bd0d09d9e7c542cdbee4815a9ec1b6c))
+* **desktop:** check for updates and install them in place ([ce6967b](https://github.com/suiflex/companion/commit/ce6967b9a1b8f424e2fac77394065fd8ecc3c0c1))
+
 ## [0.2.0](https://github.com/suiflex/companion/compare/companion-desktop-v0.1.0...companion-desktop-v0.2.0) (2026-09-02)
 
 
