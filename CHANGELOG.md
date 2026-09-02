@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.8.0](https://github.com/suiflex/companion/compare/v1.7.1...v1.8.0) (2026-09-02)
+
+
+### Features
+
+* **bridge:** deliver finished meetings to the desktop vault ([a5c1ba6](https://github.com/suiflex/companion/commit/a5c1ba679997f0e69e55a324f4e88118d6ce8a6f))
+* **bridge:** wire extension to native host to vault ([9cf9e41](https://github.com/suiflex/companion/commit/9cf9e41892b196cdee64d6883d47941d5517a32c))
+* **desktop:** add Companion Desktop, split the release lines, and make it testable ([ef0a730](https://github.com/suiflex/companion/commit/ef0a7304bd0d40e6101e7d2cec233662ea886138))
+* **desktop:** add Rust vault IPC and WebView note editor ([fbe4d78](https://github.com/suiflex/companion/commit/fbe4d7870a89ea755fda7f0c293d70346ab5b3df))
+* **desktop:** make the settings screen real ([051912b](https://github.com/suiflex/companion/commit/051912b2678a9195362d1bbd8c6143c005d8d8f5))
+* **desktop:** scaffold Tauri 2 desktop workspace ([c6d4a85](https://github.com/suiflex/companion/commit/c6d4a8563be07ad523acfe3fbac29167ce3dcde5))
+* **desktop:** wire FTS search into the note sidebar ([d0d7dc4](https://github.com/suiflex/companion/commit/d0d7dc4cc872e3162510967ca6527aa0c65fd565))
+* **vault:** add native-messaging bridge handler ([37f17ed](https://github.com/suiflex/companion/commit/37f17ed03f42cbb1dc2c27a03c29207c2b8260d1))
+* **vault:** add packages/vault with identity, notes and FTS index ([1f21861](https://github.com/suiflex/companion/commit/1f21861baed6eb2fba414e3d4760afb545cca792))
+
+
+### Bug Fixes
+
+* **bridge:** apply native host deliveries one at a time ([1f8706d](https://github.com/suiflex/companion/commit/1f8706dd67050241945b0fd0f88cf2688b1e8582))
+* **vault:** guard an empty FTS match like the meeting store does ([0b4393d](https://github.com/suiflex/companion/commit/0b4393d723d3567db3db0548cae3b1103013c201))
+* **vault:** key note files by session start, not just the day ([d1d4db8](https://github.com/suiflex/companion/commit/d1d4db8008fcac701b8862b3a3d74edf42b6928e))
+* **vault:** point the transcript frontmatter at the sidecar it writes ([52ca5aa](https://github.com/suiflex/companion/commit/52ca5aad2a808470821c39569eee1e766d784195))
+* **vault:** slug the date segment of a note path too ([1e1bb4e](https://github.com/suiflex/companion/commit/1e1bb4e9c4eee23a636d14c5c610889b48be7dd4))
+* **vault:** treat only a leading heading as the note title ([7615902](https://github.com/suiflex/companion/commit/7615902c7c06b81ba912aed7598cd4d02f0aa878))
+
+
+### Performance Improvements
+
+* **desktop:** index the notes the refresh already read ([29ca90d](https://github.com/suiflex/companion/commit/29ca90d9b8f9c57d196038950cdf8c054f02bdcd))
+
 ## [1.7.1](https://github.com/suiflex/companion/compare/v1.7.0...v1.7.1) (2026-09-01)
 
 
