@@ -106,6 +106,12 @@ jobs:
       - name: Build the desktop bundles
         run: npx tauri build --target ${{ matrix.target }}
         working-directory: apps/desktop
+        env:
+          # Signs the updater bundles. This is our own key, checked by the
+          # pubkey compiled into the app — it has nothing to do with Apple
+          # notarization, and Gatekeeper still warns on a fresh download.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       # release-please has already created the release for this tag. Creating
       # it here is only a fallback for a hand-pushed tag; the leg that loses
@@ -115,6 +121,21 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes || true
+
+      # Every other bundler puts the architecture in the filename; the macOS
+      # updater tarball is just "Companion Desktop.app.tar.gz", so without this
+      # the second Apple leg would overwrite the first one's asset.
+      - name: Name the macOS updater bundle after its architecture
+        if: runner.os == 'macOS'
+        shell: bash
+        working-directory: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/macos
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for f in *.app.tar.gz; do
+            mv "$f" "${f%.app.tar.gz}.${{ matrix.target }}.app.tar.gz"
+            mv "$f.sig" "${f%.app.tar.gz}.${{ matrix.target }}.app.tar.gz.sig"
+          done
 
       # Each leg tops up the same release independently, so re-running one
       # failed architecture never touches the assets the others uploaded.
@@ -130,3 +151,44 @@ jobs:
             -o -name '*.deb' -o -name '*.rpm' -o -name '*.msi' -o -name '*.exe' \
             -o -name '*.sig' \
           \) -print0 | xargs -0 -t gh release upload "$TAG" --clobber
+
+  # Fan-in: the six legs never see each other, so the manifest is built from
+  # what actually reached the release. `always()` because an experimental arm
+  # leg is allowed to fail without withholding the manifest for the rest.
+  manifest:
+    needs: [bundle]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Collect the signed bundles
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets > assets.json
+          mkdir -p sigs
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -p '*.sig' -D sigs --clobber
+
+      - name: Build latest.json
+        run: |
+          python3 .github/scripts/updater_manifest.py --selftest
+          python3 .github/scripts/updater_manifest.py "$TAG" assets.json sigs latest.json
+
+      # Two homes. The tag's own release keeps the manifest that shipped with
+      # it; the rolling `companion-desktop-latest` release is what installed
+      # apps poll. It cannot be /releases/latest/ — that alternates with the
+      # extension's `v*` releases, which carry no manifest at all. Marked a
+      # prerelease so this pointer never becomes the repo's "Latest" itself.
+      - name: Publish latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload "$TAG" latest.json --repo "$GITHUB_REPOSITORY" --clobber
+          gh release view companion-desktop-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create companion-desktop-latest --repo "$GITHUB_REPOSITORY" \
+                 --prerelease --title 'Desktop update manifest' \
+                 --notes 'Rolling pointer the desktop app polls for updates. Not a download — see the tagged releases.'
+          gh release upload companion-desktop-latest latest.json --repo "$GITHUB_REPOSITORY" --clobber
