@@ -16,6 +16,7 @@ import {
   runPipeline,
   type DocGenDeps,
   type PipelineDeps,
+  type PipelineOptions,
   type PipelineResult,
 } from '@meetcc/meeting';
 import { GATE_EVENT, describeGate, gateSummary } from '@meetcc/exporters/gate';
@@ -124,7 +125,7 @@ const deps: PipelineDeps = {
 
 /** Run the pipeline and, on success, give the meeting a readable name if it
  *  doesn't have one. A user-set title is never overwritten. */
-async function analyze(id: string, opts: { force?: boolean } = {}): Promise<PipelineResult> {
+async function analyze(id: string, opts: PipelineOptions = {}): Promise<PipelineResult> {
   const result = await runPipeline(id, deps, opts);
   if (!result.ok) return result;
   if (await getTitle(id)) return result;
@@ -254,12 +255,18 @@ async function handleAsk(
   if (!meeting) return { ok: false, error: 'Meeting tidak ditemukan.' };
   if (!meeting.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
   const history = await loadChat(id);
+  // Persist the question before asking, not after answering. A failed call
+  // used to take the question with it: the dashboard held it in component
+  // state, so leaving the tab lost what was typed with nothing to retry from.
+  const asked: ChatMessage[] = [
+    ...history,
+    { role: 'user', content: question, time: new Date().toISOString() },
+  ];
+  await saveChat(id, asked);
   const client = await makeInteractiveClient();
   const result = await askMeeting(client, meeting, await analysisOf(id), history, question);
-  const now = new Date().toISOString();
   const turns: ChatMessage[] = [
-    ...history,
-    { role: 'user', content: question, time: now },
+    ...asked,
     { role: 'assistant', content: result.answer, time: new Date().toISOString(), result },
   ];
   await saveChat(id, turns);
@@ -546,7 +553,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return;
   }
   if (msg?.type === 'regenerate' && msg.meetingId) {
-    analyze(msg.meetingId, { force: true }).then(sendResponse);
+    // Asking mid-meeting is allowed — waiting for the meeting to end is not
+    // much use to someone who needs the minutes during it. The transcript so
+    // far is what gets analysed, and the result is marked provisional so the
+    // sweep still writes the real notes afterwards.
+    void loadMeetingForAI(msg.meetingId)
+      .then((m) => analyze(msg.meetingId, { force: true, provisional: !!m && isLive(m, Date.now()) }))
+      .then(sendResponse);
     return true; // async response
   }
   if (msg?.type === 'ask' && msg.meetingId && typeof msg.question === 'string') {

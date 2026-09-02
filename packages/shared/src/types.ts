@@ -66,7 +66,16 @@ export type PipelineStep = 'ai' | 'saving' | 'done';
 
 export type AnalysisRecord =
   | { status: 'processing'; step: PipelineStep; startedAt: string; provider: string }
-  | { status: 'done'; analysis: Analysis; generatedAt: string; provider: string }
+  /** `provisional` marks a MoM generated while the meeting was still running:
+   *  real notes over a partial transcript, replaced automatically once the
+   *  meeting ends. */
+  | {
+      status: 'done';
+      analysis: Analysis;
+      generatedAt: string;
+      provider: string;
+      provisional?: boolean;
+    }
   | { status: 'error'; error: string; failedAt: string; provider: string };
 
 export type ProviderId =

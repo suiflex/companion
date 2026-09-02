@@ -22,6 +22,10 @@ export function needsAnalysis(
   if (record.status === 'processing') {
     return now - Date.parse(record.startedAt) > STALE_PROCESSING_MS;
   }
+  // A mid-meeting MoM only ever saw part of the transcript, so it does not
+  // count as the meeting's notes: the sweep still produces the real ones once
+  // the meeting ends. A finished analysis is never redone automatically.
+  if (record.status === 'done' && record.provisional) return true;
   return false; // done or error: never auto-reprocess, only manual regenerate
 }
 
