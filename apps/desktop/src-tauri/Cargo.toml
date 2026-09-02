@@ -11,6 +11,14 @@ rust-version = "1.77.2"
 name = "companion_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+# WebDriver support is test-only and off by default. The plugins run a W3C
+# server inside the app, which is how suitest drives the real window on macOS
+# (bare tauri-driver is Windows/Linux only). A gate on debug_assertions would
+# open port 4445 during any ordinary `tauri dev`, so it is an explicit feature
+# instead — a release build never compiles either crate.
+[features]
+wdio = ["dep:tauri-plugin-wdio", "dep:tauri-plugin-wdio-webdriver"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -19,3 +27,5 @@ tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 parking_lot = "0.12"
+tauri-plugin-wdio = { version = "1", optional = true }
+tauri-plugin-wdio-webdriver = { version = "1", optional = true }

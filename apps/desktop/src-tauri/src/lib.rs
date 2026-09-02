@@ -6,7 +6,13 @@ pub fn run() {
     if let Err(e) = vault::ensure_root(&root) {
         eprintln!("could not create the vault at {}: {e}", root.display());
     }
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // Test-only, compiled out entirely without `--features wdio`.
+    #[cfg(feature = "wdio")]
+    let builder = builder
+        .plugin(tauri_plugin_wdio_webdriver::init())
+        .plugin(tauri_plugin_wdio::init());
+    builder
         .manage(vault::VaultState::new(root))
         .invoke_handler(tauri::generate_handler![
             vault::vault_root,
