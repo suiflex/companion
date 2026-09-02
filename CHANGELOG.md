@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.8.1](https://github.com/suiflex/companion/compare/v1.8.0...v1.8.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* **installer:** pick a release by product, not by whatever shipped last ([adba7d7](https://github.com/suiflex/companion/commit/adba7d71bf5c3c48bc832b475f66b65b73a95805))
+* **release:** resolve the desktop extra-file relative to its package ([59c3386](https://github.com/suiflex/companion/commit/59c33864e4dccfd9d185e75f671fb45009fc89ab))
+* unblock the first desktop release, and repair the README ([28c101c](https://github.com/suiflex/companion/commit/28c101c8ec420f2bf666ec28fc8492f64cdc2e11))
+
 ## [1.8.0](https://github.com/suiflex/companion/compare/v1.7.1...v1.8.0) (2026-09-02)
 
 
