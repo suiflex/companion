@@ -36,6 +36,20 @@ describe('needsAnalysis', () => {
   it('false for tiny transcripts', () => {
     expect(needsAnalysis(meeting({ entries: [] }), null, NOW)).toBe(false);
   });
+  it('re-analyses a meeting whose only notes are a mid-meeting MoM', () => {
+    const provisional: AnalysisRecord = {
+      status: 'done',
+      analysis: {} as never,
+      generatedAt: iso(0),
+      provider: 'openai',
+      provisional: true,
+    };
+    // Ended: the partial notes get replaced by the real ones.
+    expect(needsAnalysis(meeting(), provisional, NOW)).toBe(true);
+    // Still running: pressing the button again is the user's call, not the sweep's.
+    const live = meeting({ meta: { id: 'x', startedAt: iso(600_000), lastSeenAt: iso(3_000) } });
+    expect(needsAnalysis(live, provisional, NOW)).toBe(false);
+  });
   it('false when done or fresh-processing; true when processing is stale', () => {
     const done: AnalysisRecord = {
       status: 'done',

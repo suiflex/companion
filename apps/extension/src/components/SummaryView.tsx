@@ -169,7 +169,7 @@ export function SummaryView({ meeting, record, live }: Props) {
         type: 'regenerate',
         meetingId: meeting.id,
       });
-      if (res?.ok) toast('success', 'Notulen selesai dibuat.');
+      if (res?.ok) toast('success', live ? 'MoM sementara dibuat.' : 'Notulen selesai dibuat.');
       else toast('error', `Gagal: ${res?.error ?? res?.reason ?? 'unknown'}`);
     } catch (e) {
       toast('error', `Gagal: ${(e as Error).message}`);
@@ -241,8 +241,8 @@ export function SummaryView({ meeting, record, live }: Props) {
         ⬇ PDF
       </button>
       <span className="spacer" />
-      <button onClick={regenerate} disabled={busy || live}>
-        {busy ? 'Memproses…' : '↻ Regenerate'}
+      <button onClick={regenerate} disabled={busy}>
+        {busy ? 'Memproses…' : live ? '↻ Perbarui MoM' : '↻ Regenerate'}
       </button>
     </div>
   );
@@ -253,6 +253,8 @@ export function SummaryView({ meeting, record, live }: Props) {
         {actions(record.analysis)}
         <div className="summary-meta dim">
           Provider: {record.provider} · {new Date(record.generatedAt).toLocaleString('id-ID')}
+          {record.provisional &&
+            ' · MoM sementara dari transcript sejauh ini — diganti otomatis setelah meeting selesai'}
         </div>
         <Result meeting={meeting} analysis={record.analysis} />
       </>
@@ -311,14 +313,12 @@ export function SummaryView({ meeting, record, live }: Props) {
       <p>{live ? 'Meeting masih berlangsung.' : 'Belum ada notulen.'}</p>
       <p className="empty-hint">
         {live
-          ? 'Notulen dibuat otomatis begitu meeting selesai.'
+          ? 'Notulen dibuat otomatis begitu meeting selesai — atau buat MoM sementara sekarang dari transcript sejauh ini.'
           : 'Jalankan analisis AI untuk ringkasan, keputusan, dan action items.'}
       </p>
-      {!live && (
-        <button className="primary" onClick={regenerate} disabled={busy}>
-          {busy ? 'Memproses…' : 'Generate sekarang'}
-        </button>
-      )}
+      <button className="primary" onClick={regenerate} disabled={busy}>
+        {busy ? 'Memproses…' : live ? 'Buat MoM sekarang' : 'Generate sekarang'}
+      </button>
     </div>
   );
 }

@@ -32,15 +32,22 @@ const pipelineRuns = createInFlight<PipelineResult>();
 export function runPipeline(
   id: string,
   deps: PipelineDeps,
-  opts: { force?: boolean } = {},
+  opts: PipelineOptions = {},
 ): Promise<PipelineResult> {
   return pipelineRuns.run(`pipeline:${id}`, () => runPipelineInner(id, deps, opts));
+}
+
+export interface PipelineOptions {
+  force?: boolean;
+  /** The meeting is still running: analyse what exists so far and mark the
+   *  result provisional, so the sweep replaces it once the meeting ends. */
+  provisional?: boolean;
 }
 
 async function runPipelineInner(
   id: string,
   deps: PipelineDeps,
-  opts: { force?: boolean } = {},
+  opts: PipelineOptions = {},
 ): Promise<PipelineResult> {
   const meeting = await deps.getMeeting(id);
   if (!meeting) return { ok: false, reason: 'not-found' };
@@ -81,9 +88,14 @@ async function runPipelineInner(
       analysis,
       generatedAt: deps.now(),
       provider: client.provider,
+      ...(opts.provisional ? { provisional: true } : {}),
     });
-    await deps.audit('pipeline.done', id);
-    deps.notify('Notulen siap ✓', `Meeting ${id} selesai dianalisis AI.`, id);
+    await deps.audit(opts.provisional ? 'pipeline.provisional' : 'pipeline.done', id);
+    // No notification for a provisional run: the user pressed a button and is
+    // looking at the result already.
+    if (!opts.provisional) {
+      deps.notify('Notulen siap ✓', `Meeting ${id} selesai dianalisis AI.`, id);
+    }
     return { ok: true };
   } catch (e) {
     const error = (e as Error).message;
