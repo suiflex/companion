@@ -82,6 +82,16 @@ describe('vault file ops', () => {
     expect(path.endsWith('Rapat/undated/nota-lz4x.md')).toBe(true)
   })
 
+  it('keeps a hostile timestamp inside the vault', async () => {
+    // startedAt crosses the bridge from the extension; it must not be able to
+    // steer the write out of the vault root.
+    const path = await vault.writeNote(
+      note({ sessionKey: 'meet/abc', startedAt: '../../../..', title: 'Escape' }),
+    )
+    expect(path.startsWith(dir + '/')).toBe(true)
+    expect(path).not.toContain('..')
+  })
+
   it('lists notes newest-updated first', async () => {
     await vault.writeNote(note({ id: 'a', title: 'Older' }))
     await vault.writeNote(

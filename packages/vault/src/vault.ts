@@ -58,8 +58,11 @@ export class Vault {
    */
   notePath(note: VaultNote): string {
     const [room, stamp] = splitSessionKey(note.sessionKey)
-    const day = stamp?.slice(0, 10) || note.startedAt?.slice(0, 10) || 'undated'
-    const hhmm = stamp?.slice(11, 16).replace(':', '')
+    // Every segment is slugged, the date included: `startedAt` arrives from the
+    // extension over the bridge, and an unslugged `..` in it would walk the
+    // write out of the vault entirely.
+    const day = slug(stamp?.slice(0, 10) || note.startedAt?.slice(0, 10) || '') || 'undated'
+    const hhmm = slug(stamp?.slice(11, 16).replace(':', '') ?? '')
     const name = hhmm ? `${slug(room)}-${hhmm}` : slug(room)
     return this.io.join(this.io.root, 'Rapat', day, `${name}.md`)
   }
