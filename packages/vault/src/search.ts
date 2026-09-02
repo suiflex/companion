@@ -7,6 +7,7 @@
 // extension uses, run against native SQLite (Tauri) vs wasm/OPFS (extension/tests).
 import { ftsQuery, type SqlDriver } from '@meetcc/store'
 import type { Vault } from './vault'
+import type { VaultNote } from './note'
 
 export interface VaultIndexRow {
   id: string
@@ -43,16 +44,30 @@ CREATE TRIGGER IF NOT EXISTS vault_au AFTER UPDATE ON vault_notes BEGIN
 END;
 `
 
-/** Create the derived tables and populate them from the vault. */
-export async function createIndex(db: SqlDriver, vault: Vault): Promise<void> {
+/**
+ * Create the derived tables and populate them from the vault.
+ *
+ * `notes` lets a caller that has just read the vault hand those notes over
+ * instead of paying for a second full read — which, in the desktop app, is a
+ * second round of IPC per note on every save.
+ */
+export async function createIndex(
+  db: SqlDriver,
+  vault: Vault,
+  notes?: VaultNote[],
+): Promise<void> {
   db.exec(SCHEMA)
-  await rebuild(db, vault)
+  await rebuild(db, vault, notes)
 }
 
 /** Repopulate the index from the vault's current .md files. */
-export async function rebuild(db: SqlDriver, vault: Vault): Promise<void> {
+export async function rebuild(
+  db: SqlDriver,
+  vault: Vault,
+  notes?: VaultNote[],
+): Promise<void> {
   db.exec('DELETE FROM vault_notes')
-  for (const note of await vault.readAll()) {
+  for (const note of notes ?? (await vault.readAll())) {
     const path = vault.relPath(note)
     db.run(
       'INSERT INTO vault_notes(id, session_key, title, body, platform, updated_at, path) VALUES (?,?,?,?,?,?,?)',

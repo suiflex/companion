@@ -44,15 +44,12 @@ export default function App() {
   }, [])
 
   async function refresh(v: Vault) {
+    // Read the vault once and feed both the sidebar and the index from it —
+    // every read here is a round trip through Rust, and this runs on every save.
     const rel = await v.listNotes()
-    const heads = await Promise.all(
-      rel.map(async (r) => {
-        const n = await v.readNote(r)
-        return { rel: r, title: n.title || r, updatedAt: n.updatedAt }
-      }),
-    )
-    setNotes(heads)
-    if (driverRef.current) await createIndex(driverRef.current, v)
+    const read = await Promise.all(rel.map((r) => v.readNote(r)))
+    setNotes(read.map((n, i) => ({ rel: rel[i], title: n.title || rel[i], updatedAt: n.updatedAt })))
+    if (driverRef.current) await createIndex(driverRef.current, v, read)
   }
 
   async function open(rel: string) {

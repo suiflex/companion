@@ -117,6 +117,23 @@ describe('derived index', () => {
     expect(gate.map((h) => h.title)).toContain('Gate review')
   })
 
+  it('indexes notes the caller already read without reading them again', async () => {
+    await vault.writeNote(note())
+    const notes = await vault.readAll()
+    let reads = 0
+    const counted = {
+      readAll: async () => {
+        reads++
+        return notes
+      },
+      relPath: (n: VaultNote) => vault.relPath(n),
+    } as unknown as Vault
+    const { driver } = await openDatabase()
+    await createIndex(driver, counted, notes)
+    expect(reads).toBe(0)
+    expect(search(driver, 'Gate')).toHaveLength(1)
+  })
+
   it('returns nothing for a query too short to make an FTS term', async () => {
     await vault.writeNote(note())
     const { driver } = await openDatabase()
