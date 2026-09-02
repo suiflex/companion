@@ -44,6 +44,13 @@ it('applies a batch once and writes note + transcript to the sidecar', async () 
   expect(await vault.readTranscript(notes[0].id)).toHaveLength(1)
 })
 
+it('points the transcript frontmatter at the sidecar it actually writes', async () => {
+  await applyBatch({ vault, now: () => '2026-09-01T10:00:00Z' }, batch())
+  const [note] = await vault.readAll()
+  expect(note.transcript).toBe(`.transcript/${note.id}.jsonl`)
+  expect(await vault.readTranscript(note.id)).toHaveLength(1)
+})
+
 it('dedupes a redelivered operation_id', async () => {
   const now = () => '2026-09-01T10:00:00Z'
   const state = { seen: {} }

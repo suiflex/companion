@@ -62,14 +62,16 @@ export async function applyBatch(
   const sessionKey = batch.sessionKey ?? sessionKeyFor(batch.roomId, batch.startedAt)
   const all = await deps.vault.readAll()
   const existing = all.find((n) => n.sessionKey === sessionKey)
+  const id = uuidV7()
   const note: VaultNote = existing ?? {
-    id: uuidV7(),
+    id,
     sessionKey,
     platform: batch.platform,
     startedAt: batch.startedAt,
     participants: batch.participants,
     tags: ['rapat'],
-    transcript: transcriptPathFor(batch),
+    // must match where appendTranscript writes it, below
+    transcript: `.transcript/${id}.jsonl`,
     updatedAt: deps.now(),
     title: '',
     body: '',
@@ -95,9 +97,4 @@ function splitMarkdown(md: string): { title: string; body: string } {
   if (!m) return { title: '', body: md.trim() }
   const body = md.replace(/^#\s+.+\n+/, '')
   return { title: m[1].trim(), body: body.trim() }
-}
-
-function transcriptPathFor(batch: BridgeBatch): string {
-  const room = batch.roomId.replace(/[^a-zA-Z0-9-]+/g, '-')
-  return `.transcript/${room}.jsonl`
 }
