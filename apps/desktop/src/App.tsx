@@ -22,6 +22,10 @@ export default function App() {
   const [note, setNote] = useState<VaultNote | null>(null)
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [dirty, setDirty] = useState(false)
+  // Leaving a note with unsaved edits used to drop them silently. Hold the
+  // action the user asked for until they say what to do with the edits.
+  const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
   const driverRef = useRef<SqlDriver | null>(null)
 
   useEffect(() => {
@@ -52,11 +56,26 @@ export default function App() {
     if (driverRef.current) await createIndex(driverRef.current, v, read)
   }
 
+  /** Run `action`, unless there are unsaved edits to resolve first. */
+  function guard(action: () => Promise<void>) {
+    if (dirty) setPending(() => action)
+    else void action()
+  }
+
+  async function resume(discard: boolean) {
+    const action = pending
+    setPending(null)
+    if (!discard) await save()
+    setDirty(false)
+    if (action) await action()
+  }
+
   async function open(rel: string) {
     if (!vault) return
     const n = await vault.readNote(rel)
     setSelected(rel)
     setNote(n)
+    setDirty(false)
     setError(null)
   }
 
@@ -73,6 +92,7 @@ export default function App() {
     // nothing on disk yet, so there is no vault path to select
     setSelected(null)
     setNote(fresh)
+    setDirty(false)
     setError(null)
   }
 
@@ -86,6 +106,7 @@ export default function App() {
       // its session key and misses.
       setSelected(vault.relPath(note))
       setNote({ ...note })
+      setDirty(false)
       await refresh(vault)
       setError(null)
     } catch (e) {
@@ -103,6 +124,7 @@ export default function App() {
       }
       setNote(null)
       setSelected(null)
+      setDirty(false)
       setError(null)
     } catch (e) {
       setError(String(e))
@@ -154,7 +176,7 @@ export default function App() {
         <div className="sidebar-head">
           <span className="kicker">Vault</span>
           <span className="count">{notes.length} nota</span>
-          <button type="button" className="add-btn" onClick={openNew} aria-label="Nota baru">
+          <button type="button" className="add-btn" onClick={() => guard(openNew)} aria-label="Nota baru">
             ＋
           </button>
         </div>
@@ -171,7 +193,7 @@ export default function App() {
                 <button
                   type="button"
                   className={selected === n.rel ? 'note-item active' : 'note-item'}
-                  onClick={() => open(n.rel)}
+                  onClick={() => guard(() => open(n.rel))}
                 >
                   <span className="note-title">{n.title}</span>
                   <span className="note-date">{dayOf(n.updatedAt)}</span>
@@ -204,16 +226,24 @@ export default function App() {
                 className="title-input"
                 value={note.title}
                 placeholder="Judul nota"
-                onChange={(e) => setNote({ ...note, title: e.target.value })}
+                onChange={(e) => {
+                  setNote({ ...note, title: e.target.value })
+                  setDirty(true)
+                }}
               />
               <textarea
                 className="body-input"
                 value={note.body}
                 placeholder="Tulis di sini…"
-                onChange={(e) => setNote({ ...note, body: e.target.value })}
+                onChange={(e) => {
+                  setNote({ ...note, body: e.target.value })
+                  setDirty(true)
+                }}
               />
               <div className="editor-actions">
-                <span className="meta">diperbarui {dayOf(note.updatedAt) || '—'}</span>
+                <span className="meta">
+                  {dirty ? 'belum disimpan' : `diperbarui ${dayOf(note.updatedAt) || '—'}`}
+                </span>
                 <button type="button" className="btn danger" onClick={remove}>
                   Pindah ke sampah
                 </button>
@@ -228,6 +258,17 @@ export default function App() {
               <p>
                 Buka atau buat nota di vault lokal. Semua berkas .md, bisa diedit editor apa pun.
               </p>
+            </div>
+          )}
+          {pending && (
+            <div className="confirm-bar" role="alert">
+              <span>Nota ini punya perubahan yang belum disimpan.</span>
+              <button type="button" className="btn" onClick={() => void resume(true)}>
+                Buang perubahan
+              </button>
+              <button type="button" className="btn primary" onClick={() => void resume(false)}>
+                Simpan lalu lanjut
+              </button>
             </div>
           )}
           {error && <div className="error-bar">{error}</div>}

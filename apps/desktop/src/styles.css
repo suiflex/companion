@@ -332,3 +332,20 @@ body {
   cursor: default;
   padding: 7px 9px;
 }
+
+.confirm-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e0b341;
+  border-radius: 8px;
+  background: rgba(224, 179, 65, 0.1);
+  color: var(--fg);
+  font-size: 12px;
+}
+
+.confirm-bar span {
+  flex: 1;
+}
