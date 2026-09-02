@@ -73,7 +73,8 @@ export default function App() {
       title: 'Nota baru',
       body: '',
     }
-    setSelected(fresh.sessionKey)
+    // nothing on disk yet, so there is no vault path to select
+    setSelected(null)
     setNote(fresh)
     setError(null)
   }
@@ -83,6 +84,10 @@ export default function App() {
     try {
       note.updatedAt = new Date().toISOString()
       await vault.writeNote(note)
+      // `selected` addresses a file, so it has to become the path the note was
+      // just written to — otherwise trashing a freshly created note aims at
+      // its session key and misses.
+      setSelected(vault.relPath(note))
       setNote({ ...note })
       await refresh(vault)
       setError(null)
@@ -92,11 +97,19 @@ export default function App() {
   }
 
   async function remove() {
-    if (!vault || !selected) return
-    await vault.trash(selected)
-    setNote(null)
-    setSelected(null)
-    await refresh(vault)
+    if (!vault) return
+    try {
+      // a note that was never saved has no file — dropping it is the delete
+      if (selected) {
+        await vault.trash(selected)
+        await refresh(vault)
+      }
+      setNote(null)
+      setSelected(null)
+      setError(null)
+    } catch (e) {
+      setError(String(e))
+    }
   }
 
   const filtered = useMemo(() => {
