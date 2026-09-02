@@ -1,0 +1,6 @@
+# One line ending everywhere. Windows checkouts were getting CRLF into
+# .mjs sources, which Node then refused to parse.
+* text=auto eol=lf
+
+*.png binary
+*.svg text eol=lf

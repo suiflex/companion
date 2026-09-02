@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mkdtempSync, readdirSync, readFileSync, rmSync, existsSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, rmSync, existsSync, utimesSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openDatabase } from '@meetcc/store'
@@ -102,10 +102,16 @@ describe('vault file ops', () => {
   })
 
   it('lists notes newest-updated first', async () => {
-    await vault.writeNote(note({ id: 'a', title: 'Older' }))
-    await vault.writeNote(
+    const older = await vault.writeNote(note({ id: 'a', title: 'Older' }))
+    const newer = await vault.writeNote(
       note({ id: 'b', sessionKey: 'meet/x#2026-08-28T14:00', updatedAt: '2026-09-02T10:00:00+07:00', title: 'Newer' }),
     )
+    // listNotes orders by filesystem mtime, and two writes this close land in
+    // the same tick on a coarse-resolution filesystem — the tie then resolves
+    // by directory order, which is why CI saw 'Older' first on Linux. Stamp
+    // the two apart so the assertion tests the ordering, not the clock.
+    utimesSync(older, new Date(1_000_000), new Date(1_000_000))
+    utimesSync(newer, new Date(2_000_000), new Date(2_000_000))
     const list = await vault.listNotes()
     expect(list).toHaveLength(2)
     expect((await vault.readNote(list[0])).title).toBe('Newer')
