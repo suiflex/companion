@@ -82,12 +82,16 @@ folder of Markdown `.md` files that stay the canonical source. Search and
 backlinks run on a derived SQLite/FTS5 index that is rebuilt from the files, so
 deleting the index never loses a note.
 
-The two talk over a **native-messaging bridge**: when the desktop app (and its
-registered host) is installed, the extension pushes caption batches into the
-vault through `@meetcc/vault` (`applyBatch`, deduped by `operation_id`, merged by
-`session_key`), writing each meeting as a note plus an append-only transcript
-sidecar. Installing the desktop is optional and purely additive — with no host,
-the extension works exactly as before. Build and native-host setup:
+The two talk over a **native-messaging bridge**. With the desktop app installed,
+its host registered, and the bridge switched on in Settings, the extension hands
+each finished meeting to the vault through `@meetcc/vault` (`applyBatch`, deduped
+by `operation_id`, merged by `session_key`), writing it as a note plus an
+append-only transcript sidecar. Deliveries are incremental and only advance once
+the host confirms them.
+
+Installing the desktop is optional and purely additive: the bridge is off by
+default, and with no host the extension works exactly as before. Build,
+native-host setup and the Settings toggle:
 **[INSTALL.md](INSTALL.md#the-two-deliveries-extension-and-companion-desktop)**.
 
 ## How it works

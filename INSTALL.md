@@ -265,6 +265,22 @@ on Linux, `%LOCALAPPDATA%\Companion` on Windows — never the Downloads folder),
 and writes the browser manifest (registry key on Windows Chrome). Re-run it any
 time the extension id or build changes.
 
+### Turning the bridge on
+
+Registering the host is not enough on its own: delivery is **opt-in**. In the
+extension's Settings, enable *"Kirim rapat selesai ke Companion Desktop"*. It is
+off by default because the extension is a complete product without the desktop
+app, and asking to talk to a host that is not there has no upside.
+
+Once on, the sweep that already runs each minute hands every finished meeting to
+the vault, sending only the captions the vault has not seen yet. The counter of
+what has been delivered advances only when the host confirms, so an uninstalled
+or crashed host costs a retry on the next sweep, never a lost or duplicated
+caption. A meeting still in progress is never sent — its note body is written
+once, from the summary, and there is no summary until the meeting ends.
+
+Delivered meetings show up as `bridge.send` rows in the audit log.
+
 ## When capture breaks
 
 Meet rotates obfuscated class names every few months. Console (filter `MeetCC`) dumps the caption container when nothing matches. Update `KNOWN` at the top of `apps/extension/public/content.js` (2026-07: block `.nMcdL`, speaker `.KcIKyf`, text `.ygicle`). The avatar-anchored heuristic usually keeps capture alive meanwhile.
