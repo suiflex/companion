@@ -413,3 +413,25 @@ body {
   color: var(--accent);
   overflow-wrap: anywhere;
 }
+
+/* Fixed rather than a flex child: the shell is a two-column layout and the
+   banner is transient, so it floats over instead of reshaping anything. */
+.update-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--fg);
+  font-size: 12px;
+}
+
+.update-banner span {
+  margin-right: auto;
+}

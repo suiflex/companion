@@ -4,6 +4,7 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { openDatabase, type SqlDriver } from '@meetcc/store'
 import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
+import UpdateBanner from './UpdateBanner'
 
 /** Vault & bridge settings. Small on purpose: the only thing here that changes
  *  state is where the vault lives, and that is a decision worth making explicit
@@ -255,6 +256,7 @@ export default function App() {
 
   return (
     <div className="shell">
+      <UpdateBanner />
       <aside className="rail" aria-label="Navigasi utama">
         <BrandMark />
         <button

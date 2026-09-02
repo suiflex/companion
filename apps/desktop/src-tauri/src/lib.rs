@@ -6,7 +6,12 @@ pub fn run() {
     if let Err(e) = vault::ensure_root(&root) {
         eprintln!("could not create the vault at {}: {e}", root.display());
     }
-    let builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init());
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        // The frontend asks; the update itself is fetched and verified in Rust
+        // against the pubkey in tauri.conf.json, then `process` relaunches.
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
     // Test-only, compiled out entirely without `--features wdio`.
     #[cfg(feature = "wdio")]
     let builder = builder
