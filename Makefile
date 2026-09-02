@@ -56,7 +56,8 @@ tauri-dev: ## Run the desktop app in dev mode (vite + tauri)
 # Register the native host with Chrome (default) or Firefox. The extension id
 # (Chromium: pkgpllhlmhhocidmipbokpigndoeiemb, Firefox: companion@suiflex.dev)
 # must match the browser's loaded build.
-native-host-install: build-host ## Register the native host (macOS/Linux): make native-host-install ID=... [CHANNEL=chrome]
+# The install script builds the host itself, so this does not depend on build-host.
+native-host-install: ## Register the native host (macOS/Linux): make native-host-install ID=... [CHANNEL=chrome]
 	apps/desktop/scripts/install-native-host.sh $(ID) $(CHANNEL)
 
 ## ---- smoke ----

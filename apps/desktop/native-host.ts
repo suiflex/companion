@@ -8,7 +8,7 @@
 //
 // State (seen operation_ids) and the vault root are file-based so the process,
 // which Chrome spawns and kills freely, survives restarts.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { openNodeVault } from '../../packages/vault/src/nodeIo.ts'
@@ -26,8 +26,23 @@ function loadState(): { seen: Record<string, string> } {
   }
 }
 
+// A redelivery older than this many operations is not a case worth carrying
+// forever; without a cap the seen-set grows for the life of the vault.
+const MAX_SEEN = 500
+
 function saveState(state: { seen: Record<string, string> }): void {
-  writeFileSync(stateFile, JSON.stringify(state, null, 2))
+  const ids = Object.keys(state.seen)
+  if (ids.length > MAX_SEEN) {
+    const newest = ids
+      .sort((a, b) => state.seen[a].localeCompare(state.seen[b]))
+      .slice(-MAX_SEEN)
+    state.seen = Object.fromEntries(newest.map((id) => [id, state.seen[id]]))
+  }
+  // Chrome kills this process freely, and a half-written state file reads back
+  // as no state at all — which would silently drop every dedupe record.
+  const tmp = `${stateFile}.${process.pid}.tmp`
+  writeFileSync(tmp, JSON.stringify(state, null, 2))
+  renameSync(tmp, stateFile)
 }
 
 const vault = openNodeVault(root)

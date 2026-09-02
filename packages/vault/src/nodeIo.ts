@@ -2,6 +2,7 @@
 // never imports this module, so `node:fs` stays out of the desktop bundle.
 import {
   appendFileSync,
+  existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -35,7 +36,15 @@ export function nodeIo(root: string): VaultIo {
       const base = abs.split('/').pop() ?? abs
       const trashDir = join(root, TRASH)
       mkdirSync(trashDir, { recursive: true })
-      renameSync(abs, join(trashDir, base))
+      // Notes from different days share a basename, so the trash needs to keep
+      // them apart — landing on an existing name would delete what is already
+      // in there, which is the one thing the trash exists to prevent.
+      let dest = join(trashDir, base)
+      if (existsSync(dest)) {
+        const stem = base.replace(/\.md$/, '')
+        dest = join(trashDir, `${stem}-${Date.now()}.md`)
+      }
+      renameSync(abs, dest)
     },
     listMarkdown: async () => walkMd(root),
     mtimeMs: async (abs) => statSync(abs).mtimeMs,

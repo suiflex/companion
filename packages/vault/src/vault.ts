@@ -29,7 +29,6 @@ export interface VaultIo {
   mtimeMs(abs: string): Promise<number>
 }
 
-const TRASH = '.trash'
 const TRANSCRIPT_DIR = '.transcript'
 
 export interface VaultOptions {
@@ -42,7 +41,6 @@ export class Vault {
 
   constructor(options: VaultOptions) {
     this.io = options.io
-    void this.io.mkdirs(this.io.join(this.io.root, TRANSCRIPT_DIR))
   }
 
   transcriptDir(): string {
@@ -104,6 +102,7 @@ export class Vault {
   /** Append one raw transcript line to the note's sidecar (never edited). */
   async appendTranscript(noteId: string, line: string): Promise<string> {
     const path = this.io.join(this.transcriptDir(), `${noteId}.jsonl`)
+    await this.io.mkdirs(this.transcriptDir())
     await this.io.appendLine(path, line)
     return path
   }
@@ -117,10 +116,7 @@ export class Vault {
 
   /** Move a note to the trash instead of deleting (non-destructive). */
   async trash(rel: string): Promise<void> {
-    const from = this.io.join(this.io.root, rel)
-    const trashRoot = this.io.join(this.io.root, TRASH)
-    await this.io.mkdirs(trashRoot)
-    await this.io.trash(from)
+    await this.io.trash(this.io.join(this.io.root, rel))
   }
 }
 

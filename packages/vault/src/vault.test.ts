@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openDatabase } from '@meetcc/store'
@@ -90,6 +90,15 @@ describe('vault file ops', () => {
     )
     expect(path.startsWith(dir + '/')).toBe(true)
     expect(path).not.toContain('..')
+  })
+
+  it('does not let the trash overwrite a note already in it', async () => {
+    const first = await vault.writeNote(note({ startedAt: '2026-08-27T14:00:12+07:00' }))
+    await vault.trash(first.replace(dir + '/', ''))
+    const second = await vault.writeNote(note({ startedAt: '2026-08-28T14:00:12+07:00' }))
+    await vault.trash(second.replace(dir + '/', ''))
+    const trashed = readdirSync(join(dir, '.trash'))
+    expect(trashed).toHaveLength(2)
   })
 
   it('lists notes newest-updated first', async () => {

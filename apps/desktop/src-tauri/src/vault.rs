@@ -161,6 +161,17 @@ pub fn trash_vault_file(state: State<'_, VaultState>, rel: String) -> Result<(),
         .unwrap_or("note.md");
     let trash_dir = root(&state).join(TRASH);
     fs::create_dir_all(&trash_dir).map_err(|e| e.to_string())?;
-    fs::rename(&from, trash_dir.join(name)).map_err(|e| e.to_string())?;
+    // Notes from different days share a basename; landing on one already in the
+    // trash would destroy it, which is what the trash exists to prevent.
+    let mut dest = trash_dir.join(name);
+    if dest.exists() {
+        let stem = name.trim_end_matches(".md");
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis())
+            .unwrap_or(0);
+        dest = trash_dir.join(format!("{stem}-{stamp}.md"));
+    }
+    fs::rename(&from, dest).map_err(|e| e.to_string())?;
     Ok(())
 }
