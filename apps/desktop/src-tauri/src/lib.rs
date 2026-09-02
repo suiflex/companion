@@ -3,6 +3,9 @@ mod vault;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let root = vault::default_root();
+    if let Err(e) = vault::ensure_root(&root) {
+        eprintln!("could not create the vault at {}: {e}", root.display());
+    }
     tauri::Builder::default()
         .manage(vault::VaultState::new(root))
         .invoke_handler(tauri::generate_handler![

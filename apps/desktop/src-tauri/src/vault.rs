@@ -31,6 +31,13 @@ pub fn default_root() -> PathBuf {
     PathBuf::from(home).join("Companion")
 }
 
+/// Create the vault skeleton. Called at startup: on a machine that has never
+/// run the app, `~/Companion` does not exist, and the first `list_vault` would
+/// fail on read_dir and leave the window stuck on an error with no way out.
+pub fn ensure_root(root: &Path) -> std::io::Result<()> {
+    fs::create_dir_all(root.join(TRANSCRIPT))
+}
+
 fn root(state: &VaultState) -> PathBuf {
     state.root.lock().clone()
 }
@@ -48,10 +55,8 @@ pub fn vault_root(state: State<'_, VaultState>) -> Result<String, String> {
 #[tauri::command]
 pub fn set_vault_root(state: State<'_, VaultState>, path: String) -> Result<(), String> {
     let new_root = PathBuf::from(path);
-    fs::create_dir_all(&new_root).map_err(|e| e.to_string())?;
+    ensure_root(&new_root).map_err(|e| e.to_string())?;
     *state.root.lock() = new_root;
-    let current = root(&state);
-    fs::create_dir_all(current.join(TRANSCRIPT)).map_err(|e| e.to_string())?;
     Ok(())
 }
 
