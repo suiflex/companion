@@ -38,10 +38,19 @@ it updated. Firefox users get it from
 [addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/companion%40suiflex.dev/),
 where Firefox handles updates itself.
 
-> **The desktop builds are not code-signed yet.** macOS will refuse a
-> downloaded app on first launch — open it once with right-click → **Open**, or
-> System Settings → Privacy & Security → **Open Anyway**. Windows SmartScreen
-> shows a similar warning. Signing is a tracked, open decision
+> **The desktop builds are not code-signed yet.** macOS refuses a downloaded
+> app on first launch — on macOS 15 and newer the dialog offers only *Move to
+> Trash* and *Done*, and neither right-click → **Open** nor *Open Anyway*
+> reliably appears. Strip the quarantine flag once, from a terminal:
+>
+> ```bash
+> xattr -dr com.apple.quarantine "/Applications/Companion Desktop.app"
+> ```
+>
+> Windows SmartScreen shows a similar warning (*More info* → *Run anyway*).
+> Full per-OS steps:
+> [INSTALL.md](INSTALL.md#installing-companion-desktop-from-a-release). Signing
+> is a tracked, open decision
 > ([docs/05](docs/05-distribution-and-installer.md#signing-cost--open-decision-owner-pak-cuanadi));
 > this note goes away when it is resolved, not before.
 

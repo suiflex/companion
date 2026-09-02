@@ -2,7 +2,7 @@
 
 ## Problem and requirements
 
-Meet Companion turns live Google Meet / Microsoft Teams captions into durable AI meeting notes without a server in the capture path. Hard requirements: capture survives selector rot and page reloads; raw transcript lines are immutable evidence; analysis is validated structured JSON, not free text; the archive stays on-device and searchable offline; AI provider is user policy (API key, subscription sign-in, or local); export works without the app running. Single-user and local-first — the desktop vault and multi-device sync are ADR-gated futures (§32.1), not current scope.
+Meet Companion turns live Google Meet / Microsoft Teams captions into durable AI meeting notes without a server in the capture path. Hard requirements: capture survives selector rot and page reloads; raw transcript lines are immutable evidence; analysis is validated structured JSON, not free text; the archive stays on-device and searchable offline; AI provider is user policy (API key, subscription sign-in, or local); export works without the app running. Single-user and local-first. The desktop vault ships today as an optional, one-way delivery target behind the native-messaging bridge; multi-device sync is still an ADR-gated future (§32.1), not current scope.
 
 ## Proposed design
 
@@ -20,10 +20,10 @@ flowchart TB
     MCP["packages/mcp read-only stdio tools"] --> SNAP[("exported JSON snapshot")]
     SW -.->|"optional E2EE HTTPS"| SYNC["packages/sync-server (opaque ciphertext only)"]
   end
-  SW -.->|"ADR-008 native messaging bridge, gated by §32.1 demand"| DESK["Tauri desktop vault (future)"]
+  SW -.->|"ADR-008 native messaging bridge, opt-in (settings.desktopBridge)"| DESK["Companion Desktop: ~/Companion vault of .md notes"]
 ```
 
-One repo, one build, no microservices. `content.js` is the only DOM reader; the service worker is the sole orchestrator and the only OPFS writer; React stays in `apps/extension/src`; every `packages/*` module is framework-free. Chrome storage is the capture archive and rollback copy; OPFS SQLite is a rebuildable queryable index (`ingestAll`), never a second truth. Desktop and sync v2 operations wait behind ADR-008/ADR-013 and the §32.1 demand gate.
+One repo, one build, no microservices. `content.js` is the only DOM reader; the service worker is the sole orchestrator and the only OPFS writer; React stays in `apps/extension/src`; every `packages/*` module is framework-free. Chrome storage is the capture archive and rollback copy; OPFS SQLite is a rebuildable queryable index (`ingestAll`), never a second truth. The desktop bridge is built and tested: when `settings.desktopBridge` is on, the sweep hands each *finished* meeting to `apps/desktop/native-host.ts`, which applies it through `packages/vault` `applyBatch` — deduped by `operation_id`, merged by `session_key` — into `~/Companion`. It is one-way and strictly additive: the extension is a complete product with no desktop installed, the desktop never reads extension storage, and the two share an operation contract rather than a database. Sync v2 operations still wait behind ADR-013 and the §32.1 demand gate.
 
 ## Core interfaces
 
