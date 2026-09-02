@@ -293,42 +293,42 @@ export default function App() {
       </aside>
 
       {view === 'notes' && (
-      <aside className="sidebar">
-        <div className="sidebar-head">
-          <span className="kicker">Vault</span>
-          <span className="count">{notes.length} nota</span>
-          <button type="button" className="add-btn" onClick={() => guard(openNew)} aria-label="Nota baru">
-            ＋
-          </button>
-        </div>
-        <input
-          className="search"
-          placeholder="Cari nota…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <ul className="note-list">
-          {filtered.map((n) => (
-            <li key={n.rel || n.title}>
-              {n.rel ? (
-                <button
-                  type="button"
-                  className={selected === n.rel ? 'note-item active' : 'note-item'}
-                  onClick={() => guard(() => open(n.rel))}
-                >
-                  <span className="note-title">{n.title}</span>
-                  <span className="note-date">{dayOf(n.updatedAt)}</span>
-                </button>
-              ) : (
-                <span className="note-title muted" title="hasil pencarian isi tubuh nota">
-                  {n.title}
-                </span>
-              )}
-            </li>
-          ))}
-          {filtered.length === 0 && <li className="empty-hint">Belum ada nota.</li>}
-        </ul>
-      </aside>
+        <aside className="sidebar">
+          <div className="sidebar-head">
+            <span className="kicker">Vault</span>
+            <span className="count">{notes.length} nota</span>
+            <button type="button" className="add-btn" onClick={() => guard(openNew)} aria-label="Nota baru">
+              ＋
+            </button>
+          </div>
+          <input
+            className="search"
+            placeholder="Cari nota…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <ul className="note-list">
+            {filtered.map((n) => (
+              <li key={n.rel || n.title}>
+                {n.rel ? (
+                  <button
+                    type="button"
+                    className={selected === n.rel ? 'note-item active' : 'note-item'}
+                    onClick={() => guard(() => open(n.rel))}
+                  >
+                    <span className="note-title">{n.title}</span>
+                    <span className="note-date">{dayOf(n.updatedAt)}</span>
+                  </button>
+                ) : (
+                  <span className="note-title muted" title="hasil pencarian isi tubuh nota">
+                    {n.title}
+                  </span>
+                )}
+              </li>
+            ))}
+            {filtered.length === 0 && <li className="empty-hint">Belum ada nota.</li>}
+          </ul>
+        </aside>
       )}
 
       <main className="content">
@@ -346,7 +346,7 @@ export default function App() {
             <Settings
               root={vault?.io.root ?? '…'}
               noteCount={notes.length}
-              onMove={moveVault}
+              onMove={() => guard(moveVault)}
             />
           ) : note ? (
             <>
