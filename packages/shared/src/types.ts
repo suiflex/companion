@@ -170,6 +170,10 @@ export interface Settings {
   retentionDays: number;
   /** Detect decisions/actions/deadlines while the meeting is still running. */
   liveHighlights: boolean;
+  /** Hand finished meetings to Companion Desktop's vault over the native
+   *  messaging host. Opt-in: the extension is a complete product on its own,
+   *  and without the desktop app installed there is nothing to deliver to. */
+  desktopBridge: boolean;
   integrations: IntegrationSettings;
 }
 
@@ -182,6 +186,7 @@ export const DEFAULT_SETTINGS: Settings = {
   byProvider: {},
   retentionDays: 0,
   liveHighlights: true,
+  desktopBridge: false,
   integrations: DEFAULT_INTEGRATIONS,
 };
 

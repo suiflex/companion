@@ -6,14 +6,26 @@ steps in `INSTALL.md` — this file only carries what neither says.
 
 ## Commands
 
+Every command in this repository goes through `make`. The Makefile is the
+interface; `package.json` and cargo are the implementation. Documentation that
+names an npm script instead is documentation that will quietly rot.
+
 ```bash
-npm test                # vitest, whole monorepo
-npm run typecheck       # tsc --noEmit — the authority on types, not eslint
-npm run lint            # eslint
-npm run build           # typecheck + bundle extension, MCP, sync-server
-npm run smoke -w @meetcc/mcp          # built MCP bin answers over stdio
-npm run smoke -w @meetcc/sync-server  # built sync bin answers over HTTP
+make ci             # the gate — everything CI runs. Run it before a PR.
+
+make test           # vitest, whole monorepo
+make typecheck      # tsc --noEmit — the authority on types, not eslint
+make lint           # eslint
+make build          # bundle extension, MCP, sync-server
+make smoke          # native host: framing + dedupe over stdio
+make smoke-mcp      # built MCP bin answers over stdio
+make smoke-sync     # built sync bin answers over HTTP
+
+make rust-check     # cargo check, with and without the wdio feature
+make tauri-dev      # run the desktop app with a window
 ```
+
+`make help` lists the rest.
 
 After every build: reload the extension at `chrome://extensions`, then refresh
 the meeting tab. Load unpacked from `apps/extension/dist/`.
@@ -25,9 +37,11 @@ button and the add-ons list; Chromium ignores them.
 
 ## Layout
 
-npm workspaces: `apps/extension` and `packages/{shared,ai,meeting,store,mcp,sync-server,exporters}`.
+npm workspaces: `apps/{extension,desktop}` and
+`packages/{shared,ai,meeting,store,vault,mcp,sync-server,exporters}`.
 
-React lives only in `apps/extension/src`. Capture, orchestration and every
+React lives only in the `apps/*` frontends — `apps/extension/src` (MV3 UI) and
+`apps/desktop/src` (Tauri desktop shell). Capture, orchestration and every
 `packages/*` module stay framework-free — do not pull React or DOM libraries
 into them.
 

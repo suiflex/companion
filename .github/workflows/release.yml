@@ -47,13 +47,10 @@ jobs:
       # the tag release ships what CI verified; the suite runs again only as a
       # guard against a tag pushed from an unverified tree
       - name: Typecheck, lint, test
-        run: |
-          npm run typecheck
-          npm run lint
-          npx vitest run
+        run: make check-all-js && make test
 
       - name: Build
-        run: npm run build -w apps/extension
+        run: make build-extension
 
       - name: Read version from manifest
         id: meta
@@ -62,12 +59,12 @@ jobs:
       # one build, two manifests: Chromium takes dist as-is, Gecko needs an
       # event page instead of a service worker (see scripts/pack.mjs)
       - name: Pack the Chromium and Firefox artifacts
-        run: npm run pack
+        run: make pack
 
       # AMO requires the source when the reviewed files are minified, and ours
       # are a Vite bundle. REVIEWERS.md rebuilds the exact tree from it.
       - name: Pack the source archive for AMO
-        run: npm run pack:source
+        run: make pack-source
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
@@ -102,13 +99,13 @@ jobs:
       # uploads the source archive against this tree, and REVIEWERS.md
       # promises the reviewer a byte-identical rebuild.
       - name: Build
-        run: npm run build -w apps/extension
+        run: make build-extension
 
       - name: Pack the Chromium and Firefox artifacts
-        run: npm run pack
+        run: make pack
 
       - name: Pack the source archive for AMO
-        run: npm run pack:source
+        run: make pack-source
 
       # Submits to the listed channel, which puts it in Mozilla's review queue —
       # AMO then distributes and auto-updates it.
@@ -133,6 +130,8 @@ jobs:
             # attempt one. `|| status=$?` exempts the call from -e while
             # still capturing web-ext's real exit code.
             status=0
+            # Not `make sign-firefox`: that target is the plain one-shot call,
+            # while this loop owns the AMO retry policy described above.
             npx web-ext sign --channel=listed \
               --source-dir apps/extension/dist-firefox \
               --artifacts-dir web-ext-artifacts \

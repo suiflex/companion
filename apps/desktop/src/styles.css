@@ -1,0 +1,415 @@
+:root {
+  color-scheme: dark;
+  --bg: #0a0d12;
+  --bg-panel: #0f131b;
+  --border: #1d2434;
+  --fg: #dbe2ee;
+  --fg-muted: #8b95a9;
+  --accent: #46e394;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.5 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.shell {
+  display: flex;
+  height: 100%;
+}
+
+.rail {
+  width: 52px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0;
+  border-right: 1px solid var(--border);
+  background: #0d1119;
+}
+
+.rail .brand {
+  width: 26px;
+  height: 26px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
+.rail-btn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.rail-btn:hover:not(:disabled) {
+  background: #131926;
+  color: var(--fg);
+}
+
+/* A disabled rail button must not invite a click it will not answer. */
+.rail-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.add-btn:disabled,
+.search:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.rail-spacer {
+  margin-top: auto;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  height: 38px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: #0d1119;
+}
+
+.badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 99px;
+  background: rgba(70, 227, 148, 0.12);
+  border: 1px solid rgba(70, 227, 148, 0.4);
+  color: var(--accent);
+  font: 700 9px/1 ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.12em;
+}
+
+.badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.empty h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.empty p {
+  margin: 0;
+  color: var(--fg-muted);
+  max-width: 46ch;
+}
+
+.rail-active {
+  background: #131926;
+  color: var(--fg);
+}
+
+.sidebar {
+  width: 262px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--bg-panel);
+  min-height: 0;
+}
+
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.kicker {
+  font: 600 9.5px/1 ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.count {
+  margin-left: auto;
+  font: 400 10px/1 ui-monospace, Menlo, monospace;
+  color: var(--fg-muted);
+}
+
+.add-btn {
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  color: var(--accent);
+}
+
+.search {
+  margin: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0d1119;
+  color: var(--fg);
+  font-size: 12.5px;
+}
+
+.note-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.note-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.note-item:hover {
+  background: #131926;
+}
+
+.note-item.active {
+  background: #131926;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.note-title {
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-date {
+  font: 400 9.5px/1 ui-monospace, Menlo, monospace;
+  color: var(--fg-muted);
+}
+
+.empty-hint {
+  padding: 10px;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}
+
+.editor-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 40px;
+  overflow-y: auto;
+}
+
+.title-input {
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: 600 28px/1.25 'Avenir Next', Avenir, sans-serif;
+  letter-spacing: -0.015em;
+  margin-bottom: 12px;
+}
+
+.body-input {
+  flex: 1;
+  min-height: 300px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0d1119;
+  color: var(--fg);
+  padding: 16px;
+  font: 14px/1.7 ui-monospace, 'SF Mono', Menlo, monospace;
+  resize: none;
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.meta {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--fg-muted);
+  font: 600 11px/1 'Avenir Next', Avenir, sans-serif;
+  cursor: pointer;
+}
+
+.btn:hover {
+  color: var(--fg);
+  border-color: var(--accent);
+}
+
+.btn.primary {
+  border-color: var(--accent);
+  background: rgba(70, 227, 148, 0.12);
+  color: var(--accent);
+}
+
+.btn.primary:hover {
+  background: var(--accent);
+  color: #0a0d12;
+}
+
+.btn.danger:hover {
+  border-color: #ff6b74;
+  color: #ff6b74;
+}
+
+.error-bar {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #ff6b74;
+  border-radius: 8px;
+  background: rgba(255, 107, 116, 0.1);
+  color: #ff6b74;
+  font: 400 12px/1.4 ui-monospace, Menlo, monospace;
+}
+
+.note-title.muted {
+  color: var(--fg-muted);
+  cursor: default;
+  padding: 7px 9px;
+}
+
+.confirm-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e0b341;
+  border-radius: 8px;
+  background: rgba(224, 179, 65, 0.1);
+  color: var(--fg);
+  font-size: 12px;
+}
+
+.confirm-bar span {
+  flex: 1;
+}
+
+.settings {
+  max-width: 640px;
+  padding: 8px 4px;
+}
+
+.settings h1 {
+  margin: 0 0 20px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.settings h2 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.setting-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+.setting-row > div {
+  min-width: 0;
+}
+
+/* The label is two words; letting it wrap made the button look broken. */
+.setting-row > .btn {
+  flex: none;
+  white-space: nowrap;
+}
+
+.setting-row .hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+/* A path is the one thing here a user may need to copy exactly. */
+.setting-path {
+  margin: 0;
+  font: 400 12px/1.5 ui-monospace, Menlo, monospace;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Register the Companion native-messaging host with Chrome/Firefox on macOS or
+# Linux. Windows uses install-native-host.ps1 instead.
+#
+# Usage:
+#   apps/desktop/scripts/install-native-host.sh <EXTENSION_ID> [channel]
+#
+#   EXTENSION_ID is the chrome-extension://<id> (Chrome/Chromium) OR the
+#   {uuid} (Firefox) the browser loads the build under. It must match the
+#   allowlist written below, otherwise the browser refuses to launch the host.
+#
+#   channel default "chrome"; pass "firefox" to target Firefox. On Linux,
+#   pass "chromium" to target Chromium instead of Chrome.
+set -euo pipefail
+
+EXT_ID="${1:?usage: install-native-host.sh <EXTENSION_ID> [channel]}"
+CHANNEL="${2:-chrome}"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+OS="$(uname -s)"
+
+# 1. Build the host into a standalone bundled mjs.
+npm --prefix "$ROOT/apps/desktop" run build:host
+
+# 2. Install location. macOS needs ~/Library (TCC blocks ~/Documents);
+#    Linux keeps it under ~/.local. Never user-writable Downloads.
+case "$OS" in
+  Darwin)
+    INSTALL_DIR="$HOME/Library/Application Support/Companion"
+    ;;
+  Linux)
+    INSTALL_DIR="$HOME/.local/share/companion"
+    ;;
+  *)
+    echo "unsupported OS: $OS (use install-native-host.ps1 on Windows)" >&2
+    exit 1
+    ;;
+esac
+
+mkdir -p "$INSTALL_DIR"
+HOST_PATH="$INSTALL_DIR/native-host.mjs"
+cp "$ROOT/apps/desktop/dist-native/native-host.mjs" "$HOST_PATH"
+chmod +x "$HOST_PATH"
+
+# 3. Native-messaging host manifest location, per browser and OS.
+case "$OS-$CHANNEL" in
+  Darwin-chrome)
+    NM_DIR="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"
+    ;;
+  Darwin-firefox)
+    NM_DIR="$HOME/Library/Application Support/Mozilla/NativeMessagingHosts"
+    ;;
+  Linux-chrome)
+    NM_DIR="$HOME/.config/google-chrome/NativeMessagingHosts"
+    ;;
+  Linux-chromium)
+    NM_DIR="$HOME/.config/chromium/NativeMessagingHosts"
+    ;;
+  Linux-firefox)
+    NM_DIR="$HOME/.mozilla/native-messaging-hosts"
+    ;;
+  *)
+    echo "unsupported OS/channel: $OS/$CHANNEL" >&2
+    exit 1
+    ;;
+esac
+mkdir -p "$NM_DIR"
+
+# Firefox allowlists by extension id (not a chrome-extension:// origin).
+if [ "$CHANNEL" = "firefox" ]; then
+  ALLOW="\"allowed_extensions\": [\"$EXT_ID\"]"
+else
+  ALLOW="\"allowed_origins\": [\"chrome-extension://$EXT_ID/\"]"
+fi
+
+MANIFEST="$NM_DIR/dev.suiflex.companion.json"
+cat > "$MANIFEST" <<EOF
+{
+  "name": "dev.suiflex.companion",
+  "description": "Companion vault capture host",
+  "path": "$HOST_PATH",
+  "type": "stdio",
+  $ALLOW
+}
+EOF
+
+echo "Host registered."
+echo "  manifest: $MANIFEST"
+echo "  host:     $HOST_PATH"
+echo "  allowlist: $ALLOW"
+echo
+echo "Then reload the extension and refresh the meeting tab."

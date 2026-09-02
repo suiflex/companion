@@ -10,6 +10,7 @@ export default defineConfig({
       '@meetcc/ai': p('./packages/ai/src'),
       '@meetcc/meeting': p('./packages/meeting/src'),
       '@meetcc/store': p('./packages/store/src'),
+      '@meetcc/vault': p('./packages/vault/src'),
       '@meetcc/mcp': p('./packages/mcp/src'),
       '@meetcc/exporters': p('./packages/exporters/src'),
     },

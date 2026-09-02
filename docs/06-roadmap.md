@@ -26,7 +26,7 @@ in its desktop app. Obsidian is never a runtime dependency.
 |---|---|---|---|---|
 | 0 — Extension foundation | **Now** | Ask v2; Obsidian export probe; stable IDs/DTOs; migration bundle; installer spike | Current product | Existing tests and smokes pass; archive round-trip preserves IDs/counts/hashes; probe instrumentation ships; installer spike records a verdict |
 | G — Desktop scope gate | **Next decision** | Choose full desktop or a smaller meeting reader | Phase 0 evidence available | G1 or G3 passes → full scope; neither passes after 6 weeks → reader + light annotation, with G1′ as supporting evidence |
-| 1 — Desktop workspace | **Not started** | Offline vault, Markdown editing/preview, meetings, native SQLite/FTS, search/backlinks, file watcher, trash/restore, import/export | Gate G decides scope; native-messaging protocol has a GO verdict; identity ADRs are accepted | Offline end-to-end flow passes; crash tests leave no partial files; integrity scanner passes |
+| 1 — Desktop workspace | **Foundation built, gated** | Offline vault, Markdown editing/preview, meetings, native SQLite/FTS, search/backlinks, file watcher, trash/restore, import/export | Gate G decides scope; native-messaging protocol has a GO verdict; identity ADRs are accepted | Offline end-to-end flow passes; crash tests leave no partial files; integrity scanner passes |
 | 2 — Extension ↔ desktop | **After desktop** | Captured meetings arrive once in Desktop through native messaging | Phase 1 vault and migration contract are stable | Meet/Teams fixtures survive bridge downtime and retry without duplicates; extension still works alone |
 | 3 — Optional encrypted sync | **Later** | Multi-device sync without server plaintext | Local vault and operation identity are proven | Retry/reorder/conflict/recovery suite converges; server plaintext-negative tests pass |
 | 4 — Unified AI | **Later** | Grounded search and Ask across meetings and notes | Stable local query and provenance contracts | Retrieval evals and citation checks pass; mutation tools remain off |
@@ -47,7 +47,7 @@ Repository snapshot verified on 1 September 2026:
 | G1/G2 clock | **Blocking probe release:** `gateSummary` still anchors to the oldest surviving audit event; no persisted release T0 exists | Persist one release T0 and make the tested gate calculation use it |
 | G3 measurement | **Partially implemented:** `ask.global` records `meetingsCited`; no weekly trend rollup exists | Add the smallest local four-week rollup and regression test |
 | Native messaging spike | **GO with conditions:** protocol passed on macOS/Linux; clean-VM timing, Windows execution, uninstall/update, and signing remain unverified or pending | Complete the recorded conditions before desktop distribution |
-| Companion Desktop | **Not started:** no desktop/Tauri workspace or dependency exists | Wait for Stage G, then create only the selected Desktop scope |
+| Companion Desktop | **Foundation built (pre-gate):** `apps/desktop` Tauri 2 workspace, `packages/vault` (canonical .md, identity, derived FTS index), WebView note editor, extension→native-host→vault bridge, cross-platform installers | Await Stage G; then build the selected full Desktop scope (file watcher, trash/restore UI, import/export, meetings) |
 
 Stage 0 has parallel workstreams; only the arrows below are hard dependencies:
 

@@ -74,6 +74,20 @@ export function IntegrationsPanel({
         </span>
       </label>
 
+      <label className="field checkbox-field">
+        <input
+          type="checkbox"
+          checked={settings.desktopBridge}
+          onChange={(e) => onChange({ desktopBridge: e.target.checked })}
+        />
+        <span>Kirim rapat selesai ke Companion Desktop</span>
+        <span className="hint">
+          Menulis nota rapat ke vault lokal Companion Desktop lewat native messaging host-nya —
+          tetap di komputer ini, tidak lewat jaringan. Butuh Companion Desktop terpasang; kalau
+          belum, extension tetap jalan normal dan pengiriman dicoba lagi nanti.
+        </span>
+      </label>
+
       <fieldset className="field-group">
         <legend>Issue tracker (action item)</legend>
         <label className="field">

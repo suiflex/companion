@@ -21,14 +21,24 @@ it works stays in [README.md](README.md).
 ## Build and load
 
 ```bash
-npm install
-npm test                # vitest
-npm run test:coverage   # v8 coverage
-npm run lint            # eslint (tsc --noEmit stays the authority on types)
-npm run build           # typecheck + bundle -> extension, MCP and sync-server dist/
-npm run smoke -w @meetcc/mcp          # the built MCP bin answers over stdio
-npm run smoke -w @meetcc/sync-server  # the built sync bin answers over HTTP
+make install        # workspace dependencies
+make ci             # the gate: linters, typecheck, tests, builds, smokes
 ```
+
+`make ci` is what CI runs, so a green local run means a green pipeline. The
+pieces are available on their own while you work:
+
+```bash
+make test           # vitest
+make test-coverage  # v8 coverage
+make lint           # eslint (tsc --noEmit stays the authority on types)
+make typecheck      # tsc --noEmit
+make build          # bundle -> extension, MCP and sync-server dist/
+make smoke-mcp      # the built MCP bin answers over stdio
+make smoke-sync     # the built sync bin answers over HTTP
+```
+
+`make help` lists every target.
 
 Load: `chrome://extensions` → Developer mode → **Load unpacked** → **`apps/extension/dist/`**.
 After every build: reload the extension, then refresh the Meet tab.
@@ -177,8 +187,7 @@ you run yourself; it only ever stores the encrypted blob the extension sends,
 so it cannot read a meeting even if it wanted to.
 
 ```bash
-npm run build -w @meetcc/sync-server
-COMPANION_TOKEN=$(openssl rand -hex 24) npm run start -w @meetcc/sync-server
+COMPANION_TOKEN=$(openssl rand -hex 24) make sync-start
 # -> http://127.0.0.1:8787 ; paste that + the token into Settings -> Sync
 ```
 
@@ -202,18 +211,85 @@ Expose the meeting archive to a coding agent, read-only:
 
 ```bash
 # Settings → Data & MCP → "Ekspor snapshot"  (no API keys or audit log included)
-npm run build -w @meetcc/mcp
+make build-mcp
 node packages/mcp/dist/server.js ~/Downloads/companion-snapshot.json
 ```
 
 The bin is bundled rather than run from source: the workspace packages ship as
 raw `src/*.ts` for the bundler, which plain `node` cannot resolve.
-`npm run build` at the root builds it alongside the extension.
+`make build` builds it alongside the extension.
 
 Tools: `list_meetings`, `search_meetings`, `get_meeting`, `get_transcript`,
 `ask_meeting`, `ask_meetings`, `get_decisions`, `get_action_items`,
 `get_open_questions`. The `ask_*` tools return grounded evidence windows rather
 than a generated answer — the calling agent does the reasoning.
+
+
+## The two deliveries: extension, and Companion Desktop
+
+This repo now builds two independent products that share the same capture
+core. Neither depends on the other at runtime.
+
+1. **Extension (Chrome/Mozilla)** — capture + AI notes, distributed through the
+   official stores (Chrome Web Store, Mozilla Add-ons). Uses the extension only
+   and needs nothing else installed.
+2. **Companion Desktop (Windows/Linux/macOS)** — a Tauri 2 app that owns a
+   local vault of Markdown notes (the `.md` files are canonical; search is a
+   rebuildable FTS index). Installing the desktop app also registers a
+   **native-messaging host**, which lets the extension push caption batches
+   straight into the vault.
+
+The bridge is strictly additive: if the desktop host is not installed the
+extension's `bridge-send` simply fails silently and the extension keeps working
+exactly as before.
+
+### Companion Desktop
+
+```bash
+make install
+make tauri          # release binary
+make tauri-bundle   # release binary + installers (.app/.dmg, .msi, .AppImage)
+make tauri-dev      # run it in dev mode, with the window
+```
+
+The vault lands at `~/Companion`, created the first time the app runs. See
+[README.md](README.md) for the architecture.
+
+### Registering the native-messaging host
+
+The host must be installed and allowlisted with the extension id the browser
+loads the build under:
+
+```bash
+# macOS / Linux (Chrome, or pass `firefox` for Firefox)
+apps/desktop/scripts/install-native-host.sh pkgpllhlmhhocidmipbokpigndoeiemb chrome
+apps/desktop/scripts/install-native-host.sh companion@suiflex.dev firefox
+
+# Windows (PowerShell, from the repo root)
+powershell -ExecutionPolicy Bypass -File apps/desktop/scripts/install-native-host.ps1 -ExtensionId pkgpllhlmhhocidmipbokpigndoeiemb -Channel chrome
+```
+
+The installer bundles the host, copies it to a stable user path per OS
+(`~/Library/Application Support/Companion` on macOS, `~/.local/share/companion`
+on Linux, `%LOCALAPPDATA%\Companion` on Windows — never the Downloads folder),
+and writes the browser manifest (registry key on Windows Chrome). Re-run it any
+time the extension id or build changes.
+
+### Turning the bridge on
+
+Registering the host is not enough on its own: delivery is **opt-in**. In the
+extension's Settings, enable *"Kirim rapat selesai ke Companion Desktop"*. It is
+off by default because the extension is a complete product without the desktop
+app, and asking to talk to a host that is not there has no upside.
+
+Once on, the sweep that already runs each minute hands every finished meeting to
+the vault, sending only the captions the vault has not seen yet. The counter of
+what has been delivered advances only when the host confirms, so an uninstalled
+or crashed host costs a retry on the next sweep, never a lost or duplicated
+caption. A meeting still in progress is never sent — its note body is written
+once, from the summary, and there is no summary until the meeting ends.
+
+Delivered meetings show up as `bridge.send` rows in the audit log.
 
 ## When capture breaks
 

@@ -22,6 +22,7 @@ import { GATE_EVENT, describeGate, gateSummary } from '@meetcc/exporters/gate';
 import { obsidianVault } from '@meetcc/exporters/obsidian';
 import { loadSettingsForAI } from './lib/aiSettings';
 import { makeZip } from './lib/zip';
+import { toBridgeBatch } from './lib/bridgeBatch';
 import { getStore, handleDb, refreshHighlights, syncIndex } from './db';
 import {
   appendAudit,
@@ -158,6 +159,17 @@ async function sweep(): Promise<void> {
       await analyze(m.id);
     }
     await enforceRetention(meetings);
+    // Opt-in second delivery target: the desktop vault. Only meetings that have
+    // ended — a live one would hand over a note body before there is a summary
+    // to put in it, and the vault fills the body once.
+    if ((await loadSettings()).desktopBridge) {
+      for (const m of meetings) {
+        if (isLive(m, Date.now())) continue;
+        await deliverToDesktop(m).catch((e) =>
+          console.warn('[MeetCC] desktop bridge delivery failed:', e),
+        );
+      }
+    }
     // the index is derived data: rebuilding it from storage is cheap and keeps
     // it correct even if a write was missed while the worker was suspended
     await syncIndex().catch((e) => console.warn('[MeetCC] index sync failed:', e));
@@ -441,6 +453,50 @@ async function handleExportObsidian(): Promise<{
   };
 }
 
+// Native-messaging host registered by the desktop installer. Sending to it is
+// best-effort: a missing / uninstalled host must never crash the worker or
+// block capture, so failures resolve to an `ok:false` and the vault is rebuilt
+// from the extension store as before.
+const NATIVE_HOST = 'dev.suiflex.companion';
+
+/** How many caption lines of a meeting the vault has already been given. */
+const BRIDGE_SENT_KEY = (meetingId: string): string => `bridge:${meetingId}`;
+
+function handleBridgeSend(
+  batch: object,
+): Promise<{ ok: boolean; data?: unknown; error?: string }> {
+  // lib is ES2022 (no Promise.withResolvers) and sendNativeMessage is
+  // executor-callback-based, so the executor form is required here.
+  return new Promise((resolve) => {
+    chrome.runtime.sendNativeMessage(NATIVE_HOST, batch, (res) => {
+      const err = chrome.runtime.lastError;
+      if (err) resolve({ ok: false, error: err.message ?? 'native-host-error' });
+      else resolve({ ok: true, data: res });
+    });
+  });
+}
+
+/**
+ * Hand a finished meeting to the desktop vault, captions first delivery only
+ * carrying the note body.
+ *
+ * Deliberately incremental: the sweep runs every minute, so re-sending the
+ * whole transcript each time would pile duplicates into the sidecar. The
+ * counter only advances once the host confirms, and the host dedupes by the
+ * operation id, so a lost counter costs a redelivery rather than a duplicate.
+ */
+async function deliverToDesktop(meeting: Meeting): Promise<void> {
+  const key = BRIDGE_SENT_KEY(meeting.id);
+  const sent = Number((await chrome.storage.local.get(key))[key] ?? 0);
+  if (sent >= meeting.entries.length) return;
+  const record = await getAnalysis(meeting.id);
+  const batch = toBridgeBatch(meeting, sent, record?.status === 'done' ? record.analysis : null);
+  const res = await handleBridgeSend(batch);
+  if (!res.ok) return; // desktop not installed, or host down — try again next sweep
+  await chrome.storage.local.set({ [key]: meeting.entries.length });
+  await appendAudit('bridge.send', `${meeting.id}: ${batch.entries.length} baris`);
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'db' && typeof msg.op === 'string') {
     handleDb({ op: msg.op, args: msg.args })
@@ -450,6 +506,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg?.type === 'export-obsidian') {
     handleExportObsidian()
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
+    return true; // async response
+  }
+  if (msg?.type === 'bridge-send' && msg.batch && typeof msg.batch === 'object') {
+    handleBridgeSend(msg.batch as object)
       .then(sendResponse)
       .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
     return true; // async response

@@ -12,6 +12,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/dist-firefox/**',
       '**/node_modules/**',
+      '**/src-tauri/target/**',
       'coverage/**',
       'docs/.obsidian/**',
       'docs/mockup/**',
@@ -40,6 +41,11 @@ export default tseslint.config(
   },
   {
     files: ['apps/extension/src/**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: reactHooks.configs.recommended.rules,
+  },
+  {
+    files: ['apps/desktop/src/**/*.{ts,tsx}'],
     plugins: { 'react-hooks': reactHooks },
     rules: reactHooks.configs.recommended.rules,
   },
