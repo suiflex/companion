@@ -1,8 +1,11 @@
 # Path -> label map for the PR area labeler (the `label` job in
 # .github/workflows/suiflex.yml).
 #
-# One entry per npm workspace, so a reviewer can tell from the label row which
-# parts of the monorepo a pull request touches without opening the diff.
+# Mostly one entry per npm workspace, so a reviewer can tell from the label row
+# which parts of the monorepo a pull request touches without opening the diff.
+# A few entries deliberately overlap a workspace label because the files under
+# them rot on their own schedule or want different reviewers — 'area: capture'
+# and 'area: rust' are both inside larger areas on purpose.
 #
 # Adding a workspace means adding it here as well as to package.json's
 # `workspaces` — nothing checks that this file stayed in sync.
@@ -20,6 +23,33 @@
   - changed-files:
       - any-glob-to-any-file:
           - "apps/extension/public/content.js"
+
+"area: desktop":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "apps/desktop/**"
+
+# Deliberately inside 'area: desktop'. The Rust crate is the one part of this
+# repository with a different toolchain and a different CI job, so a change to
+# it is worth seeing without opening the diff.
+"area: rust":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "apps/desktop/src-tauri/**"
+
+"area: vault":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "packages/vault/**"
+
+# The extension -> native host -> vault path, which spans three workspaces and
+# is the one thing in this repo that breaks in the seam between them.
+"area: bridge":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "apps/desktop/native-host.ts"
+          - "apps/extension/src/lib/bridgeBatch.ts"
+          - "packages/vault/src/bridge.ts"
 
 "area: ai":
   - changed-files:
@@ -85,6 +115,8 @@
           - "scripts/zip.mjs"
           - "scripts/unzip.mjs"
           - "scripts/picker.mjs"
+          - "apps/desktop/scripts/install-native-host.sh"
+          - "apps/desktop/scripts/install-native-host.ps1"
 
 "area: release":
   - changed-files:
@@ -92,3 +124,7 @@
           - "release-please-config.json"
           - ".release-please-manifest.json"
           - "CHANGELOG.md"
+          # The desktop releases on its own tag, so its version files belong here too.
+          - "apps/desktop/CHANGELOG.md"
+          - "apps/desktop/package.json"
+          - "apps/desktop/src-tauri/tauri.conf.json"
