@@ -68,6 +68,11 @@ interface JoinedRow extends VaultIndexRow {
 /** Full-text search across notes; returns notes whose title/body match. */
 export function search(db: SqlDriver, query: string): VaultIndexRow[] {
   const match = ftsQuery(query)
+  // ftsQuery drops terms of one character, so a query like "a" reduces to an
+  // empty string — and `MATCH ''` is a syntax error in FTS5. The sidebar calls
+  // this during render, so an exception here is a blank window, not a bad
+  // result set. Same guard the meeting store uses.
+  if (!match) return []
   const rows = db.all<JoinedRow>(
     `SELECT n.id, n.session_key AS sessionKey, n.title, n.updated_at AS updatedAt, n.path, n.rowid
        FROM vault_fts f JOIN vault_notes n ON n.rowid = f.rowid

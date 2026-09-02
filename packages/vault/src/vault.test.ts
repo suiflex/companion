@@ -107,6 +107,15 @@ describe('derived index', () => {
     expect(gate.map((h) => h.title)).toContain('Gate review')
   })
 
+  it('returns nothing for a query too short to make an FTS term', async () => {
+    await vault.writeNote(note())
+    const { driver } = await openDatabase()
+    await createIndex(driver, vault)
+    // one character survives neither ftsQuery nor `MATCH ''`
+    expect(search(driver, 'a')).toEqual([])
+    expect(search(driver, '  ')).toEqual([])
+  })
+
   it('delete + rebuild restores the index from .md source', async () => {
     await vault.writeNote(note())
     const { driver } = await openDatabase()
