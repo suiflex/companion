@@ -26,7 +26,7 @@ signature is Mozilla's — distribution stays on our GitHub Releases.
 
    ```bash
    set -a; . ./.env; set +a
-   npm run sign:firefox
+   make sign-firefox
    ```
 
    `web-ext` reads both from the environment; nothing is passed on the command
@@ -43,8 +43,8 @@ only that account can sign it, so use the project account, not a personal one.
 ## Checking the package before you upload
 
 ```bash
-npm run build
-npm run lint:firefox
+make build
+make lint-firefox
 ```
 
 Mozilla's validator has to report **0 errors**. The warnings it does report all
@@ -60,7 +60,7 @@ first release supporting that key on both desktop and Android.
 ## Signing
 
 ```bash
-npm run sign:firefox
+make sign-firefox
 ```
 
 That packs `apps/extension/dist-firefox` (the Gecko-patched manifest, see

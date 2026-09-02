@@ -21,14 +21,24 @@ it works stays in [README.md](README.md).
 ## Build and load
 
 ```bash
-npm install
-npm test                # vitest
-npm run test:coverage   # v8 coverage
-npm run lint            # eslint (tsc --noEmit stays the authority on types)
-npm run build           # typecheck + bundle -> extension, MCP and sync-server dist/
-npm run smoke -w @meetcc/mcp          # the built MCP bin answers over stdio
-npm run smoke -w @meetcc/sync-server  # the built sync bin answers over HTTP
+make install        # workspace dependencies
+make ci             # the gate: linters, typecheck, tests, builds, smokes
 ```
+
+`make ci` is what CI runs, so a green local run means a green pipeline. The
+pieces are available on their own while you work:
+
+```bash
+make test           # vitest
+make test-coverage  # v8 coverage
+make lint           # eslint (tsc --noEmit stays the authority on types)
+make typecheck      # tsc --noEmit
+make build          # bundle -> extension, MCP and sync-server dist/
+make smoke-mcp      # the built MCP bin answers over stdio
+make smoke-sync     # the built sync bin answers over HTTP
+```
+
+`make help` lists every target.
 
 Load: `chrome://extensions` → Developer mode → **Load unpacked** → **`apps/extension/dist/`**.
 After every build: reload the extension, then refresh the Meet tab.
@@ -177,8 +187,7 @@ you run yourself; it only ever stores the encrypted blob the extension sends,
 so it cannot read a meeting even if it wanted to.
 
 ```bash
-npm run build -w @meetcc/sync-server
-COMPANION_TOKEN=$(openssl rand -hex 24) npm run start -w @meetcc/sync-server
+COMPANION_TOKEN=$(openssl rand -hex 24) make sync-start
 # -> http://127.0.0.1:8787 ; paste that + the token into Settings -> Sync
 ```
 
@@ -202,13 +211,13 @@ Expose the meeting archive to a coding agent, read-only:
 
 ```bash
 # Settings → Data & MCP → "Ekspor snapshot"  (no API keys or audit log included)
-npm run build -w @meetcc/mcp
+make build-mcp
 node packages/mcp/dist/server.js ~/Downloads/companion-snapshot.json
 ```
 
 The bin is bundled rather than run from source: the workspace packages ship as
 raw `src/*.ts` for the bundler, which plain `node` cannot resolve.
-`npm run build` at the root builds it alongside the extension.
+`make build` builds it alongside the extension.
 
 Tools: `list_meetings`, `search_meetings`, `get_meeting`, `get_transcript`,
 `ask_meeting`, `ask_meetings`, `get_decisions`, `get_action_items`,
@@ -237,12 +246,13 @@ exactly as before.
 ### Companion Desktop
 
 ```bash
-npm install
-npm run build -w @meetcc/desktop   # frontend (tsc + vite)
-cd apps/desktop && npx tauri build --no-bundle   # or `make tauri` from repo root
+make install
+make tauri          # release binary
+make tauri-bundle   # release binary + installers (.app/.dmg, .msi, .AppImage)
+make tauri-dev      # run it in dev mode, with the window
 ```
 
-`make tauri-dev` (from the repo root) runs the app in dev mode. See
+The vault lands at `~/Companion`, created the first time the app runs. See
 [README.md](README.md) for the architecture.
 
 ### Registering the native-messaging host

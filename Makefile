@@ -3,7 +3,7 @@
 	rust-fmt rust-fmt-fix rust-lint rust-check \
 	build build-extension build-desktop build-host build-mcp build-sync \
 	smoke smoke-mcp smoke-sync \
-	pack pack-source sign-firefox lint-firefox \
+	pack pack-source sign-firefox lint-firefox sync-start \
 	dev dev-extension dev-desktop tauri tauri-dev tauri-bundle native-host-install
 
 # The command surface for this repository.
@@ -97,6 +97,13 @@ build-mcp: ## Build the MCP server bin
 
 build-sync: ## Build the sync-server bin
 	npm run build -w @meetcc/sync-server
+
+## ---- run a server ----
+
+# Reads COMPANION_TOKEN from the environment, so the token never has to be
+# typed into a workspace-flag incantation.
+sync-start: build-sync ## Run the sync server (COMPANION_TOKEN=... make sync-start)
+	npm run start -w @meetcc/sync-server
 
 ## ---- package & sign ----
 
