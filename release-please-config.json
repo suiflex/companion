@@ -17,7 +17,28 @@
           "path": "apps/extension/public/manifest.json",
           "jsonpath": "$.version"
         }
+      ],
+      "exclude-paths": [
+        "apps/desktop"
       ]
+    },
+    "apps/desktop": {
+      "component": "companion-desktop",
+      "changelog-path": "CHANGELOG.md",
+      "pull-request-title-pattern": "chore${scope}: release companion-desktop ${version}",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "apps/desktop/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "apps/desktop/src-tauri/tauri.conf.json",
+          "jsonpath": "$.version"
+        }
+      ],
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
@@ -72,5 +93,6 @@
       "section": "Continuous Integration",
       "hidden": true
     }
-  ]
+  ],
+  "separate-pull-requests": true
 }
