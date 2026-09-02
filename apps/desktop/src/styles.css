@@ -75,6 +75,12 @@ body {
   cursor: default;
 }
 
+.add-btn:disabled,
+.search:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .rail-spacer {
   margin-top: auto;
 }

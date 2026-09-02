@@ -297,15 +297,26 @@ export default function App() {
           <div className="sidebar-head">
             <span className="kicker">Vault</span>
             <span className="count">{notes.length} nota</span>
-            <button type="button" className="add-btn" onClick={() => guard(openNew)} aria-label="Nota baru">
+            {/* The vault opens asynchronously (sqlite wasm) and openNew returns
+                early without it, so until then the button would look live and
+                answer a click with nothing. */}
+            <button
+              type="button"
+              className="add-btn"
+              onClick={() => guard(openNew)}
+              aria-label="Nota baru"
+              disabled={!vault}
+              title={vault ? 'Nota baru' : 'Menyiapkan vault…'}
+            >
               ＋
             </button>
           </div>
           <input
             className="search"
-            placeholder="Cari nota…"
+            placeholder={vault ? 'Cari nota…' : 'Menyiapkan vault…'}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            disabled={!vault}
           />
           <ul className="note-list">
             {filtered.map((n) => (
