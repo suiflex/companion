@@ -243,7 +243,62 @@ The bridge is strictly additive: if the desktop host is not installed the
 extension's `bridge-send` simply fails silently and the extension keeps working
 exactly as before.
 
-### Companion Desktop
+### Installing Companion Desktop (from a release)
+
+Grab the asset for your OS from
+[Releases · `companion-desktop-v*`](https://github.com/suiflex/companion/releases?q=companion-desktop):
+
+| OS | Asset |
+|---|---|
+| macOS | `.dmg` |
+| Linux | `.AppImage`, or `.deb` / `.rpm` |
+| Windows | `.msi`, or `-setup.exe` |
+
+**These builds are not code-signed.** Nothing is wrong with the download — the
+project has no Apple Developer certificate and no Windows code-signing
+certificate, so both systems treat the app as coming from an unidentified
+developer. It is a tracked, open cost decision
+([docs/05](05-distribution-and-installer.md#signing-cost--open-decision-owner-pak-cuanadi)),
+not a build defect. Until it is resolved, each OS needs one manual unblock.
+
+**macOS.** Open the `.dmg`, drag *Companion Desktop* to Applications, then:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Companion Desktop.app"
+```
+
+Open the app normally afterwards. macOS 15 and newer show *"Apple could not
+verify 'Companion Desktop' is free of malware"* with only **Move to Trash** and
+**Done** — the older right-click → **Open** and *Privacy & Security → Open
+Anyway* routes are no longer dependable, which is why the command above is the
+documented path. If the app still refuses to launch, re-sign it ad-hoc:
+
+```bash
+codesign --force --deep --sign - "/Applications/Companion Desktop.app"
+```
+
+**Windows.** SmartScreen shows *"Windows protected your PC"*: click **More
+info**, then **Run anyway**. The `.msi` installs per-user and needs no admin.
+
+**Linux.** The AppImage needs the executable bit; the packages install as usual:
+
+```bash
+chmod +x Companion*.AppImage && ./Companion*.AppImage
+sudo dpkg -i companion-desktop_*.deb    # Debian/Ubuntu
+sudo rpm -i companion-desktop-*.rpm     # Fedora/RHEL
+```
+
+**After first launch.** The vault is created at `~/Companion` — plain Markdown
+files, yours to move or back up. Point the app somewhere else by exporting
+`COMPANION_VAULT=/path/to/vault` before launching, or use *Settings → Pindah
+folder…* inside the app. Nothing is sent anywhere: with the extension bridge
+off, the desktop app makes no network calls at all.
+
+To let the extension push finished meetings into that vault, register the
+native-messaging host ([below](#registering-the-native-messaging-host)) and
+turn the bridge on ([below](#turning-the-bridge-on)). Both are optional.
+
+### Building Companion Desktop from source
 
 ```bash
 make install
