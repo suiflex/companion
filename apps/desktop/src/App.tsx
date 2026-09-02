@@ -4,6 +4,21 @@ import { openDatabase, type SqlDriver } from '@meetcc/store'
 import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
 
+/** The Companion mark from assets/brand/logo-mark.svg, inlined. */
+function BrandMark() {
+  return (
+    <svg className="brand" viewBox="0 0 32 32" role="img" aria-label="Meet Companion">
+      <rect width="32" height="32" rx="7" fill="#0a0a0a" />
+      <path
+        d="M10 7 H22 A4 4 0 0 1 26 11 V17 A4 4 0 0 1 22 21 H14.5 L10 25.5 V21 A4 4 0 0 1 6 17 V11 A4 4 0 0 1 10 7 Z"
+        fill="#4ade80"
+      />
+      <rect x="10" y="11.2" width="12" height="2.6" rx="1.3" fill="#0a0a0a" />
+      <rect x="10" y="15.4" width="7" height="2.6" rx="1.3" fill="#0a0a0a" opacity=".55" />
+    </svg>
+  )
+}
+
 interface NoteHeader {
   rel: string
   title: string
@@ -159,15 +174,30 @@ export default function App() {
   return (
     <div className="shell">
       <aside className="rail" aria-label="Navigasi utama">
-        <span className="brand">Com</span>
+        <BrandMark />
         <button type="button" title="Catatan" className="rail-btn rail-active" aria-label="Catatan">
           ▤
         </button>
-        <button type="button" title="Rapat masuk" className="rail-btn" aria-label="Rapat masuk">
+        {/* Screens that do not exist yet. Disabled rather than removed so the
+            rail keeps its shape, and so a button never looks pressable while
+            doing nothing — which is how these read before. */}
+        <button
+          type="button"
+          title="Rapat masuk — belum tersedia"
+          className="rail-btn"
+          aria-label="Rapat masuk (belum tersedia)"
+          disabled
+        >
           ◈
         </button>
         <span className="rail-spacer" />
-        <button type="button" title="Vault & jembatan" className="rail-btn" aria-label="Vault & jembatan">
+        <button
+          type="button"
+          title="Vault & jembatan — belum tersedia"
+          className="rail-btn"
+          aria-label="Vault & jembatan (belum tersedia)"
+          disabled
+        >
           ⚙
         </button>
       </aside>

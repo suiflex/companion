@@ -45,10 +45,10 @@ body {
 }
 
 .rail .brand {
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--accent);
+  width: 26px;
+  height: 26px;
   margin-bottom: 8px;
+  border-radius: 6px;
 }
 
 .rail-btn {
@@ -64,9 +64,15 @@ body {
   cursor: pointer;
 }
 
-.rail-btn:hover {
+.rail-btn:hover:not(:disabled) {
   background: #131926;
   color: var(--fg);
+}
+
+/* A disabled rail button must not invite a click it will not answer. */
+.rail-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .rail-spacer {
