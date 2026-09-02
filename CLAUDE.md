@@ -25,9 +25,10 @@ button and the add-ons list; Chromium ignores them.
 
 ## Layout
 
-npm workspaces: `apps/extension` and `packages/{shared,ai,meeting,store,mcp,sync-server,exporters}`.
+npm workspaces: `apps/{extension,desktop}` and `packages/{shared,ai,meeting,store,mcp,sync-server,exporters}`.
 
-React lives only in `apps/extension/src`. Capture, orchestration and every
+React lives only in the `apps/*` frontends — `apps/extension/src` (MV3 UI) and
+`apps/desktop/src` (Tauri desktop shell). Capture, orchestration and every
 `packages/*` module stay framework-free — do not pull React or DOM libraries
 into them.
 
