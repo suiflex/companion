@@ -8,18 +8,42 @@
 </p>
 
 <p align="center">
-  Chrome extension (Manifest V3) that captures <b>Google Meet</b> and <b>Microsoft Teams</b>
-  captions from the DOM, then generates AI meeting notes: executive summary, timeline,
-  decisions, action items, risks, open questions — exportable as Markdown and PDF.
+  A <b>browser extension</b> that captures <b>Google Meet</b> and <b>Microsoft Teams</b>
+  captions from the DOM and turns them into AI meeting notes — executive summary,
+  timeline, decisions, action items, risks, open questions — and a
+  <b>desktop app</b> that keeps those notes in a local vault of plain Markdown files.
 </p>
 
 <p align="center">
-  <a href="INSTALL.md"><b>Install and run →</b></a>
+  <a href="#download"><b>Download →</b></a> ·
+  <a href="INSTALL.md"><b>Build from source</b></a> ·
+  <a href="CONTRIBUTING.md"><b>Contributing</b></a>
 </p>
 
 Everything stays on the machine: capture, the searchable archive, and the notes.
 The only thing that leaves is the transcript you send to the AI provider you
 chose — and which provider that is, is yours to pick, including a local one.
+
+## Download
+
+Two products, released on two tags. Take one or both — neither needs the other.
+
+| | Latest | What you get |
+|---|---|---|
+| **Extension** | [Releases · `v*`](https://github.com/suiflex/companion/releases?q=%22Meet+Companion%22) | `meetcc-extension-v*.zip` (Chromium), `meetcc-extension-firefox-v*.zip` |
+| **Companion Desktop** | [Releases · `companion-desktop-v*`](https://github.com/suiflex/companion/releases?q=companion-desktop) | `.dmg` / `.app.tar.gz` (macOS), `.AppImage` / `.deb` / `.rpm` (Linux), `.msi` / `-setup.exe` (Windows) |
+
+The extension is easiest through the terminal installer below, which also keeps
+it updated. Firefox users get it from
+[addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/companion%40suiflex.dev/),
+where Firefox handles updates itself.
+
+> **The desktop builds are not code-signed yet.** macOS will refuse a
+> downloaded app on first launch — open it once with right-click → **Open**, or
+> System Settings → Privacy & Security → **Open Anyway**. Windows SmartScreen
+> shows a similar warning. Signing is a tracked, open decision
+> ([docs/05](docs/05-distribution-and-installer.md#signing-cost--open-decision-owner-pak-cuanadi));
+> this note goes away when it is resolved, not before.
 
 ## Install from the terminal
 
@@ -54,6 +78,7 @@ equivalent. Full steps: **[INSTALL.md](INSTALL.md)**.
 
 ## Monorepo
 
+```
 apps/
   extension/            # MV3 extension: React UI, service worker, content script
   desktop/              # Tauri 2 desktop app (Windows/macOS/Linux): vault + FTS editor
@@ -73,7 +98,7 @@ One repository, one build — no microservices. UI is React 18 + TypeScript + Vi
 
 > Build, test and load instructions: **[INSTALL.md](INSTALL.md)**.
 
-### Companion Desktop (Tauri 2)
+## Companion Desktop (Tauri 2)
 
 Beyond the extension, this repo ships a **Companion Desktop** app
 (Windows/macOS/Linux, Tauri 2 + React). Where the extension captures and
