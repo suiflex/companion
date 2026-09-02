@@ -72,13 +72,12 @@ jobs:
       # The tag ships what CI verified; this runs again only as a guard against
       # a tag pushed from an unverified tree.
       - name: Typecheck, lint, test
-        run: |
-          npm run typecheck
-          npm run lint
-          npx vitest run
+        run: make check-all-js && make test
 
       # No --features wdio: the WebDriver plugin is test-only and must not be
       # in anything a user installs.
+      # Not `make tauri-bundle`: the matrix passes a per-platform target flag
+      # that the target does not take. The flagless case is the same command.
       - name: Build the desktop bundles
         run: npx tauri build ${{ matrix.args }}
         working-directory: apps/desktop
