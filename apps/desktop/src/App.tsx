@@ -176,6 +176,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'notes' | 'inbox' | 'settings'>('notes')
   const [dirty, setDirty] = useState(false)
+  // Search fell back to titles because the SQLite index would not open.
+  const [indexDown, setIndexDown] = useState(false)
   // Leaving a note with unsaved edits used to drop them silently. Hold the
   // action the user asked for until they say what to do with the edits.
   const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
@@ -186,12 +188,26 @@ export default function App() {
       try {
         const root = await invoke<string>('vault_root')
         const v = new Vault({ io: tauriVaultIo(root) })
-        // Derived index is disposable and session-scoped: an in-memory SQLite
-        // rebuilt from the .md files is all the UI needs for search.
-        const { driver } = await openDatabase()
-        driverRef.current = driver
-        setDriver(driver)
+        // The vault is the product; it is plain .md over Rust IPC and needs no
+        // SQLite at all. Open it first, so nothing downstream can take away the
+        // ability to read and write notes.
         setVault(v)
+
+        // Derived index is disposable and session-scoped: an in-memory SQLite
+        // rebuilt from the .md files is all the UI needs for search. Losing it
+        // costs full-text search, nothing else — `filtered` already falls back
+        // to matching titles, and `refresh` skips indexing without a driver. It
+        // used to be opened before the vault, so a failure here left the whole
+        // window inert with a disabled "new note" button.
+        try {
+          const { driver } = await openDatabase()
+          driverRef.current = driver
+          setDriver(driver)
+        } catch (e) {
+          console.warn('[Companion] search index unavailable, titles only:', e)
+          setIndexDown(true)
+        }
+
         await refresh(v)
       } catch (e) {
         setError(String(e))
@@ -461,7 +477,9 @@ export default function App() {
           </div>
           <input
             className="search"
-            placeholder={vault ? 'Cari nota…' : 'Menyiapkan vault…'}
+            placeholder={
+              !vault ? 'Menyiapkan vault…' : indexDown ? 'Cari judul (indeks mati)…' : 'Cari nota…'
+            }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             disabled={!vault}
