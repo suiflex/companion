@@ -1,11 +1,38 @@
+/* Dark is the default; `body[data-theme]` is stamped before first paint by
+   theme.ts, which resolves the "system" preference through matchMedia. Every
+   colour below is a token — a hard-coded hex anywhere else in this file is a
+   colour that cannot follow the theme. */
 :root {
   color-scheme: dark;
   --bg: #0a0d12;
   --bg-panel: #0f131b;
+  --bg-sunken: #0d1119;
+  --bg-raised: #131926;
   --border: #1d2434;
   --fg: #dbe2ee;
   --fg-muted: #8b95a9;
+  --fg-on-accent: #0a0d12;
   --accent: #46e394;
+  --danger: #ff6b74;
+  --warning: #e0b341;
+}
+
+/* Light: the same structure on paper. The signal green darkens so it still
+   reads as an accent against white, and the sunken/raised pair inverts —
+   sunken becomes lighter than the page, not darker. */
+body[data-theme='light'] {
+  color-scheme: light;
+  --bg: #eef1f6;
+  --bg-panel: #ffffff;
+  --bg-sunken: #f7f9fc;
+  --bg-raised: #ffffff;
+  --border: #d2dae7;
+  --fg: #1c2433;
+  --fg-muted: #55617a;
+  --fg-on-accent: #ffffff;
+  --accent: #0c8f60;
+  --danger: #d43f49;
+  --warning: #a86f0c;
 }
 
 * {
@@ -41,7 +68,7 @@ body {
   gap: 6px;
   padding: 12px 0;
   border-right: 1px solid var(--border);
-  background: #0d1119;
+  background: var(--bg-sunken);
 }
 
 .rail .brand {
@@ -65,7 +92,7 @@ body {
 }
 
 .rail-btn:hover:not(:disabled) {
-  background: #131926;
+  background: var(--bg-raised);
   color: var(--fg);
 }
 
@@ -100,7 +127,7 @@ body {
   gap: 12px;
   padding: 0 14px;
   border-bottom: 1px solid var(--border);
-  background: #0d1119;
+  background: var(--bg-sunken);
 }
 
 .badge {
@@ -148,7 +175,7 @@ body {
 }
 
 .rail-active {
-  background: #131926;
+  background: var(--bg-raised);
   color: var(--fg);
 }
 
@@ -200,7 +227,7 @@ body {
   padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #0d1119;
+  background: var(--bg-sunken);
   color: var(--fg);
   font-size: 12.5px;
 }
@@ -229,11 +256,11 @@ body {
 }
 
 .note-item:hover {
-  background: #131926;
+  background: var(--bg-raised);
 }
 
 .note-item.active {
-  background: #131926;
+  background: var(--bg-raised);
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
@@ -288,6 +315,35 @@ body {
 
 /* Ticket metadata sits between the title and the body, the way an issue
    tracker puts it: visible without opening anything, out of the writing flow. */
+/* Three-way choice shown as one control, so the options read as alternatives
+   rather than three separate buttons. */
+.segmented {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmented .seg {
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  padding: 7px 12px;
+  font: 12px 'Avenir Next', Avenir, sans-serif;
+  cursor: pointer;
+}
+
+.segmented .seg:last-child { border-right: 0; }
+.segmented .seg:hover { color: var(--fg); }
+
+.segmented .seg.active {
+  background: var(--accent);
+  color: var(--fg-on-accent);
+  font-weight: 600;
+}
+
 /* A grid, not a wrapping flex row: equal columns keep the four controls the
    same width, and a shared height keeps their boxes on one baseline. Left to
    themselves, a select and a text input measure differently in WebKit and the
@@ -317,7 +373,7 @@ body {
   height: 34px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #0d1119;
+  background: var(--bg-sunken);
   color: var(--fg);
   padding: 0 10px;
   font: 13px 'Avenir Next', Avenir, sans-serif;
@@ -349,17 +405,30 @@ body {
   min-height: 300px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #0d1119;
+  background: var(--bg-sunken);
   overflow: auto;
 }
 
+/* Every colour Crepe's frame theme exposes, so nothing in the editor stays
+   pinned to the imported theme's palette. */
 .body-editor .milkdown {
-  --crepe-color-background: #0d1119;
+  --crepe-color-background: var(--bg-sunken);
   --crepe-color-on-background: var(--fg);
-  --crepe-color-surface: #0d1119;
-  --crepe-color-surface-low: #121722;
+  --crepe-color-surface: var(--bg-sunken);
+  --crepe-color-surface-low: var(--bg-raised);
+  --crepe-color-on-surface: var(--fg);
+  --crepe-color-on-surface-variant: var(--fg-muted);
   --crepe-color-outline: var(--border);
   --crepe-color-primary: var(--accent);
+  --crepe-color-secondary: var(--bg-raised);
+  --crepe-color-on-secondary: var(--fg);
+  --crepe-color-inverse: var(--fg);
+  --crepe-color-on-inverse: var(--bg);
+  --crepe-color-hover: var(--bg-raised);
+  --crepe-color-selected: var(--bg-raised);
+  --crepe-color-inline-code: var(--danger);
+  --crepe-color-inline-area: var(--bg-raised);
+  --crepe-color-error: var(--danger);
   --crepe-font-title: 'Avenir Next', Avenir, sans-serif;
   --crepe-font-default: 'Avenir Next', Avenir, sans-serif;
   --crepe-font-code: ui-monospace, 'SF Mono', Menlo, monospace;
@@ -409,21 +478,21 @@ body {
 
 .btn.primary:hover {
   background: var(--accent);
-  color: #0a0d12;
+  color: var(--fg-on-accent);
 }
 
 .btn.danger:hover {
-  border-color: #ff6b74;
-  color: #ff6b74;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .error-bar {
   margin-top: 12px;
   padding: 10px 12px;
-  border: 1px solid #ff6b74;
+  border: 1px solid var(--danger);
   border-radius: 8px;
   background: rgba(255, 107, 116, 0.1);
-  color: #ff6b74;
+  color: var(--danger);
   font: 400 12px/1.4 ui-monospace, Menlo, monospace;
 }
 
@@ -439,7 +508,7 @@ body {
   gap: 10px;
   margin-top: 12px;
   padding: 10px 12px;
-  border: 1px solid #e0b341;
+  border: 1px solid var(--warning);
   border-radius: 8px;
   background: rgba(224, 179, 65, 0.1);
   color: var(--fg);

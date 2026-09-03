@@ -4,24 +4,64 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { openDatabase, type SqlDriver } from '@meetcc/store'
 import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
+import {
+  applyTheme,
+  loadThemePref,
+  saveThemePref,
+  watchSystemTheme,
+  type ThemePref,
+} from './theme'
 import { NoteEditor } from './NoteEditor'
 import UpdateBanner from './UpdateBanner'
 
 /** Vault & bridge settings. Small on purpose: the only thing here that changes
  *  state is where the vault lives, and that is a decision worth making explicit
  *  rather than burying in a preferences tree. */
+const THEME_LABELS: Record<ThemePref, string> = {
+  system: 'Ikut sistem',
+  light: 'Terang',
+  dark: 'Gelap',
+}
+
 function Settings({
   root,
   noteCount,
   onMove,
+  themePref,
+  onThemeChange,
 }: {
   root: string
   noteCount: number
   onMove: () => void
+  themePref: ThemePref
+  onThemeChange: (pref: ThemePref) => void
 }) {
   return (
     <div className="settings">
       <h1>Vault &amp; jembatan</h1>
+
+      <section className="setting-row">
+        <div>
+          <h2>Tema</h2>
+          <p className="hint">
+            “Ikut sistem” mengikuti tampilan macOS/Windows dan berubah sendiri saat
+            sistem berganti terang atau gelap.
+          </p>
+        </div>
+        <div className="segmented" role="group" aria-label="Tema">
+          {(['system', 'light', 'dark'] as ThemePref[]).map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={themePref === p ? 'seg active' : 'seg'}
+              aria-pressed={themePref === p}
+              onClick={() => onThemeChange(p)}
+            >
+              {THEME_LABELS[p]}
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="setting-row">
         <div>
@@ -178,6 +218,16 @@ export default function App() {
   const [dirty, setDirty] = useState(false)
   // Search fell back to titles because the SQLite index would not open.
   const [indexDown, setIndexDown] = useState(false)
+  const [themePref, setThemePref] = useState<ThemePref>(loadThemePref)
+
+  // Applied on change, and re-applied when the OS flips while on `system` —
+  // otherwise following the system would only take effect on the next launch.
+  useEffect(() => {
+    applyTheme(themePref)
+    saveThemePref(themePref)
+    if (themePref !== 'system') return
+    return watchSystemTheme(() => applyTheme('system'))
+  }, [themePref])
   // Leaving a note with unsaved edits used to drop them silently. Hold the
   // action the user asked for until they say what to do with the edits.
   const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
@@ -446,6 +496,17 @@ export default function App() {
         <span className="rail-spacer" />
         <button
           type="button"
+          className="rail-btn"
+          title={`Tema: ${THEME_LABELS[themePref]}`}
+          aria-label={`Tema: ${THEME_LABELS[themePref]}. Klik untuk ganti.`}
+          onClick={() =>
+            setThemePref((p) => (p === 'system' ? 'light' : p === 'light' ? 'dark' : 'system'))
+          }
+        >
+          {themePref === 'system' ? '◐' : themePref === 'light' ? '☀' : '☾'}
+        </button>
+        <button
+          type="button"
           title="Vault & jembatan"
           className={view === 'settings' ? 'rail-btn rail-active' : 'rail-btn'}
           aria-label="Vault & jembatan"
@@ -561,6 +622,8 @@ export default function App() {
               root={vault?.io.root ?? '…'}
               noteCount={notes.length}
               onMove={() => guard(moveVault)}
+              themePref={themePref}
+              onThemeChange={setThemePref}
             />
           ) : note ? (
             <>

@@ -12,8 +12,11 @@
 import { Crepe } from '@milkdown/crepe'
 import { useEffect, useRef } from 'react'
 
+// The light frame is the base; every colour it exposes is re-pointed at our own
+// tokens in styles.css, so the editor follows the app's theme instead of being
+// pinned to whichever of Crepe's two themes was imported here.
 import '@milkdown/crepe/theme/common/style.css'
-import '@milkdown/crepe/theme/frame-dark.css'
+import '@milkdown/crepe/theme/frame.css'
 
 export function NoteEditor({
   value,
