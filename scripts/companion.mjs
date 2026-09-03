@@ -15,20 +15,19 @@
 //   companion install --preview      show the TTY picker flow, do not launch
 //   companion install --dry-run      detect + resolve dist, do not launch
 //   companion update                 re-download the latest release dist (standalone)
+//   companion --help | -h            this help
 //
 // Installing also registers the desktop native-messaging host into the profile
 // it launches, which is what lets the extension hand finished meetings to
 // Companion Desktop. See scripts/nativeHost.mjs for why it has to be per-profile.
-//   companion --help | -h            this help
 
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, rm, readdir, stat, copyFile } from 'node:fs/promises';
 import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { join, dirname, resolve } from 'node:path';
 import { homedir, platform } from 'node:os';
-import { readFileSync, writeFileSync } from 'node:fs';
 import { extractZip } from './unzip.mjs';
 import { pickerFrame } from './picker.mjs';
 import { extensionIdFor, installHost } from './nativeHost.mjs';

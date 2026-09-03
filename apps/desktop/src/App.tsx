@@ -224,18 +224,27 @@ export default function App() {
   // this the app only ever read the vault at startup, so a delivery looked
   // like nothing had happened until the next restart.
   //
-  // ponytail: polls the note list rather than watching the filesystem — swap in
-  // tauri-plugin-fs watch if a vault ever grows big enough for the walk to show.
+  // ponytail: polls `listMarkdown` — one IPC call per tick, whatever the vault
+  // holds. Deliberately NOT `listNotes`, which stats every note individually
+  // and would put a round trip per note on a five-second loop forever.
+  //
+  // The ceiling that buys: only *new* files are noticed, so a second delivery
+  // filling in an existing note's summary waits for the next save or reopen.
+  // Swap in tauri-plugin-fs watch when that starts to matter.
   useEffect(() => {
     if (!vault) return
-    const seen = notes.map((n) => n.rel).join('\n')
+    const seen = notes.map((n) => n.rel).sort().join('\n')
     const timer = setInterval(() => {
       // Never while editing: refresh replaces the note list the editor's
       // selection is addressed against, and unsaved work is not ours to drop.
       if (dirty) return
-      void vault
-        .listNotes()
-        .then((rel) => {
+      void vault.io
+        .listMarkdown()
+        .then((abs) => {
+          // Same prefix rule the Vault's own `relative` uses, so the two sides
+          // of this comparison cannot drift apart over a trailing slash.
+          const root = vault.io.root.replace(/\/+$/, '')
+          const rel = abs.map((a) => (a.startsWith(`${root}/`) ? a.slice(root.length + 1) : a)).sort()
           if (rel.join('\n') !== seen) return refresh(vault)
         })
         .catch(() => undefined)
@@ -547,10 +556,12 @@ export default function App() {
                 }}
               />
               <TicketFields note={note} onChange={(patch) => { setNote({ ...note, ...patch }); setDirty(true) }} />
-              {/* Keyed by the note: the editor owns its document, so opening
-                  another note is a remount rather than a value push. */}
+              {/* Keyed by the note id, not its path: the editor owns its
+                  document, so opening another note must remount it — but the
+                  first save of a new note, which is the moment a path appears,
+                  must not, or the cursor jumps out from under the typing. */}
               <NoteEditor
-                key={selected ?? note.id}
+                key={note.id}
                 value={note.body}
                 onChange={(body) => {
                   setNote({ ...note, body })
