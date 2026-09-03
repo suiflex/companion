@@ -1,8 +1,7 @@
 name: Release Desktop
 
-# Runs only on a Companion Desktop tag. The extension has its own tag shape
-# (`v*`) and its own workflow (release.yml); the two products are released
-# independently and neither triggers the other.
+# Runs on the repository's one release tag, `v*`, alongside release.yml: the
+# extension and the desktop app share a version and ship together.
 #
 # Each platform builds on its own runner because Tauri bundles natively: a
 # .dmg needs macOS, an .msi needs Windows. A single runner cannot produce the
@@ -14,7 +13,7 @@ name: Release Desktop
 
 on:
   push:
-    tags: ['companion-desktop-v*']
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       tag:
@@ -141,24 +140,42 @@ jobs:
         shell: bash
         run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes || true
 
-      # Every other bundler puts the architecture in the filename; the macOS
-      # updater tarball is just "Companion Desktop.app.tar.gz", so without this
-      # the second Apple leg would overwrite the first one's asset.
-      - name: Name the macOS updater bundle after its architecture
-        if: always() && runner.os == 'macOS'
+      # Tauri names bundles after productName and the version, and GitHub turns
+      # the spaces into dots on upload: "Companion.Desktop_0.3.0_x64_en-US.msi".
+      # Those names drift every release and differ per bundler, so an updater
+      # manifest can only match them by guessing. Rename to one stable shape,
+      # `companion-desktop-<target-triple>.<ext>`, the way rdb names its own
+      # assets — the manifest then matches on an exact name.
+      #
+      # One extension appears once per target (macOS .dmg + .app.tar.gz, Linux
+      # .AppImage + .deb + .rpm, Windows .msi + -setup.exe), so the triple plus
+      # the extension is unique and nothing collides.
+      - name: Name the bundles after their architecture
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          dir=apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/macos
+          dir=apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
           # Reached even on a failed build, where the directory may not exist.
           [ -d "$dir" ] || exit 0
-          cd "$dir"
-          for f in *.app.tar.gz; do
-            base="${f%.app.tar.gz}.${{ matrix.target }}.app.tar.gz"
-            mv "$f" "$base"
-            # Absent when signing failed; the tarball is still worth shipping.
-            if [ -f "$f.sig" ]; then mv "$f.sig" "$base.sig"; fi
+          # Signatures are renamed through the bundle they sign, not on their
+          # own, so the pair keeps the `<bundle>.sig` name the manifest expects.
+          # `.app` and `.AppDir` are staging trees the bundlers leave behind,
+          # full of files that must not be renamed. Only what sits beside them
+          # is a shippable bundle.
+          find "$dir" \( -name '*.app' -o -name '*.AppDir' \) -prune -o \
+               -type f ! -name '*.sig' -print | while IFS= read -r f; do
+            case "$f" in
+              *.app.tar.gz) ext=app.tar.gz ;;
+              *.AppImage) ext=AppImage ;;
+              *.dmg|*.deb|*.rpm|*.msi|*.exe) ext="${f##*.}" ;;
+              *) continue ;;
+            esac
+            new="$(dirname "$f")/companion-desktop-${{ matrix.target }}.$ext"
+            if [ "$f" = "$new" ]; then continue; fi
+            mv "$f" "$new"
+            # Absent when signing failed; the bundle is still worth shipping.
+            if [ -f "$f.sig" ]; then mv "$f.sig" "$new.sig"; fi
           done
 
       # Each leg tops up the same release independently, so re-running one
@@ -215,9 +232,9 @@ jobs:
 
       # Two homes. The tag's own release keeps the manifest that shipped with
       # it; the rolling `companion-desktop-latest` release is what installed
-      # apps poll. It cannot be /releases/latest/ — that alternates with the
-      # extension's `v*` releases, which carry no manifest at all. Marked a
-      # prerelease so this pointer never becomes the repo's "Latest" itself.
+      # apps poll. The endpoint keeps that name so apps installed before the
+      # versions were merged still find their updates. Marked a prerelease so
+      # this pointer never becomes the repo's "Latest" itself.
       - name: Publish latest.json
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

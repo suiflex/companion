@@ -7,8 +7,8 @@ name: CI
 # what CI runs and what CONTRIBUTING tells you to run cannot drift apart: they
 # are the same target in the same file.
 #
-# The release machinery lives in release.yml (v* tags, the extension) and
-# release-desktop.yml (companion-desktop-v* tags, the app): artifacts, GitHub
+# The release machinery lives in release.yml (the extension) and
+# release-desktop.yml (the app), both on the one v* tag: artifacts, GitHub
 # Releases and the AMO submission stay out of the PR loop, so a Mozilla rate
 # limit can never turn a green branch red.
 
