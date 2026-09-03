@@ -40,6 +40,11 @@ export function NoteEditor({
         // already summarized upstream by the extension.
         [Crepe.Feature.AI]: false,
         [Crepe.Feature.Latex]: false,
+        // Off by default in Crepe, which is why the editor looked like it had
+        // no controls at all: the selection toolbar and the slash menu only
+        // appear once you are already editing. This is the always-visible row
+        // — headings, bold, lists, code block, quote, table, link.
+        [Crepe.Feature.TopBar]: true,
       },
       featureConfigs: {
         [Crepe.Feature.Placeholder]: { text: 'Tulis di sini…' },
