@@ -17,6 +17,15 @@ export default defineConfig({
       ignored: ['**/src-tauri/**'],
     },
   },
+  // sqlite-wasm's emscripten glue resolves sqlite3.wasm relative to its own
+  // module URL. Pre-bundled into node_modules/.vite/deps, that points at a file
+  // Vite never copies there, and the dev server answers the miss with
+  // index.html — which the browser then tries to compile as WebAssembly
+  // ("module doesn't start with '\0asm'"). Excluding it keeps the package
+  // served from its own directory, next to its .wasm.
+  optimizeDeps: {
+    exclude: ['@sqlite.org/sqlite-wasm'],
+  },
   resolve: {
     alias: {
       '@meetcc/store': p('../../packages/store/src'),
