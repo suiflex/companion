@@ -31,6 +31,48 @@ function downloadText(name: string, text: string | Blob, type = 'application/jso
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Whether the browser can reach the desktop host at all.
+ *
+ * Delivery is best-effort and never blocks capture, which used to mean an
+ * unregistered host looked exactly like a working one: the checkbox stayed
+ * ticked and nothing ever arrived. This is the only place that says so.
+ */
+function BridgeStatus() {
+  const [state, setState] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [detail, setDetail] = useState('');
+
+  const test = async () => {
+    setState('testing');
+    try {
+      await sendMessage({ type: 'bridge-ping' });
+      setDetail('');
+      setState('ok');
+    } catch (e) {
+      setDetail((e as Error).message);
+      setState('fail');
+    }
+  };
+
+  return (
+    <div className="field bridge-status">
+      <div className="subbar">
+        <button type="button" onClick={() => void test()} disabled={state === 'testing'}>
+          {state === 'testing' ? 'Menguji…' : 'Tes koneksi'}
+        </button>
+        {state === 'ok' && <span className="ok">Terhubung ke Companion Desktop.</span>}
+        {state === 'fail' && <span className="warn">Belum terhubung.</span>}
+      </div>
+      {state === 'fail' && (
+        <span className="hint">
+          {detail} — jalankan <code>companion install</code> sekali lagi untuk mendaftarkan
+          host-nya ke profil browser ini, lalu muat ulang extension.
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function IntegrationsPanel({
   settings,
   onChange,
@@ -87,6 +129,8 @@ export function IntegrationsPanel({
           belum, extension tetap jalan normal dan pengiriman dicoba lagi nanti.
         </span>
       </label>
+
+      <BridgeStatus />
 
       <fieldset className="field-group">
         <legend>Issue tracker (action item)</legend>

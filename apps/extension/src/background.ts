@@ -466,6 +466,9 @@ async function handleExportObsidian(): Promise<{
 // from the extension store as before.
 const NATIVE_HOST = 'dev.suiflex.companion';
 
+/** One audit line per worker lifetime, not one per meeting per sweep. */
+let bridgeErrorLogged = false;
+
 /** How many caption lines of a meeting the vault has already been given. */
 const BRIDGE_SENT_KEY = (meetingId: string): string => `bridge:${meetingId}`;
 
@@ -499,7 +502,17 @@ async function deliverToDesktop(meeting: Meeting): Promise<void> {
   const record = await getAnalysis(meeting.id);
   const batch = toBridgeBatch(meeting, sent, record?.status === 'done' ? record.analysis : null);
   const res = await handleBridgeSend(batch);
-  if (!res.ok) return; // desktop not installed, or host down — try again next sweep
+  if (!res.ok) {
+    // Still never blocks capture — but a silent return was why an enabled
+    // bridge could do nothing for weeks with no trace anywhere. Recorded once
+    // per worker so a permanently missing host cannot flood the audit log.
+    if (!bridgeErrorLogged) {
+      bridgeErrorLogged = true;
+      await appendAudit('bridge.error', res.error ?? 'native-host-error');
+    }
+    return; // desktop not installed, or host down — try again next sweep
+  }
+  bridgeErrorLogged = false;
   await chrome.storage.local.set({ [key]: meeting.entries.length });
   await appendAudit('bridge.send', `${meeting.id}: ${batch.entries.length} baris`);
 }
@@ -520,6 +533,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'bridge-send' && msg.batch && typeof msg.batch === 'object') {
     handleBridgeSend(msg.batch as object)
       .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
+    return true; // async response
+  }
+  if (msg?.type === 'bridge-ping') {
+    // The host's reply is irrelevant; what the UI needs is whether the browser
+    // could launch it at all, and the error verbatim when it could not.
+    handleBridgeSend({ type: 'ping' })
+      .then((res) => sendResponse(res))
       .catch((e) => sendResponse({ ok: false, error: (e as Error).message }));
     return true; // async response
   }

@@ -62,6 +62,12 @@ process.stdin.on('data', (chunk: Buffer) => {
       continue
     }
     buf = buf.slice(4 + len)
+    // A liveness check, so "is the desktop bridge reachable?" can be answered
+    // without writing anything into the vault.
+    if (msg.type === 'ping') {
+      respond({ status: 'ok', pong: true, root })
+      continue
+    }
     queue(msg)
   }
 })

@@ -1006,6 +1006,13 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
 
 .hint { font-size: 11px; color: var(--text-faint); }
 
+/* Bridge reachability readout — the one place an unregistered native host
+   stops looking like a working one. */
+.bridge-status .subbar { padding: 0; border-bottom: none; align-items: center; }
+.bridge-status .ok { font-size: 11px; color: var(--phosphor); }
+.bridge-status .warn { font-size: 11px; color: var(--amber); }
+.bridge-status .hint { margin-top: 4px; }
+
 /* ── states / toasts ── */
 
 .empty-state {
