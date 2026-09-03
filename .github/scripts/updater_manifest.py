@@ -36,7 +36,12 @@ PLATFORMS = {
 
 def pick(names, needles):
     """The one asset matching every needle, or None. Ambiguity is a bug worth
-    failing on rather than resolving by guessing."""
+    failing on rather than resolving by guessing.
+
+    Signatures are excluded first: every needle set is a substring match, and a
+    `.sig` sits next to the bundle it signs under a name that contains the
+    bundle's own -- so `foo.app.tar.gz` matches `foo.app.tar.gz.sig` too."""
+    names = [n for n in names if not n.endswith(".sig")]
     hits = [n for n in names if all(x in n for x in needles)]
     if len(hits) > 1:
         raise SystemExit(f"ambiguous updater asset for {needles}: {hits}")
@@ -86,15 +91,27 @@ def selftest():
     here that can be quietly wrong, so they get a check. GitHub rewrites spaces
     in asset names to dots on upload, which is why names come from the release
     rather than from the build directory."""
+    # Taken from the real companion-desktop-v0.3.1 release, signatures
+    # included: leaving those out is what let the ambiguity ship.
     names = [
         "Companion.Desktop_0.3.0_aarch64.dmg",
+        "Companion.Desktop_0.3.0_x64.dmg",
         "Companion.Desktop.aarch64-apple-darwin.app.tar.gz",
+        "Companion.Desktop.aarch64-apple-darwin.app.tar.gz.sig",
         "Companion.Desktop.x86_64-apple-darwin.app.tar.gz",
+        "Companion.Desktop.x86_64-apple-darwin.app.tar.gz.sig",
         "companion-desktop_0.3.0_amd64.AppImage",
+        "companion-desktop_0.3.0_amd64.AppImage.sig",
         "companion-desktop_0.3.0_aarch64.AppImage",
+        "companion-desktop_0.3.0_aarch64.AppImage.sig",
         "companion-desktop_0.3.0_amd64.deb",
+        "companion-desktop_0.3.0_amd64.deb.sig",
         "Companion.Desktop_0.3.0_x64_en-US.msi",
+        "Companion.Desktop_0.3.0_x64_en-US.msi.sig",
         "Companion.Desktop_0.3.0_arm64_en-US.msi",
+        "Companion.Desktop_0.3.0_arm64_en-US.msi.sig",
+        "Companion.Desktop_0.3.0_x64-setup.exe",
+        "Companion.Desktop_0.3.0_arm64-setup.exe",
     ]
     got = {k: pick(names, n) for k, n in PLATFORMS.items()}
     assert got["darwin-aarch64"] == "Companion.Desktop.aarch64-apple-darwin.app.tar.gz", got
