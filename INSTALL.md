@@ -338,8 +338,25 @@ The vault lands at `~/Companion`, created the first time the app runs. See
 
 ### Registering the native-messaging host
 
-The host must be installed and allowlisted with the extension id the browser
-loads the build under:
+**`companion install` does this for you.** It knows which browser it is
+launching and which profile it is launching into, derives the extension id from
+the pinned manifest key, and writes the host manifest into that profile before
+starting the browser. Nothing below is needed for a normal install.
+
+Chromium resolves native-messaging manifests against the *effective*
+`--user-data-dir`, and `companion install` runs browsers in a dedicated profile
+under `~/.meetcc/browser-profiles/<browser>` — so the manifest goes inside that
+profile, not into the browser's default location. Firefox is the exception: its
+manifests are global. On Windows registration is a registry write and still has
+to be done with the PowerShell script below.
+
+The registered `path` points at a small `native-host` wrapper that execs an
+absolute `node`, because a browser started from Finder or a desktop launcher
+inherits no shell PATH and `#!/usr/bin/env node` would find nothing.
+
+To register it by hand — a repo checkout loading the extension into a browser's
+default profile, for example — the host must be allowlisted with the extension
+id the browser loads the build under:
 
 ```bash
 # macOS / Linux (Chrome, or pass `firefox` for Firefox)

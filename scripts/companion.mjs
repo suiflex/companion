@@ -15,6 +15,10 @@
 //   companion install --preview      show the TTY picker flow, do not launch
 //   companion install --dry-run      detect + resolve dist, do not launch
 //   companion update                 re-download the latest release dist (standalone)
+//
+// Installing also registers the desktop native-messaging host into the profile
+// it launches, which is what lets the extension hand finished meetings to
+// Companion Desktop. See scripts/nativeHost.mjs for why it has to be per-profile.
 //   companion --help | -h            this help
 
 import { existsSync, mkdirSync } from 'node:fs';
@@ -24,8 +28,10 @@ import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { join, dirname, resolve } from 'node:path';
 import { homedir, platform } from 'node:os';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { extractZip } from './unzip.mjs';
 import { pickerFrame } from './picker.mjs';
+import { extensionIdFor, installHost } from './nativeHost.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const COMPANION_HOME = process.env.COMPANION_HOME || null;
@@ -253,6 +259,70 @@ async function resolveChromiumDist(opts) {
   return distDir;
 }
 
+/**
+ * The bundled native-messaging host, built if this is a repo checkout and
+ * fetched from the release if it is not.
+ *
+ * The host is the desktop half of the bridge: without it registered, the
+ * extension's sendNativeMessage lands nowhere and "Kirim rapat selesai ke
+ * Companion Desktop" does nothing at all.
+ */
+async function resolveNativeHost() {
+  if (COMPANION_HOME) {
+    const hostPath = join(COMPANION_HOME, 'native-host.mjs');
+    if (existsSync(hostPath)) return hostPath;
+    const release = await fetchLatestRelease();
+    const buf = await downloadAsset(release, /^companion-native-host-v.*\.mjs$/, 'companion-native-host-v*.mjs');
+    await mkdir(COMPANION_HOME, { recursive: true });
+    writeFileSync(hostPath, buf);
+    return hostPath;
+  }
+
+  const hostPath = join(HERE, '..', 'apps', 'desktop', 'dist-native', 'native-host.mjs');
+  if (existsSync(hostPath)) return hostPath;
+  console.log('No native host build found — building it first...');
+  const r = spawnSync('npm', ['run', 'build:host', '-w', 'apps/desktop'], {
+    cwd: join(HERE, '..'), stdio: 'inherit', shell: platform() === 'win32',
+  });
+  if (r.status !== 0) throw new Error('Host build failed.');
+  return hostPath;
+}
+
+/** The manifest the browser will actually load, for the extension id. */
+function readExtensionManifest(sources) {
+  const candidates = [
+    sources.chromium && join(sources.chromium, 'manifest.json'),
+    join(HERE, '..', 'apps', 'extension', 'public', 'manifest.json'),
+    COMPANION_HOME && join(COMPANION_HOME, 'dist', 'manifest.json'),
+  ].filter(Boolean);
+  for (const c of candidates) {
+    if (existsSync(c)) return JSON.parse(readFileSync(c, 'utf8'));
+  }
+  return null;
+}
+
+/**
+ * Register the desktop bridge for one launched profile. Best-effort on
+ * purpose: loading the extension is still worth doing when the desktop app is
+ * not installed, so a failure here is reported and stepped over.
+ */
+async function registerNativeHost(browser, profileDir, extensionId, hostSource) {
+  if (!extensionId) {
+    console.log('    desktop bridge: skipped (could not determine the extension id)');
+    return;
+  }
+  if (platform() === 'win32') {
+    console.log('    desktop bridge: run apps/desktop/scripts/install-native-host.ps1 to register it on Windows');
+    return;
+  }
+  try {
+    const done = installHost({ browser, profileDir, hostSource: await hostSource(), extensionId });
+    console.log(`    desktop bridge: registered (${done.manifestPath})`);
+  } catch (e) {
+    console.log(`    desktop bridge: not registered (${e.message})`);
+  }
+}
+
 /** Resolve the local source Chromium needs. Firefox installs from AMO. */
 export async function resolveSources(opts, browsers) {
   const sources = { chromium: null };
@@ -468,9 +538,17 @@ async function cmdInstall(opts) {
     return;
   }
 
+  const extManifest = readExtensionManifest(sources);
+  // Resolved lazily and once: a Firefox-only run still needs it, but a run that
+  // registers nothing should not pay for a build or a download.
+  let hostPromise = null;
+  const hostSource = () => (hostPromise ??= resolveNativeHost());
+
   console.log(`\nLaunching ${selected.length} Companion instance(s)...`);
   for (const b of selected) {
     const profileDir = opts.profile || join(homedir(), '.meetcc', 'browser-profiles', b.tag);
+    mkdirSync(profileDir, { recursive: true });
+    await registerNativeHost(b, profileDir, extManifest && extensionIdFor(extManifest, b.engine), hostSource);
     const pid = launch(b, sources, profileDir);
     console.log(`  ${b.name} started (pid ${pid})`);
     console.log(`    profile: ${profileDir}`);

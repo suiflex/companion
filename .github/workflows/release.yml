@@ -52,9 +52,18 @@ jobs:
       - name: Build
         run: make build-extension
 
+      # The standalone `companion install` fetches this to register the desktop
+      # bridge; without it on the release, the bridge can only be installed from
+      # a repo checkout.
+      - name: Build the native-messaging host
+        run: make build-host
+
       - name: Read version from manifest
         id: meta
         run: echo "version=$(node -p "require('./apps/extension/public/manifest.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Name the host asset after the release
+        run: cp apps/desktop/dist-native/native-host.mjs "companion-native-host-v${{ steps.meta.outputs.version }}.mjs"
 
       # one build, two manifests: Chromium takes dist as-is, Gecko needs an
       # event page instead of a service worker (see scripts/pack.mjs)
@@ -73,6 +82,7 @@ jobs:
             meetcc-extension-v*.zip
             meetcc-extension-firefox-v*.zip
             meetcc-source-v*.zip
+            companion-native-host-v*.mjs
 
   amo:
     needs: artifacts
@@ -95,11 +105,20 @@ jobs:
         id: meta
         run: echo "version=$(node -p "require('./apps/extension/public/manifest.json').version")" >> "$GITHUB_OUTPUT"
 
+      - name: Name the host asset after the release
+        run: cp apps/desktop/dist-native/native-host.mjs "companion-native-host-v${{ steps.meta.outputs.version }}.mjs"
+
       # rebuild exactly what the artifacts job packed: the AMO submission
       # uploads the source archive against this tree, and REVIEWERS.md
       # promises the reviewer a byte-identical rebuild.
       - name: Build
         run: make build-extension
+
+      # The standalone `companion install` fetches this to register the desktop
+      # bridge; without it on the release, the bridge can only be installed from
+      # a repo checkout.
+      - name: Build the native-messaging host
+        run: make build-host
 
       - name: Pack the Chromium and Firefox artifacts
         run: make pack
