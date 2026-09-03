@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/suiflex/companion/compare/companion-desktop-v0.3.0...companion-desktop-v0.3.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* **desktop:** rotate the updater signing key onto a passphrase ([6dcd337](https://github.com/suiflex/companion/commit/6dcd337bea9b0b0f27fe299a76db44c2bc79fd2f))
+* recover the desktop release and harden its failure modes ([e540860](https://github.com/suiflex/companion/commit/e540860533106d8ca396fd5d07ce6bf45d85a368))
+
 ## [0.3.0](https://github.com/suiflex/companion/compare/companion-desktop-v0.2.0...companion-desktop-v0.3.0) (2026-09-02)
 
 

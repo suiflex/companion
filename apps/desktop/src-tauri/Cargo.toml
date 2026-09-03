@@ -1,6 +1,6 @@
 [package]
 name = "companion-desktop"
-version = "0.3.0"
+version = "0.3.1"
 description = "Companion Desktop — local-first vault for meeting notes"
 authors = ["suiflex"]
 edition = "2021"
