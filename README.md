@@ -26,12 +26,12 @@ chose — and which provider that is, is yours to pick, including a local one.
 
 ## Download
 
-Two products, released on two tags. Take one or both — neither needs the other.
+Two products, released together on one tag. Take one or both — neither needs the other.
 
 | | Latest | What you get |
 |---|---|---|
 | **Extension** | [Releases · `v*`](https://github.com/suiflex/companion/releases?q=%22Meet+Companion%22) | `meetcc-extension-v*.zip` (Chromium), `meetcc-extension-firefox-v*.zip` |
-| **Companion Desktop** | [Releases · `companion-desktop-v*`](https://github.com/suiflex/companion/releases?q=companion-desktop) | `.dmg` / `.app.tar.gz` (macOS), `.AppImage` / `.deb` / `.rpm` (Linux), `.msi` / `-setup.exe` (Windows) |
+| **Companion Desktop** | [Releases · `v*`](https://github.com/suiflex/companion/releases?q=%22Meet+Companion%22) | `companion-desktop-<target-triple>` as `.dmg` / `.app.tar.gz` (macOS), `.AppImage` / `.deb` / `.rpm` (Linux), `.msi` / `-setup.exe` (Windows) |
 
 The extension is easiest through the terminal installer below, which also keeps
 it updated. Firefox users get it from
@@ -74,15 +74,21 @@ curl -fsSL https://raw.githubusercontent.com/suiflex/companion/develop/scripts/i
 irm https://raw.githubusercontent.com/suiflex/companion/develop/scripts/install.ps1 | iex
 ```
 
+That installs **Companion Desktop** and the `companion` CLI. The extension is
+one command away:
+
 ```bash
 companion install          # TTY-pick browser(s), then launches
 companion install --preview # see the picker without launching
-companion update           # re-download the latest release dist
+companion update           # re-download the latest extension dist
 ```
 
 `companion` lives in `~/.local/bin` (`%USERPROFILE%\.local\bin` on Windows —
-add it to your `PATH`) with the release `dist` in `~/.companion`. Node 20+ is
-the only prerequisite. From a checkout, `node scripts/companion.mjs install` is
+add it to your `PATH`); the desktop app goes to `/Applications` on macOS (or `~/Applications` if that
+is not writable), `~/.local/bin` on Linux, and through its `.msi` on Windows. Node 20+ is needed
+for the extension half only — the desktop app installs without it. Set
+`COMPANION_DESKTOP=0` to skip the app, or `COMPANION_FETCH_DIST=1` to pre-fetch
+the extension dist too. From a checkout, `node scripts/companion.mjs install` is
 equivalent. Full steps: **[INSTALL.md](INSTALL.md)**.
 
 ## Monorepo

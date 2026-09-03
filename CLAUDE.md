@@ -73,6 +73,18 @@ the procedure. Both `manifest.json` and `content.js` must agree on hosts.
   `PROVIDER_PRESETS`; `packages/ai/src/oauth.ts` is pure protocol and must stay
   free of `chrome.*` and storage calls.
 
+## Releases
+
+The extension and the desktop app share one version, one tag (`vX.Y.Z`) and one
+`CHANGELOG.md`; release-please bumps `apps/extension` and `apps/desktop`
+together from the root package. Which product a change belongs to comes from the
+commit scope — `feat(desktop):`, `fix(extension):` — which is what separates
+them in the changelog, so scope every user-facing commit.
+
+CI renames the desktop bundles to `companion-desktop-<target-triple>.<ext>`
+before upload. `.github/scripts/updater_manifest.py` matches those names
+exactly, so a change to either side needs the other; its `--selftest` says so.
+
 # ForgeGuard
 
 For code changes, use `/forgeguard-engineering`.

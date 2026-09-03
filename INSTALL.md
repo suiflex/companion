@@ -57,11 +57,11 @@ different folder would hand you an empty dashboard.
 
 ### Terminal installer (no npm, no manual load)
 
-For a quicker path — especially on a machine that just wants to run the
-released extension without a checkout — run the curl installer. It puts the
-`companion` CLI and the latest release `dist` into `~/.companion` and a
-`companion` wrapper into `~/.local/bin` (add it to your `PATH` if it isn't
-there). Nothing is published to npm.
+For a quicker path — especially on a machine that just wants what was released,
+without a checkout — run the curl installer. It installs **Companion Desktop**
+and puts the `companion` CLI into `~/.companion` with a wrapper in
+`~/.local/bin` (add it to your `PATH` if it isn't there). Nothing is published
+to npm.
 
 ```bash
 # macOS / Linux
@@ -73,17 +73,41 @@ curl -fsSL https://raw.githubusercontent.com/suiflex/companion/develop/scripts/i
 irm https://raw.githubusercontent.com/suiflex/companion/develop/scripts/install.ps1 | iex
 ```
 
+The extension is then one command away:
+
 ```bash
 # then, on either platform:
 companion install              # TTY-pick one or several browsers, launch each
 companion install --preview    # see the TTY flow without launching anything
-companion update               # re-downloads the latest release dist
+companion update               # re-downloads the latest extension dist
 ```
 
-Node 20+ is the only prerequisite — the release zip is unpacked by the CLI
-itself, so there is no `unzip` or `tar` to install first. On Windows the shim
-is `%USERPROFILE%\.local\bin\companion.cmd`; the installer prints the command
-that puts it on your `PATH` rather than editing the environment for you.
+The extension dist is downloaded the first time `companion install` needs it,
+so nothing is fetched up front that you may never load. Two env overrides
+change that: `COMPANION_DESKTOP=0` skips the desktop app, and
+`COMPANION_FETCH_DIST=1` pre-fetches the extension dist during the curl step.
+
+Where the desktop app lands:
+
+| OS | Destination |
+|---|---|
+| macOS | `/Applications` when your account can write it, else `~/Applications` |
+| Linux | `~/.local/bin/companion-desktop` (AppImage) |
+| Windows | wherever the `.msi` puts it — that step raises the usual UAC prompt |
+
+The admin account a single-user Mac starts with can write `/Applications`,
+which is how Homebrew casks land there too; a standard account falls back to
+the home directory. `COMPANION_APPS` overrides the choice, and the installer
+never asks for sudo. Installing this way does not make the macOS build signed,
+so the first launch still needs the right-click → **Open** step described
+above. Once installed the app updates itself; `companion update` is for the
+extension.
+
+Node 20+ is needed for the `companion` CLI, not for the desktop app — the
+release zip is unpacked by the CLI itself, so there is no `unzip` or `tar` to
+install first. On Windows the shim is `%USERPROFILE%\.local\bin\companion.cmd`;
+the installer prints the command that puts it on your `PATH` rather than editing
+the environment for you.
 
 `companion install` launches each chosen browser in its own **dedicated
 profile** (`~/.meetcc/browser-profiles/<browser>`), so it never touches your
@@ -246,13 +270,15 @@ exactly as before.
 ### Installing Companion Desktop (from a release)
 
 Grab the asset for your OS from
-[Releases · `companion-desktop-v*`](https://github.com/suiflex/companion/releases?q=companion-desktop):
+[Releases · `v*`](https://github.com/suiflex/companion/releases?q=%22Meet+Companion%22) —
+the same release that carries the extension zip. Every desktop asset is named
+`companion-desktop-<target-triple>.<ext>`:
 
 | OS | Asset |
 |---|---|
-| macOS | `.dmg` |
-| Linux | `.AppImage`, or `.deb` / `.rpm` |
-| Windows | `.msi`, or `-setup.exe` |
+| macOS | `companion-desktop-aarch64-apple-darwin.dmg`, or `-x86_64-apple-darwin` |
+| Linux | `companion-desktop-x86_64-unknown-linux-gnu.AppImage`, or `.deb` / `.rpm` |
+| Windows | `companion-desktop-x86_64-pc-windows-msvc.msi`, or `.exe` |
 
 **These builds are not code-signed.** Nothing is wrong with the download — the
 project has no Apple Developer certificate and no Windows code-signing

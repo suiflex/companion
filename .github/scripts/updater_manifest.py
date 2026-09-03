@@ -22,15 +22,16 @@ from urllib.parse import quote
 REPO = "suiflex/companion"
 
 # Which asset is the updater bundle for each platform key Tauri asks about.
-# Matched as "all these substrings appear in the filename", which is enough to
-# separate the architectures without pinning Tauri's exact naming scheme.
+# release-desktop.yml renames every bundle to `companion-desktop-<triple>.<ext>`
+# before upload, so these are exact names rather than the substring guesses the
+# raw Tauri filenames used to force.
 PLATFORMS = {
-    "darwin-aarch64": ["aarch64-apple-darwin.app.tar.gz"],
-    "darwin-x86_64": ["x86_64-apple-darwin.app.tar.gz"],
-    "linux-x86_64": ["amd64", ".AppImage"],
-    "linux-aarch64": ["aarch64", ".AppImage"],
-    "windows-x86_64": ["x64", ".msi"],
-    "windows-aarch64": ["arm64", ".msi"],
+    "darwin-aarch64": ["companion-desktop-aarch64-apple-darwin.app.tar.gz"],
+    "darwin-x86_64": ["companion-desktop-x86_64-apple-darwin.app.tar.gz"],
+    "linux-x86_64": ["companion-desktop-x86_64-unknown-linux-gnu.AppImage"],
+    "linux-aarch64": ["companion-desktop-aarch64-unknown-linux-gnu.AppImage"],
+    "windows-x86_64": ["companion-desktop-x86_64-pc-windows-msvc.msi"],
+    "windows-aarch64": ["companion-desktop-aarch64-pc-windows-msvc.msi"],
 }
 
 
@@ -88,40 +89,39 @@ def main(tag, assets_path, sig_dir, out_path):
 
 def selftest():
     """`updater_manifest.py --selftest` — the matching rules are the only part
-    here that can be quietly wrong, so they get a check. GitHub rewrites spaces
-    in asset names to dots on upload, which is why names come from the release
-    rather than from the build directory."""
-    # Taken from the real companion-desktop-v0.3.1 release, signatures
+    here that can be quietly wrong, so they get a check. Names come from the
+    release rather than the build directory: GitHub rewrites spaces on upload,
+    which the rename step in release-desktop.yml now removes ahead of it."""
+    # The asset set a release carries once every leg has uploaded, signatures
     # included: leaving those out is what let the ambiguity ship.
     names = [
-        "Companion.Desktop_0.3.0_aarch64.dmg",
-        "Companion.Desktop_0.3.0_x64.dmg",
-        "Companion.Desktop.aarch64-apple-darwin.app.tar.gz",
-        "Companion.Desktop.aarch64-apple-darwin.app.tar.gz.sig",
-        "Companion.Desktop.x86_64-apple-darwin.app.tar.gz",
-        "Companion.Desktop.x86_64-apple-darwin.app.tar.gz.sig",
-        "companion-desktop_0.3.0_amd64.AppImage",
-        "companion-desktop_0.3.0_amd64.AppImage.sig",
-        "companion-desktop_0.3.0_aarch64.AppImage",
-        "companion-desktop_0.3.0_aarch64.AppImage.sig",
-        "companion-desktop_0.3.0_amd64.deb",
-        "companion-desktop_0.3.0_amd64.deb.sig",
-        "Companion.Desktop_0.3.0_x64_en-US.msi",
-        "Companion.Desktop_0.3.0_x64_en-US.msi.sig",
-        "Companion.Desktop_0.3.0_arm64_en-US.msi",
-        "Companion.Desktop_0.3.0_arm64_en-US.msi.sig",
-        "Companion.Desktop_0.3.0_x64-setup.exe",
-        "Companion.Desktop_0.3.0_arm64-setup.exe",
+        "companion-desktop-aarch64-apple-darwin.dmg",
+        "companion-desktop-x86_64-apple-darwin.dmg",
+        "companion-desktop-aarch64-apple-darwin.app.tar.gz",
+        "companion-desktop-aarch64-apple-darwin.app.tar.gz.sig",
+        "companion-desktop-x86_64-apple-darwin.app.tar.gz",
+        "companion-desktop-x86_64-apple-darwin.app.tar.gz.sig",
+        "companion-desktop-x86_64-unknown-linux-gnu.AppImage",
+        "companion-desktop-x86_64-unknown-linux-gnu.AppImage.sig",
+        "companion-desktop-aarch64-unknown-linux-gnu.AppImage",
+        "companion-desktop-aarch64-unknown-linux-gnu.AppImage.sig",
+        "companion-desktop-x86_64-unknown-linux-gnu.deb",
+        "companion-desktop-x86_64-unknown-linux-gnu.deb.sig",
+        "companion-desktop-x86_64-pc-windows-msvc.msi",
+        "companion-desktop-x86_64-pc-windows-msvc.msi.sig",
+        "companion-desktop-aarch64-pc-windows-msvc.msi",
+        "companion-desktop-aarch64-pc-windows-msvc.msi.sig",
+        "companion-desktop-x86_64-pc-windows-msvc.exe",
+        "companion-desktop-aarch64-pc-windows-msvc.exe",
     ]
     got = {k: pick(names, n) for k, n in PLATFORMS.items()}
-    assert got["darwin-aarch64"] == "Companion.Desktop.aarch64-apple-darwin.app.tar.gz", got
-    assert got["darwin-x86_64"] == "Companion.Desktop.x86_64-apple-darwin.app.tar.gz", got
-    assert got["linux-x86_64"] == "companion-desktop_0.3.0_amd64.AppImage", got
-    assert got["linux-aarch64"] == "companion-desktop_0.3.0_aarch64.AppImage", got
-    assert got["windows-x86_64"] == "Companion.Desktop_0.3.0_x64_en-US.msi", got
-    assert got["windows-aarch64"] == "Companion.Desktop_0.3.0_arm64_en-US.msi", got
+    for key, needles in PLATFORMS.items():
+        assert got[key] == needles[0], got
     # A leg that never uploaded leaves a hole, it does not borrow another arch.
     assert pick([n for n in names if "aarch64" not in n], PLATFORMS["linux-aarch64"]) is None
+    # The tag now carries no component, and the manifest version is what the
+    # installed app compares against.
+    assert "v1.10.0".rsplit("v", 1)[-1] == "1.10.0"
     print("selftest ok")
 
 
