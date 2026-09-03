@@ -128,6 +128,30 @@ export default function App() {
     if (driverRef.current) await createIndex(driverRef.current, v, read)
   }
 
+  // Notes also arrive from outside this window: the extension hands finished
+  // meetings to the native host, which writes straight into the vault. Without
+  // this the app only ever read the vault at startup, so a delivery looked
+  // like nothing had happened until the next restart.
+  //
+  // ponytail: polls the note list rather than watching the filesystem — swap in
+  // tauri-plugin-fs watch if a vault ever grows big enough for the walk to show.
+  useEffect(() => {
+    if (!vault) return
+    const seen = notes.map((n) => n.rel).join('\n')
+    const timer = setInterval(() => {
+      // Never while editing: refresh replaces the note list the editor's
+      // selection is addressed against, and unsaved work is not ours to drop.
+      if (dirty) return
+      void vault
+        .listNotes()
+        .then((rel) => {
+          if (rel.join('\n') !== seen) return refresh(vault)
+        })
+        .catch(() => undefined)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [vault, notes, dirty])
+
   /** Run `action`, unless there are unsaved edits to resolve first. */
   function guard(action: () => Promise<void>) {
     if (dirty) setPending(() => action)
