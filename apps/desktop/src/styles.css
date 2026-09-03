@@ -249,8 +249,21 @@ body {
   color: var(--fg-muted);
 }
 
+/* One row per delivered meeting: where it came from, when, how many people,
+   and whether the summary has landed yet. */
+.inbox-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font: 400 9.5px/1.4 ui-monospace, Menlo, monospace;
+  color: var(--fg-muted);
+}
+
+.inbox-meta .pending { color: var(--accent); opacity: 0.75; }
+
 .empty-hint {
   padding: 10px;
+  line-height: 1.5;
   color: var(--fg-muted);
   font-size: 12.5px;
 }

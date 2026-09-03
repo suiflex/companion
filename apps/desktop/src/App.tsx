@@ -79,6 +79,24 @@ interface NoteHeader {
   rel: string
   title: string
   updatedAt: string
+  /** `manual` for a note written here; the meeting platform for a delivered one. */
+  platform: string
+  startedAt?: string
+  participants: number
+  /** A delivered note has no body until the extension sends the summary. */
+  hasBody: boolean
+}
+
+const PLATFORM_LABELS: Record<string, string> = {
+  'google-meet': 'Google Meet',
+  'microsoft-teams': 'Microsoft Teams',
+  teams: 'Microsoft Teams',
+  zoom: 'Zoom',
+  import: 'Impor',
+}
+
+function platformLabel(platform: string): string {
+  return PLATFORM_LABELS[platform] ?? platform
 }
 
 function dayOf(iso?: string): string {
@@ -155,7 +173,7 @@ export default function App() {
   const [note, setNote] = useState<VaultNote | null>(null)
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'notes' | 'settings'>('notes')
+  const [view, setView] = useState<'notes' | 'inbox' | 'settings'>('notes')
   const [dirty, setDirty] = useState(false)
   // Leaving a note with unsaved edits used to drop them silently. Hold the
   // action the user asked for until they say what to do with the edits.
@@ -186,7 +204,17 @@ export default function App() {
     // every read here is a round trip through Rust, and this runs on every save.
     const rel = await v.listNotes()
     const read = await Promise.all(rel.map((r) => v.readNote(r)))
-    setNotes(read.map((n, i) => ({ rel: rel[i], title: n.title || rel[i], updatedAt: n.updatedAt })))
+    setNotes(
+      read.map((n, i) => ({
+        rel: rel[i],
+        title: n.title || rel[i],
+        updatedAt: n.updatedAt,
+        platform: n.platform,
+        startedAt: n.startedAt,
+        participants: n.participants?.length ?? 0,
+        hasBody: Boolean(n.body.trim()),
+      })),
+    )
     if (driverRef.current) await createIndex(driverRef.current, v, read)
   }
 
@@ -321,7 +349,20 @@ export default function App() {
     // FTS hits carry a vault-relative `path` (and match the note body too);
     // title-substring matches on the full list fill any gap. Dedupe by rel.
     const hits = driver
-      ? search(driver, q).map((h) => ({ rel: h.path, title: h.title, updatedAt: h.updatedAt }))
+      ? search(driver, q).map((h) => {
+          // The index carries no metadata; take it from the note list when the
+          // hit is one we already read, so a search result renders like a row.
+          const known = notes.find((n) => n.rel === h.path)
+          return {
+            rel: h.path,
+            title: h.title,
+            updatedAt: h.updatedAt,
+            platform: known?.platform ?? '',
+            startedAt: known?.startedAt,
+            participants: known?.participants ?? 0,
+            hasBody: known?.hasBody ?? false,
+          }
+        })
       : []
     const seen = new Set<string>()
     const ordered: NoteHeader[] = []
@@ -340,6 +381,17 @@ export default function App() {
     return ordered
   }, [notes, driver, query])
 
+  // Notes the extension delivered, as opposed to ones written here. The split
+  // needs no new field: openNew stamps `manual`, applyBatch stamps the meeting
+  // platform. Newest meeting first — an inbox is read from the top.
+  const incoming = useMemo(
+    () =>
+      notes
+        .filter((n) => n.platform && n.platform !== 'manual')
+        .sort((a, b) => (b.startedAt ?? b.updatedAt).localeCompare(a.startedAt ?? a.updatedAt)),
+    [notes],
+  )
+
   return (
     <div className="shell">
       <UpdateBanner />
@@ -355,15 +407,13 @@ export default function App() {
         >
           ▤
         </button>
-        {/* Screens that do not exist yet. Disabled rather than removed so the
-            rail keeps its shape, and so a button never looks pressable while
-            doing nothing — which is how these read before. */}
         <button
           type="button"
-          title="Rapat masuk — belum tersedia"
-          className="rail-btn"
-          aria-label="Rapat masuk (belum tersedia)"
-          disabled
+          title="Rapat masuk"
+          className={view === 'inbox' ? 'rail-btn rail-active' : 'rail-btn'}
+          aria-label="Rapat masuk"
+          aria-current={view === 'inbox' ? 'page' : undefined}
+          onClick={() => setView('inbox')}
         >
           ◈
         </button>
@@ -426,6 +476,43 @@ export default function App() {
               </li>
             ))}
             {filtered.length === 0 && <li className="empty-hint">Belum ada nota.</li>}
+          </ul>
+        </aside>
+      )}
+
+      {view === 'inbox' && (
+        <aside className="sidebar">
+          <div className="sidebar-head">
+            <span className="kicker">Rapat masuk</span>
+            <span className="count">{incoming.length} rapat</span>
+          </div>
+          <ul className="note-list">
+            {incoming.map((n) => (
+              <li key={n.rel}>
+                <button
+                  type="button"
+                  className={selected === n.rel ? 'note-item active' : 'note-item'}
+                  onClick={() => guard(() => open(n.rel))}
+                >
+                  <span className="note-title">{n.title}</span>
+                  <span className="inbox-meta">
+                    <span>{platformLabel(n.platform)}</span>
+                    <span>{dayOf(n.startedAt) || dayOf(n.updatedAt)}</span>
+                    {n.participants > 0 && <span>{n.participants} peserta</span>}
+                    {/* A meeting arrives as captions first; the body only fills
+                        once the extension has a summary to send. Saying so beats
+                        an empty note looking like a failed delivery. */}
+                    {!n.hasBody && <span className="pending">transkrip saja</span>}
+                  </span>
+                </button>
+              </li>
+            ))}
+            {incoming.length === 0 && (
+              <li className="empty-hint">
+                Belum ada rapat yang masuk. Nyalakan “Kirim rapat selesai ke Companion
+                Desktop” di setelan extension, lalu tekan “Tes koneksi” di sana.
+              </li>
+            )}
           </ul>
         </aside>
       )}
