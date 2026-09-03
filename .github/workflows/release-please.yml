@@ -3,11 +3,7 @@ name: release-please
 on:
   # A maintainer starts release preparation explicitly after batching changes.
   workflow_dispatch:
-  # Every merge to develop. This both finalizes a merged release PR into a tag
-  # and refreshes the *other* product's open release PR: the two versions share
-  # one .release-please-manifest.json, so releasing the desktop app leaves the
-  # extension's PR carrying a stale desktop version and conflicting (#38).
-  # release-please rebases its own PRs, but only on a run.
+  # Every merge to develop, which finalizes a merged release PR into a tag.
   #
   # This replaces a `pull_request: [closed]` trigger rather than joining it:
   # merging a release PR is itself a push to develop, so both would fire and
@@ -44,28 +40,13 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # Two products release from this repo on two tag shapes: the extension
-      # keeps vX.Y.Z (release.yml keys off `v*`) and the desktop app uses
-      # companion-desktop-vX.Y.Z (release-desktop.yml). Either or both can be
-      # released in one run, so the display title is chosen per released path
-      # rather than being a constant.
-      - name: Prefix each release title with its product name
+      # release-please names a release after its tag; the extension and the
+      # desktop app now ship from that one tag, so the title says the product
+      # rather than the tag.
+      - name: Prefix the release title with the product name
         if: ${{ steps.release.outputs.releases_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-          OUTPUTS: ${{ toJSON(steps.release.outputs) }}
         run: |
-          set -euo pipefail
-          # The action prefixes an output with its path — except for the root
-          # package, whose outputs stay unprefixed (setPathOutput in
-          # release-please-action). Looking up `.--tag_name` returns null.
-          for path in $(jq -r '.paths_released | fromjson | .[]' <<<"$OUTPUTS"); do
-            if [ "$path" = "." ]; then prefix=""; else prefix="$path--"; fi
-            tag=$(jq -er --arg k "${prefix}tag_name" '.[$k]' <<<"$OUTPUTS")
-            version=$(jq -er --arg k "${prefix}version" '.[$k]' <<<"$OUTPUTS")
-            case "$path" in
-              apps/desktop) name="Companion Desktop" ;;
-              *) name="Meet Companion" ;;
-            esac
-            gh release edit "$tag" --title "$name v$version"
-          done
+          gh release edit "${{ steps.release.outputs.tag_name }}" \
+            --title "Meet Companion v${{ steps.release.outputs.version }}"
