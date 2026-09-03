@@ -273,6 +273,38 @@ body {
   margin-bottom: 12px;
 }
 
+/* Ticket metadata sits between the title and the body, the way an issue
+   tracker puts it: visible without opening anything, out of the writing flow. */
+.ticket-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ticket-fields label { display: flex; flex-direction: column; gap: 4px; }
+
+.ticket-fields span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.ticket-fields input,
+.ticket-fields select {
+  min-width: 150px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0d1119;
+  color: var(--fg);
+  padding: 6px 8px;
+  font: 13px 'Avenir Next', Avenir, sans-serif;
+}
+
 .body-input {
   flex: 1;
   min-height: 300px;

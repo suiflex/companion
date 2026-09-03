@@ -85,6 +85,68 @@ function dayOf(iso?: string): string {
   return iso ? iso.slice(0, 10) : ''
 }
 
+const STATUSES = ['', 'To Do', 'In Progress', 'Blocked', 'Done']
+const PRIORITIES = ['', 'Low', 'Medium', 'High', 'Urgent']
+
+/**
+ * The ticket half of a note: what the body cannot carry as prose.
+ *
+ * The values are free-form in the file (frontmatter is hand-editable markdown,
+ * not a schema), so the selects offer a set without enforcing it — a note
+ * carrying a value from somewhere else keeps it.
+ */
+function TicketFields({
+  note,
+  onChange,
+}: {
+  note: VaultNote
+  onChange: (patch: Partial<VaultNote>) => void
+}) {
+  const pick = (value: string): string | undefined => value || undefined
+  return (
+    <div className="ticket-fields">
+      <label>
+        <span>Status</span>
+        <select value={note.status ?? ''} onChange={(e) => onChange({ status: pick(e.target.value) })}>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>{s || '—'}</option>
+          ))}
+          {note.status && !STATUSES.includes(note.status) && (
+            <option value={note.status}>{note.status}</option>
+          )}
+        </select>
+      </label>
+      <label>
+        <span>Prioritas</span>
+        <select value={note.priority ?? ''} onChange={(e) => onChange({ priority: pick(e.target.value) })}>
+          {PRIORITIES.map((s) => (
+            <option key={s} value={s}>{s || '—'}</option>
+          ))}
+          {note.priority && !PRIORITIES.includes(note.priority) && (
+            <option value={note.priority}>{note.priority}</option>
+          )}
+        </select>
+      </label>
+      <label>
+        <span>Assignee</span>
+        <input
+          value={note.assignee ?? ''}
+          placeholder="siapa"
+          onChange={(e) => onChange({ assignee: pick(e.target.value) })}
+        />
+      </label>
+      <label>
+        <span>Tenggat</span>
+        <input
+          type="date"
+          value={note.dueDate ?? ''}
+          onChange={(e) => onChange({ dueDate: pick(e.target.value) })}
+        />
+      </label>
+    </div>
+  )
+}
+
 export default function App() {
   const [vault, setVault] = useState<Vault | null>(null)
   const [notes, setNotes] = useState<NoteHeader[]>([])
@@ -396,6 +458,7 @@ export default function App() {
                   setDirty(true)
                 }}
               />
+              <TicketFields note={note} onChange={(patch) => { setNote({ ...note, ...patch }); setDirty(true) }} />
               <textarea
                 className="body-input"
                 value={note.body}
