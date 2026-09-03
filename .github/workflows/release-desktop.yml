@@ -96,6 +96,21 @@ jobs:
       - name: Install
         run: npm ci
 
+      # v0.3.0 died here after every leg had already built its installers: the
+      # signing secrets were never set, and Tauri only says so once the bundles
+      # exist. Ten seconds and a readable message beats twenty minutes across
+      # six runners.
+      - name: Check the signing key is available
+        shell: bash
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::TAURI_SIGNING_PRIVATE_KEY is not set. Updater bundles cannot be signed." \
+                 "Set it (and TAURI_SIGNING_PRIVATE_KEY_PASSWORD) in the repository secrets."
+            exit 1
+          fi
+
       # No test step. `ci.yml` gates every PR, and a tag is cut from a branch
       # that already passed it; re-running the whole JS suite on six runners
       # only adds six chances for a platform-flaky test to block a bundle that
@@ -117,6 +132,10 @@ jobs:
       # it here is only a fallback for a hand-pushed tag; the leg that loses
       # the race fails harmlessly and uploads anyway.
       - name: Ensure the release exists
+        # `always()` from here down: if signing fails the installers on disk are
+        # still good, and a release missing only its updater manifest beats a
+        # release missing everything. The manifest job then fails, loudly.
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
@@ -126,31 +145,49 @@ jobs:
       # updater tarball is just "Companion Desktop.app.tar.gz", so without this
       # the second Apple leg would overwrite the first one's asset.
       - name: Name the macOS updater bundle after its architecture
-        if: runner.os == 'macOS'
+        if: always() && runner.os == 'macOS'
         shell: bash
-        working-directory: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/macos
         run: |
           set -euo pipefail
           shopt -s nullglob
+          dir=apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/macos
+          # Reached even on a failed build, where the directory may not exist.
+          [ -d "$dir" ] || exit 0
+          cd "$dir"
           for f in *.app.tar.gz; do
-            mv "$f" "${f%.app.tar.gz}.${{ matrix.target }}.app.tar.gz"
-            mv "$f.sig" "${f%.app.tar.gz}.${{ matrix.target }}.app.tar.gz.sig"
+            base="${f%.app.tar.gz}.${{ matrix.target }}.app.tar.gz"
+            mv "$f" "$base"
+            # Absent when signing failed; the tarball is still worth shipping.
+            if [ -f "$f.sig" ]; then mv "$f.sig" "$base.sig"; fi
           done
 
       # Each leg tops up the same release independently, so re-running one
       # failed architecture never touches the assets the others uploaded.
       - name: Upload bundles to the Release
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
-        working-directory: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
         run: |
           set -euo pipefail
+          dir=apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
+          # A build that failed before bundling has nothing to upload; the job
+          # is already red, so say why and stop rather than erroring on a cd.
+          if [ ! -d "$dir" ]; then
+            echo "no bundles were produced for ${{ matrix.target }}"
+            exit 0
+          fi
+          cd "$dir"
           find . -type f \( \
             -name '*.dmg' -o -name '*.app.tar.gz' -o -name '*.AppImage' \
             -o -name '*.deb' -o -name '*.rpm' -o -name '*.msi' -o -name '*.exe' \
             -o -name '*.sig' \
-          \) -print0 | xargs -0 -t gh release upload "$TAG" --clobber
+          \) -print0 > /tmp/bundles
+          if [ ! -s /tmp/bundles ]; then
+            echo "no bundles were produced for ${{ matrix.target }}"
+            exit 0
+          fi
+          xargs -0 -t gh release upload "$TAG" --clobber < /tmp/bundles
 
   # Fan-in: the six legs never see each other, so the manifest is built from
   # what actually reached the release. `always()` because an experimental arm
