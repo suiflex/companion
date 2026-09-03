@@ -8,31 +8,63 @@ import {
 } from '@meetcc/shared'
 
 import { listProjects, listSessions } from '../lib/db'
+import { resolveTheme, watchSystemTheme, type ThemePref } from '../lib/theme'
 
-type Theme = 'dark' | 'light'
+const THEME_LABEL: Record<ThemePref, string> = {
+  system: 'Tema: ikut sistem',
+  light: 'Tema: terang',
+  dark: 'Tema: gelap',
+}
 
-/** Dark/light switch; persisted so the next open keeps the choice. */
+const THEME_ICON: Record<ThemePref, string> = {
+  system: '◐',
+  light: '☀',
+  dark: '☾',
+}
+
+const NEXT: Record<ThemePref, ThemePref> = {
+  system: 'light',
+  light: 'dark',
+  dark: 'system',
+}
+
+/** Cycles system → light → dark; persisted so the next open keeps the choice. */
 function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(
-    document.body.dataset.theme === 'light' ? 'light' : 'dark',
-  )
+  const [pref, setPref] = useState<ThemePref>('system')
+
+  // main.tsx already stamped the resolved theme before first paint; this only
+  // recovers which *preference* produced it, so the cycle starts where the
+  // user left off rather than always at `system`.
   useEffect(() => {
-    document.body.dataset.theme = theme
+    void chrome.storage.local
+      .get('theme')
+      .then(({ theme }) => {
+        if (theme === 'light' || theme === 'dark' || theme === 'system') setPref(theme)
+      })
+      .catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
+    document.body.dataset.theme = resolveTheme(pref)
     try {
-      void chrome.storage.local.set({ theme })
+      void chrome.storage.local.set({ theme: pref })
     } catch {
       /* storage unavailable — theme still applies for this session */
     }
-  }, [theme])
+    if (pref !== 'system') return
+    // Follow the OS live, not just on the next open.
+    return watchSystemTheme((t) => {
+      document.body.dataset.theme = t
+    })
+  }, [pref])
+
   return (
     <button
       className='icon-btn'
-      onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-      aria-label={
-        theme === 'dark' ? 'Ganti ke tema terang' : 'Ganti ke tema gelap'
-      }
-      title={theme === 'dark' ? 'Tema terang' : 'Tema gelap'}>
-      {theme === 'dark' ? '☀' : '☾'}
+      onClick={() => setPref((p) => NEXT[p])}
+      aria-label={`${THEME_LABEL[pref]}. Klik untuk ganti.`}
+      title={THEME_LABEL[pref]}>
+      {THEME_ICON[pref]}
     </button>
   )
 }
