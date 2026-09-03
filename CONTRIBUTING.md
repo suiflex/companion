@@ -12,6 +12,7 @@ This guide covers how to build, test, and submit changes.
 - **Setup, building, loading the extension** — [INSTALL.md](INSTALL.md)
 - **Where the product is headed** — [docs/06-roadmap.md](docs/06-roadmap.md)
 - **Security policy** — [SECURITY.md](SECURITY.md)
+- **Code of conduct** — [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - **Bugs & feature requests** — [Issues](https://github.com/suiflex/companion/issues/new/choose)
 
 ## How to contribute
