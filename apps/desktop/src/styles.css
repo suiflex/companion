@@ -360,7 +360,9 @@ body {
 
 .ticket-fields label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 
-.ticket-fields span {
+/* Direct children only: the date field draws its own value in a nested span,
+   and the broader selector was shouting it in caps. */
+.ticket-fields label > span {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.14em;

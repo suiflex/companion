@@ -8,12 +8,19 @@
 // The value stays the ISO `YYYY-MM-DD` the frontmatter stores; only the
 // display is localised.
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { formatDate, locale, t } from '@meetcc/shared/i18n'
 
-const DAYS = ['Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb', 'Mg']
-const MONTHS = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-]
+/** Weekday initials and month names come from Intl, so they follow the
+    language without a second list to keep in step with the catalogue. */
+function weekdayNames(): string[] {
+  const fmt = new Intl.DateTimeFormat(locale(), { weekday: 'short' })
+  // 2024-01-01 was a Monday, and this calendar starts on Monday.
+  return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 1 + i)))
+}
+
+function monthName(d: Date): string {
+  return new Intl.DateTimeFormat(locale(), { month: 'long', year: 'numeric' }).format(d)
+}
 
 export const iso = (d: Date): string =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -27,9 +34,7 @@ export function parseIso(value: string): Date | null {
 }
 
 function label(value: string): string {
-  const d = parseIso(value)
-  if (!d) return ''
-  return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`
+  return parseIso(value) ? formatDate(value) : ''
 }
 
 /**
@@ -83,6 +88,7 @@ export function DateField({
   }, [open])
 
   const days = useMemo(() => monthGrid(month), [month])
+  const dayNames = useMemo(() => weekdayNames(), [])
   const today = iso(new Date())
   const shift = (by: number): void =>
     setMonth((m) => new Date(m.getFullYear(), m.getMonth() + by, 1))
@@ -96,7 +102,7 @@ export function DateField({
         aria-haspopup="dialog"
         aria-expanded={open}
       >
-        <span className={value ? undefined : 'placeholder'}>{label(value) || 'Pilih tanggal'}</span>
+        <span className={value ? undefined : 'placeholder'}>{label(value) || t('desktop.date.pick')}</span>
         {/* Clearing has to be reachable: a due date that cannot be removed is
             worse than one that was never set. */}
         {value && (
@@ -104,7 +110,7 @@ export function DateField({
             role="button"
             tabIndex={0}
             className="datefield-clear"
-            aria-label="Hapus tenggat"
+            aria-label={t('desktop.date.clear')}
             onClick={(e) => {
               e.stopPropagation()
               onChange('')
@@ -123,22 +129,20 @@ export function DateField({
       </button>
 
       {open && (
-        <div className="calendar" role="dialog" aria-label="Pilih tanggal">
+        <div className="calendar" role="dialog" aria-label={t('desktop.date.dialog')}>
           <div className="calendar-head">
-            <button type="button" onClick={() => shift(-1)} aria-label="Bulan sebelumnya">
+            <button type="button" onClick={() => shift(-1)} aria-label={t('desktop.date.prevMonth')}>
               ‹
             </button>
-            <strong>
-              {MONTHS[month.getMonth()]} {month.getFullYear()}
-            </strong>
-            <button type="button" onClick={() => shift(1)} aria-label="Bulan berikutnya">
+            <strong>{monthName(month)}</strong>
+            <button type="button" onClick={() => shift(1)} aria-label={t('desktop.date.nextMonth')}>
               ›
             </button>
           </div>
 
           <div className="calendar-grid">
-            {DAYS.map((d) => (
-              <span key={d} className="calendar-dow">
+            {dayNames.map((d, i) => (
+              <span key={i} className="calendar-dow">
                 {d}
               </span>
             ))}
@@ -169,7 +173,7 @@ export function DateField({
 
           <div className="calendar-foot">
             <button type="button" onClick={() => { onChange(today); setOpen(false) }}>
-              Hari ini
+              {t('desktop.date.today')}
             </button>
           </div>
         </div>

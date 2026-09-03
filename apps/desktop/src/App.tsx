@@ -4,6 +4,8 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { openDatabase, type SqlDriver } from '@meetcc/store'
 import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
+import { t, formatDate, type LangPref, LANGS } from '@meetcc/shared/i18n'
+import { applyLang, loadLangPref, saveLangPref } from './lang'
 import { DateField } from './DateField'
 import {
   applyTheme,
@@ -18,11 +20,13 @@ import UpdateBanner from './UpdateBanner'
 /** Vault & bridge settings. Small on purpose: the only thing here that changes
  *  state is where the vault lives, and that is a decision worth making explicit
  *  rather than burying in a preferences tree. */
-const THEME_LABELS: Record<ThemePref, string> = {
-  system: 'Ikut sistem',
-  light: 'Terang',
-  dark: 'Gelap',
-}
+// Looked up per render, not frozen at module load: the language can change
+// while the app is open.
+const themeLabel = (p: ThemePref): string =>
+  p === 'system' ? t('pref.system') : p === 'light' ? t('pref.light') : t('pref.dark')
+
+const langLabel = (p: LangPref): string =>
+  p === 'system' ? t('pref.system') : p === 'en' ? t('lang.en') : t('lang.id')
 
 function Settings({
   root,
@@ -30,26 +34,47 @@ function Settings({
   onMove,
   themePref,
   onThemeChange,
+  langPref,
+  onLangChange,
 }: {
   root: string
   noteCount: number
   onMove: () => void
   themePref: ThemePref
   onThemeChange: (pref: ThemePref) => void
+  langPref: LangPref
+  onLangChange: (pref: LangPref) => void
 }) {
   return (
     <div className="settings">
-      <h1>Vault &amp; jembatan</h1>
+      <h1>{t('desktop.settings.title')}</h1>
 
       <section className="setting-row">
         <div>
-          <h2>Tema</h2>
-          <p className="hint">
-            “Ikut sistem” mengikuti tampilan macOS/Windows dan berubah sendiri saat
-            sistem berganti terang atau gelap.
-          </p>
+          <h2>{t('desktop.settings.language')}</h2>
+          <p className="hint">{t('desktop.settings.languageHint')}</p>
         </div>
-        <div className="segmented" role="group" aria-label="Tema">
+        <div className="segmented" role="group" aria-label={t('desktop.settings.language')}>
+          {(['system', ...LANGS] as LangPref[]).map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={langPref === p ? 'seg active' : 'seg'}
+              aria-pressed={langPref === p}
+              onClick={() => onLangChange(p)}
+            >
+              {langLabel(p)}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="setting-row">
+        <div>
+          <h2>{t('desktop.settings.theme')}</h2>
+          <p className="hint">{t('desktop.settings.themeHint')}</p>
+        </div>
+        <div className="segmented" role="group" aria-label={t('desktop.settings.theme')}>
           {(['system', 'light', 'dark'] as ThemePref[]).map((p) => (
             <button
               key={p}
@@ -58,7 +83,7 @@ function Settings({
               aria-pressed={themePref === p}
               onClick={() => onThemeChange(p)}
             >
-              {THEME_LABELS[p]}
+              {themeLabel(p)}
             </button>
           ))}
         </div>
@@ -66,36 +91,26 @@ function Settings({
 
       <section className="setting-row">
         <div>
-          <h2>Lokasi vault</h2>
+          <h2>{t('desktop.settings.vaultLocation')}</h2>
           <p className="setting-path">{root}</p>
-          <p className="hint">
-            {noteCount} nota. Semua berkas .md biasa — bisa dibuka editor apa pun, dan
-            aman disalin atau di-backup seperti folder lain.
-          </p>
+          <p className="hint">{t('desktop.settings.vaultHint', { count: noteCount })}</p>
         </div>
         <button type="button" className="btn" onClick={onMove}>
-          Pindah folder…
+          {t('desktop.settings.moveVault')}
         </button>
       </section>
 
       <section className="setting-row">
         <div>
-          <h2>Jembatan extension</h2>
-          <p className="hint">
-            Extension mengirim rapat yang selesai ke vault ini lewat native messaging
-            host, kalau host-nya sudah didaftarkan dan togglenya dinyalakan di Settings
-            extension. Pengiriman bersifat opsional — desktop tetap jalan tanpanya.
-          </p>
+          <h2>{t('desktop.settings.bridge')}</h2>
+          <p className="hint">{t('desktop.settings.bridgeHint')}</p>
         </div>
       </section>
 
       <section className="setting-row">
         <div>
-          <h2>Indeks pencarian</h2>
-          <p className="hint">
-            Dibangun ulang dari berkas .md setiap kali daftar nota disegarkan. Indeks
-            adalah turunan: menghapusnya tidak pernah menghilangkan nota.
-          </p>
+          <h2>{t('desktop.settings.index')}</h2>
+          <p className="hint">{t('desktop.settings.indexHint')}</p>
         </div>
       </section>
     </div>
@@ -145,8 +160,26 @@ function dayOf(iso?: string): string {
   return iso ? iso.slice(0, 10) : ''
 }
 
-const STATUSES = ['', 'To Do', 'In Progress', 'Blocked', 'Done']
-const PRIORITIES = ['', 'Low', 'Medium', 'High', 'Urgent']
+// Stored values stay English whatever the interface language: the note file is
+// data other tools read, and a status whose spelling changed with the UI would
+// make two notes written in two languages incomparable.
+const STATUSES = ['', 'To Do', 'In Progress', 'Blocked', 'Done'] as const
+const PRIORITIES = ['', 'Low', 'Medium', 'High', 'Urgent'] as const
+
+const STATUS_LABEL: Record<string, string> = {
+  'To Do': 'desktop.status.todo',
+  'In Progress': 'desktop.status.inProgress',
+  Blocked: 'desktop.status.blocked',
+  Done: 'desktop.status.done',
+}
+const PRIORITY_LABEL: Record<string, string> = {
+  Low: 'desktop.priority.low',
+  Medium: 'desktop.priority.medium',
+  High: 'desktop.priority.high',
+  Urgent: 'desktop.priority.urgent',
+}
+const optionLabel = (map: Record<string, string>, value: string): string =>
+  value ? t(map[value] as Parameters<typeof t>[0]) : t('desktop.field.none')
 
 /**
  * The ticket half of a note: what the body cannot carry as prose.
@@ -166,37 +199,37 @@ function TicketFields({
   return (
     <div className="ticket-fields">
       <label>
-        <span>Status</span>
+        <span>{t('desktop.field.status')}</span>
         <select value={note.status ?? ''} onChange={(e) => onChange({ status: pick(e.target.value) })}>
           {STATUSES.map((s) => (
-            <option key={s} value={s}>{s || '—'}</option>
+            <option key={s} value={s}>{optionLabel(STATUS_LABEL, s)}</option>
           ))}
-          {note.status && !STATUSES.includes(note.status) && (
+          {note.status && !(STATUSES as readonly string[]).includes(note.status) && (
             <option value={note.status}>{note.status}</option>
           )}
         </select>
       </label>
       <label>
-        <span>Prioritas</span>
+        <span>{t('desktop.field.priority')}</span>
         <select value={note.priority ?? ''} onChange={(e) => onChange({ priority: pick(e.target.value) })}>
           {PRIORITIES.map((s) => (
-            <option key={s} value={s}>{s || '—'}</option>
+            <option key={s} value={s}>{optionLabel(PRIORITY_LABEL, s)}</option>
           ))}
-          {note.priority && !PRIORITIES.includes(note.priority) && (
+          {note.priority && !(PRIORITIES as readonly string[]).includes(note.priority) && (
             <option value={note.priority}>{note.priority}</option>
           )}
         </select>
       </label>
       <label>
-        <span>Assignee</span>
+        <span>{t('desktop.field.assignee')}</span>
         <input
           value={note.assignee ?? ''}
-          placeholder="siapa"
+          placeholder={t('desktop.field.assigneePlaceholder')}
           onChange={(e) => onChange({ assignee: pick(e.target.value) })}
         />
       </label>
       <label>
-        <span>Tenggat</span>
+        <span>{t('desktop.field.due')}</span>
         <DateField value={note.dueDate ?? ''} onChange={(v) => onChange({ dueDate: pick(v) })} />
       </label>
     </div>
@@ -215,7 +248,20 @@ export default function App() {
   const [dirty, setDirty] = useState(false)
   // Search fell back to titles because the SQLite index would not open.
   const [indexDown, setIndexDown] = useState(false)
+  // Bumped when the language changes, purely to force a re-render.
+  const [, setLangTick] = useState(0)
   const [themePref, setThemePref] = useState<ThemePref>(loadThemePref)
+  const [langPref, setLangPref] = useState<LangPref>(loadLangPref)
+
+  // Applied and persisted the same way the theme is. `applyLang` also stamps
+  // <html lang>, so the document declares the language it is actually showing.
+  useEffect(() => {
+    applyLang(langPref)
+    saveLangPref(langPref)
+    // Re-render everything: `t()` reads a module-level language, so React has
+    // no way of knowing the strings changed underneath it.
+    setLangTick((n) => n + 1)
+  }, [langPref])
 
   // Applied on change, and re-applied when the OS flips while on `system` —
   // otherwise following the system would only take effect on the next launch.
@@ -345,7 +391,7 @@ export default function App() {
       sessionKey: `nota/${Date.now().toString(36)}`,
       platform: 'manual',
       updatedAt: new Date().toISOString(),
-      title: 'Nota baru',
+      title: t('desktop.editor.newNoteTitle'),
       body: '',
     }
     // nothing on disk yet, so there is no vault path to select
@@ -401,7 +447,7 @@ export default function App() {
   async function moveVault() {
     if (!vault) return
     try {
-      const picked = await openDialog({ directory: true, title: 'Pilih folder vault' })
+      const picked = await openDialog({ directory: true, title: t('desktop.settings.pickVault') })
       if (typeof picked !== 'string') return
       await invoke('set_vault_root', { path: picked })
       const next = new Vault({ io: tauriVaultIo(picked) })
@@ -472,9 +518,9 @@ export default function App() {
         <BrandMark />
         <button
           type="button"
-          data-tip="Catatan" data-tip-side="right"
+          data-tip={t('desktop.nav.notes')} data-tip-side="right"
           className={view === 'notes' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label="Catatan"
+          aria-label={t('desktop.nav.notes')}
           aria-current={view === 'notes' ? 'page' : undefined}
           onClick={() => setView('notes')}
         >
@@ -482,9 +528,9 @@ export default function App() {
         </button>
         <button
           type="button"
-          data-tip="Rapat masuk" data-tip-side="right"
+          data-tip={t('desktop.nav.inbox')} data-tip-side="right"
           className={view === 'inbox' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label="Rapat masuk"
+          aria-label={t('desktop.nav.inbox')}
           aria-current={view === 'inbox' ? 'page' : undefined}
           onClick={() => setView('inbox')}
         >
@@ -494,8 +540,8 @@ export default function App() {
         <button
           type="button"
           className="rail-btn"
-          data-tip={`Tema: ${THEME_LABELS[themePref]}`} data-tip-side="right"
-          aria-label={`Tema: ${THEME_LABELS[themePref]}. Klik untuk ganti.`}
+          data-tip={t('desktop.nav.theme', { mode: themeLabel(themePref) })} data-tip-side="right"
+          aria-label={t('desktop.nav.theme', { mode: themeLabel(themePref) })}
           onClick={() =>
             setThemePref((p) => (p === 'system' ? 'light' : p === 'light' ? 'dark' : 'system'))
           }
@@ -504,9 +550,9 @@ export default function App() {
         </button>
         <button
           type="button"
-          data-tip="Vault & jembatan" data-tip-side="right"
+          data-tip={t('desktop.nav.settings')} data-tip-side="right"
           className={view === 'settings' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label="Vault & jembatan"
+          aria-label={t('desktop.nav.settings')}
           aria-current={view === 'settings' ? 'page' : undefined}
           onClick={() => setView('settings')}
         >
@@ -517,8 +563,8 @@ export default function App() {
       {view === 'notes' && (
         <aside className="sidebar">
           <div className="sidebar-head">
-            <span className="kicker">Vault</span>
-            <span className="count">{notes.length} nota</span>
+            <span className="kicker">{t('desktop.vault.kicker')}</span>
+            <span className="count">{t('desktop.vault.count', { count: notes.length })}</span>
             {/* The vault opens asynchronously and openNew returns early without
                 it, so until then the button would look live and answer a click
                 with nothing. The tip lives on the wrapper because a disabled
@@ -526,13 +572,13 @@ export default function App() {
                 to say why it is disabled. */}
             <span
               className="tip-wrap"
-              data-tip={vault ? 'Nota baru' : 'Menyiapkan vault…'}
+              data-tip={vault ? t('desktop.vault.newNote') : t('desktop.vault.preparing')}
             >
               <button
                 type="button"
                 className="add-btn"
                 onClick={() => guard(openNew)}
-                aria-label="Nota baru"
+                aria-label={t('desktop.vault.newNote')}
                 disabled={!vault}
               >
                 ＋
@@ -542,7 +588,11 @@ export default function App() {
           <input
             className="search"
             placeholder={
-              !vault ? 'Menyiapkan vault…' : indexDown ? 'Cari judul (indeks mati)…' : 'Cari nota…'
+              !vault
+                ? t('desktop.vault.preparing')
+                : indexDown
+                  ? t('desktop.vault.searchTitlesOnly')
+                  : t('desktop.vault.search')
             }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -561,13 +611,13 @@ export default function App() {
                     <span className="note-date">{dayOf(n.updatedAt)}</span>
                   </button>
                 ) : (
-                  <span className="note-title muted" data-tip="hasil pencarian isi tubuh nota">
+                  <span className="note-title muted" data-tip={t('desktop.vault.bodyHit')}>
                     {n.title}
                   </span>
                 )}
               </li>
             ))}
-            {filtered.length === 0 && <li className="empty-hint">Belum ada nota.</li>}
+            {filtered.length === 0 && <li className="empty-hint">{t('desktop.vault.empty')}</li>}
           </ul>
         </aside>
       )}
@@ -575,8 +625,8 @@ export default function App() {
       {view === 'inbox' && (
         <aside className="sidebar">
           <div className="sidebar-head">
-            <span className="kicker">Rapat masuk</span>
-            <span className="count">{incoming.length} rapat</span>
+            <span className="kicker">{t('desktop.inbox.kicker')}</span>
+            <span className="count">{t('desktop.inbox.count', { count: incoming.length })}</span>
           </div>
           <ul className="note-list">
             {incoming.map((n) => (
@@ -590,19 +640,18 @@ export default function App() {
                   <span className="inbox-meta">
                     <span>{platformLabel(n.platform)}</span>
                     <span>{dayOf(n.startedAt) || dayOf(n.updatedAt)}</span>
-                    {n.participants > 0 && <span>{n.participants} peserta</span>}
+                    {n.participants > 0 && <span>{t('desktop.inbox.participants', { count: n.participants })}</span>}
                     {/* A meeting arrives as captions first; the body only fills
                         once the extension has a summary to send. Saying so beats
                         an empty note looking like a failed delivery. */}
-                    {!n.hasBody && <span className="pending">transkrip saja</span>}
+                    {!n.hasBody && <span className="pending">{t('desktop.inbox.transcriptOnly')}</span>}
                   </span>
                 </button>
               </li>
             ))}
             {incoming.length === 0 && (
               <li className="empty-hint">
-                Belum ada rapat yang masuk. Nyalakan “Kirim rapat selesai ke Companion
-                Desktop” di setelan extension, lalu tekan “Tes koneksi” di sana.
+                {t('desktop.inbox.empty')}
               </li>
             )}
           </ul>
@@ -613,7 +662,7 @@ export default function App() {
         <header className="topbar">
           <span className="vault">{vault?.io.root ?? '…'}</span>
           {note && (
-            <span className="badge" data-tip="Tersimpan lokal, tanpa sinkron">
+            <span className="badge" data-tip={t('desktop.badge.local')}>
               LOKAL
             </span>
           )}
@@ -627,13 +676,15 @@ export default function App() {
               onMove={() => guard(moveVault)}
               themePref={themePref}
               onThemeChange={setThemePref}
+              langPref={langPref}
+              onLangChange={setLangPref}
             />
           ) : note ? (
             <>
               <input
                 className="title-input"
                 value={note.title}
-                placeholder="Judul nota"
+                placeholder={t('desktop.editor.titlePlaceholder')}
                 onChange={(e) => {
                   setNote({ ...note, title: e.target.value })
                   setDirty(true)
@@ -654,32 +705,34 @@ export default function App() {
               />
               <div className="editor-actions">
                 <span className="meta">
-                  {dirty ? 'belum disimpan' : `diperbarui ${dayOf(note.updatedAt) || '—'}`}
+                  {dirty
+                    ? t('desktop.editor.unsaved')
+                    : t('desktop.editor.updated', {
+                        date: formatDate(note.updatedAt) || '—',
+                      })}
                 </span>
                 <button type="button" className="btn danger" onClick={remove}>
-                  Pindah ke sampah
+                  {t('desktop.editor.trash')}
                 </button>
                 <button type="button" className="btn primary" onClick={save}>
-                  Simpan
+                  {t('desktop.editor.save')}
                 </button>
               </div>
             </>
           ) : (
             <div className="empty">
-              <h1>Companion Desktop</h1>
-              <p>
-                Buka atau buat nota di vault lokal. Semua berkas .md, bisa diedit editor apa pun.
-              </p>
+              <h1>{t('desktop.editor.emptyTitle')}</h1>
+              <p>{t('desktop.editor.emptyBody')}</p>
             </div>
           )}
           {pending && (
             <div className="confirm-bar" role="alert">
-              <span>Nota ini punya perubahan yang belum disimpan.</span>
+              <span>{t('desktop.editor.confirmUnsaved')}</span>
               <button type="button" className="btn" onClick={() => void resume(true)}>
-                Buang perubahan
+                {t('desktop.editor.discard')}
               </button>
               <button type="button" className="btn primary" onClick={() => void resume(false)}>
-                Simpan lalu lanjut
+                {t('desktop.editor.saveAndGo')}
               </button>
             </div>
           )}
