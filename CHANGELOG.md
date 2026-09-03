@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.0](https://github.com/suiflex/companion/compare/v1.9.0...v1.10.0) (2026-09-03)
+
+
+### Features
+
+* **installer:** install Companion Desktop from the curl installer ([b1b488c](https://github.com/suiflex/companion/commit/b1b488cdf6c2d375c5d25ba10ddea2e9814dc6f4))
+* one release stream, stable desktop asset names, desktop-first installer ([37d9032](https://github.com/suiflex/companion/commit/37d9032068699ae3dba43752b11e755cfdb35c56))
+
+
+### Bug Fixes
+
+* **installer:** match releases on the one shared tag ([5749807](https://github.com/suiflex/companion/commit/57498070d8a55243ce90643e394759944744aaab))
+
 ## [1.9.0](https://github.com/suiflex/companion/compare/v1.8.1...v1.9.0) (2026-09-03)
 
 
