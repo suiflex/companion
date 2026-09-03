@@ -18,6 +18,13 @@ export interface VaultNote {
   participants?: string[]
   transcript?: string
   tags?: string[]
+  /* Ticket fields. Free-form on purpose: a vault note is a markdown file
+     someone can edit in any editor, so nothing here is an enum the parser
+     would have to defend. The UI offers a set; a hand-typed value survives. */
+  status?: string
+  assignee?: string
+  priority?: string
+  dueDate?: string
   updatedAt: string
   /** Title = first `# Heading` in the body, else the filename. */
   title: string
@@ -31,6 +38,10 @@ const QUOTED: Record<string, boolean> = {
   transcript: true,
   platform: true,
   startedAt: true,
+  status: true,
+  assignee: true,
+  priority: true,
+  dueDate: true,
   updatedAt: true,
 }
 /** Frontmatter keys serialized as a YAML list. */
@@ -47,6 +58,10 @@ const ORDER = [
   'participants',
   'transcript',
   'tags',
+  'status',
+  'assignee',
+  'priority',
+  'dueDate',
   'updatedAt',
 ] as const
 
@@ -131,6 +146,10 @@ export function noteFromMarkdown(doc: string, fallbackTitle = ''): VaultNote {
     participants: list('participants'),
     transcript: first('transcript'),
     tags: list('tags'),
+    status: first('status'),
+    assignee: first('assignee'),
+    priority: first('priority'),
+    dueDate: first('dueDate'),
     updatedAt: first('updatedAt') ?? '',
     title: (h ? h[1].trim() : fallbackTitle).trim(),
     body: bodyCore.trim(),

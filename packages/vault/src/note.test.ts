@@ -21,6 +21,29 @@ describe('note frontmatter', () => {
     expect(parsed).toEqual(NOTE)
   })
 
+  it('round-trips the ticket fields', () => {
+    // A frontmatter key lives in four places — the interface, QUOTED, ORDER and
+    // the parser's return literal — and missing any one of them loses the value
+    // silently on the next save. This is what catches that.
+    const ticket: VaultNote = {
+      ...NOTE,
+      status: 'In Progress',
+      assignee: 'Rani',
+      priority: 'High',
+      dueDate: '2026-09-10',
+    }
+    expect(noteFromMarkdown(noteToMarkdown(ticket))).toEqual(ticket)
+  })
+
+  it('still reads a note written before the ticket fields existed', () => {
+    const parsed = noteFromMarkdown(noteToMarkdown(NOTE))
+    expect(parsed.status).toBeUndefined()
+    expect(parsed.assignee).toBeUndefined()
+    expect(parsed.priority).toBeUndefined()
+    expect(parsed.dueDate).toBeUndefined()
+    expect(parsed).toEqual(NOTE)
+  })
+
   it('emits frontmatter in canonical order with id/session_key first', () => {
     const md = noteToMarkdown(NOTE)
     const head = md.slice(0, md.indexOf('---', 4))
