@@ -3,9 +3,16 @@ name: release-please
 on:
   # A maintainer starts release preparation explicitly after batching changes.
   workflow_dispatch:
-  # A merged release PR is finalized automatically into a tag and release.
-  pull_request:
-    types: [closed]
+  # Every merge to develop. This both finalizes a merged release PR into a tag
+  # and refreshes the *other* product's open release PR: the two versions share
+  # one .release-please-manifest.json, so releasing the desktop app leaves the
+  # extension's PR carrying a stale desktop version and conflicting (#38).
+  # release-please rebases its own PRs, but only on a run.
+  #
+  # This replaces a `pull_request: [closed]` trigger rather than joining it:
+  # merging a release PR is itself a push to develop, so both would fire and
+  # the release would be created twice.
+  push:
     branches: [develop]
 
 permissions:
@@ -18,12 +25,6 @@ concurrency:
 
 jobs:
   release-please:
-    # Manual runs prepare/update the release PR. Pull request runs only
-    # finalize a merged Release Please PR, never an application PR.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'release-please--'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
