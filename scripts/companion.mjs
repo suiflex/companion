@@ -31,18 +31,15 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const COMPANION_HOME = process.env.COMPANION_HOME || null;
 
 const REPO = 'suiflex/companion';
-// Not `/releases/latest`: that endpoint is repository-wide, and this repo
-// releases two products on two tag shapes. The moment a companion-desktop-v*
-// release is the newest one, asking for "latest" hands back a release with no
-// extension zip on it and every existing `companion install` breaks. Ask for
-// the list and pick by tag instead.
+// Ask for the list and pick by tag rather than hitting `/releases/latest`. The
+// two products now share one tag, so that endpoint would usually be right, but
+// it is repository-wide: it answers with whatever released last, and this repo
+// also publishes the rolling `companion-desktop-latest` pointer. Picking by tag
+// shape cannot hand back a release with no extension zip on it.
 const API_RELEASES = `https://api.github.com/repos/${REPO}/releases?per_page=30`;
 
-/** Tag shape per product. The extension keeps the plain vX.Y.Z tag. */
-export const RELEASE_TAGS = {
-  extension: /^v\d+\.\d+\.\d+/,
-  desktop: /^companion-desktop-v\d+\.\d+\.\d+/,
-};
+/** The one tag both products ship from. */
+export const RELEASE_TAG = /^v\d+\.\d+\.\d+/;
 
 // Firefox installs from AMO, which also keeps the add-on updated. Addressed by
 // add-on id rather than slug: AMO resolves either, and the slug can be renamed.
@@ -184,21 +181,19 @@ async function recursiveCopy(src, dst) {
  * this took over from it. The list arrives newest-first, so the first match is
  * the answer.
  */
-export function pickRelease(releases, product = 'extension') {
-  const match = RELEASE_TAGS[product];
-  if (!match) throw new Error(`Unknown product: ${product}`);
+export function pickRelease(releases) {
   const hit = (releases || []).find(
-    (r) => r && !r.draft && !r.prerelease && match.test(r.tag_name || ''),
+    (r) => r && !r.draft && !r.prerelease && RELEASE_TAG.test(r.tag_name || ''),
   );
   return hit || null;
 }
 
-async function fetchLatestRelease(product = 'extension') {
-  console.log(`Fetching latest ${product} release (${REPO})…`);
+async function fetchLatestRelease() {
+  console.log(`Fetching latest release (${REPO})…`);
   const res = await fetch(API_RELEASES, { headers: { 'User-Agent': 'companion-installer' } });
   if (!res.ok) throw new Error(`Could not reach GitHub releases (HTTP ${res.status}).`);
-  const release = pickRelease(await res.json(), product);
-  if (!release) throw new Error(`No published ${product} release found in ${REPO}.`);
+  const release = pickRelease(await res.json());
+  if (!release) throw new Error(`No published release found in ${REPO}.`);
   return release;
 }
 
@@ -493,7 +488,8 @@ async function cmdUpdate() {
   }
   await downloadLatestDist(join(COMPANION_HOME, 'dist'));
   console.log('Done. Restart Companion to pick up the update.');
-  console.log('(Firefox updates itself from addons.mozilla.org — nothing to do there.)');
+  console.log('(Firefox updates itself from addons.mozilla.org, and the desktop app');
+  console.log(' updates itself in-app — this command is the extension\'s.)');
 }
 
 // --- main -------------------------------------------------------------------

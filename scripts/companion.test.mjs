@@ -44,29 +44,25 @@ describe('resolveSources', () => {
   });
 });
 
-// A repository releasing two products on two tag shapes cannot ask GitHub for
-// "the latest release" — the answer is whichever product shipped last.
+// The repo publishes more than the product tags — the rolling
+// `companion-desktop-latest` pointer among them — so asking GitHub for "the
+// latest release" can still hand back the wrong thing.
 describe('pickRelease', () => {
   const releases = [
-    { tag_name: 'companion-desktop-v0.2.0', draft: false, prerelease: false },
     { tag_name: 'v1.8.0', draft: false, prerelease: false },
-    { tag_name: 'companion-desktop-v0.1.0', draft: false, prerelease: false },
     { tag_name: 'v1.7.1', draft: false, prerelease: false },
   ];
 
-  it('picks the newest release of the product asked for', () => {
-    expect(pickRelease(releases, 'extension').tag_name).toBe('v1.8.0');
-    expect(pickRelease(releases, 'desktop').tag_name).toBe('companion-desktop-v0.2.0');
-  });
-
-  it('never hands a desktop release to the extension installer', () => {
-    // The exact shape that broke it: the desktop shipped most recently.
-    const desktopOnTop = [releases[0], releases[3]];
-    expect(pickRelease(desktopOnTop, 'extension').tag_name).toBe('v1.7.1');
-  });
-
-  it('defaults to the extension, which is what the old call site wanted', () => {
+  it('picks the newest release', () => {
     expect(pickRelease(releases).tag_name).toBe('v1.8.0');
+  });
+
+  it('ignores the tag shape the desktop app used before the versions merged', () => {
+    const legacy = [
+      { tag_name: 'companion-desktop-v0.3.1', draft: false, prerelease: false },
+      { tag_name: 'v1.7.1', draft: false, prerelease: false },
+    ];
+    expect(pickRelease(legacy).tag_name).toBe('v1.7.1');
   });
 
   it('skips drafts and prereleases, as /releases/latest did', () => {
@@ -75,15 +71,14 @@ describe('pickRelease', () => {
       { tag_name: 'v1.9.0', draft: false, prerelease: true },
       { tag_name: 'v1.8.0', draft: false, prerelease: false },
     ];
-    expect(pickRelease(noisy, 'extension').tag_name).toBe('v1.8.0');
+    expect(pickRelease(noisy).tag_name).toBe('v1.8.0');
   });
 
-  it('returns null rather than a wrong release when the product never shipped', () => {
-    expect(pickRelease([{ tag_name: 'v1.8.0', draft: false, prerelease: false }], 'desktop')).toBeNull();
-    expect(pickRelease([], 'extension')).toBeNull();
-  });
-
-  it('rejects a product it has no tag shape for', () => {
-    expect(() => pickRelease(releases, 'mobile')).toThrow(/Unknown product/);
+  it('returns null rather than a wrong release when nothing has shipped', () => {
+    // The rolling update pointer is a prerelease, so it is never the answer.
+    expect(
+      pickRelease([{ tag_name: 'companion-desktop-latest', draft: false, prerelease: true }]),
+    ).toBeNull();
+    expect(pickRelease([])).toBeNull();
   });
 });
