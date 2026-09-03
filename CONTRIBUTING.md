@@ -36,14 +36,14 @@ decides how your change is released.
 | | Extension | Companion Desktop |
 |---|---|---|
 | Lives in | `apps/extension` | `apps/desktop` |
-| Released on tag | `v1.2.3` | `companion-desktop-v1.2.3` |
+| Released on tag | `v1.2.3` | `v1.2.3` — the same one |
 | Published to | Chrome Web Store, Mozilla Add-ons | GitHub Release installers |
 | Built by | `.github/workflows/release.yml` | `.github/workflows/release-desktop.yml` |
 
-They version independently. A `fix(desktop):` commit bumps the desktop and
-leaves the extension alone; a `fix(ai):` commit does the reverse. `release-please`
-decides that from the paths a commit touches, so put desktop work in
-`apps/desktop` and let the scope match.
+They share one version, one tag and one `CHANGELOG.md`: a release ships both,
+and a `fix(desktop):` commit bumps the number the extension carries too. What
+the scope buys you is the changelog — it is the only thing that says which
+product a line belongs to, so scope every user-facing commit.
 
 **Neither product needs the other.** The extension is complete on its own. The
 desktop app is complete on its own. The native-messaging bridge between them is
