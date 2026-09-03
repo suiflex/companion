@@ -100,6 +100,66 @@ export const en = {
   'lang.en': 'English',
   'lang.id': 'Indonesian',
 
+  // -- extension: settings shell -------------------------------------------
+  'ext.settings.title': 'Settings',
+  'ext.settings.sections': 'Settings sections',
+  'ext.settings.close': 'Close settings',
+  'ext.settings.tab.provider': 'AI Provider',
+  'ext.settings.tab.integrations': 'Integrations',
+  'ext.settings.tab.templates': 'Templates',
+  'ext.settings.tab.data': 'Data & MCP',
+  'ext.settings.save': 'Save',
+  'ext.settings.testConnection': 'Test connection',
+  'ext.settings.testing': 'Testing…',
+
+  // -- extension: language --------------------------------------------------
+  'ext.settings.language': 'Language',
+  'ext.settings.languageHint':
+    '“Follow system” uses your browser’s language. This changes the interface only — meeting notes keep the language they were spoken in.',
+
+  // -- extension: provider panel -------------------------------------------
+  'ext.provider.label': 'Provider',
+  'ext.provider.builtinHint':
+    'No configuration — uses the browser’s built-in AI (Gemini Nano) when available. For the best results pick a cloud or local provider above.',
+  'ext.provider.apiKey': 'API Key',
+  'ext.provider.apiKeyOptional': 'API Key (optional)',
+  'ext.provider.apiKeyPlaceholder': 'leave empty if the endpoint needs no auth',
+  'ext.provider.apiKeyHintRequired': 'Sent as {header} · stored encrypted (AES-GCM).',
+  'ext.provider.apiKeyHintOptional': 'Sent as {header} when filled in · stored encrypted (AES-GCM).',
+  'ext.provider.baseUrl': 'Base URL',
+  'ext.provider.azureHint': 'The Azure resource endpoint; the model is the deployment name.',
+  'ext.provider.model': 'Model',
+  'ext.provider.modelPlaceholder': 'model / deployment name',
+  'ext.provider.loadModels': 'Load models',
+  'ext.provider.loadingModels': 'Loading…',
+  'ext.provider.modelsAvailable':
+    '{count} models available — click the field to pick one, or type your own.',
+  'ext.provider.modelsPrompt': 'Click “Load models” to fetch the list from the provider.',
+  'ext.provider.retention': 'Keep history',
+  'ext.provider.retentionForever': 'Forever (default)',
+  'ext.provider.retentionDays': 'Delete automatically after {days} days',
+  'ext.provider.retentionHintForever': 'Nothing is deleted automatically.',
+  'ext.provider.retentionHintDays':
+    'Meetings inactive for more than {days} days are deleted permanently — transcript, notes, chat and documents. This cannot be undone.',
+
+  // -- extension: dashboard shell -------------------------------------------
+  'ext.tab.summary': 'Summary',
+  'ext.tab.transcript': 'Transcript',
+  'ext.tab.diagram': 'Diagram',
+  'ext.tab.ask': 'Ask',
+  'ext.tab.docs': 'Documents',
+  'ext.meeting.views': 'Meeting views',
+  'ext.meeting.nameLabel': 'Meeting name',
+  'ext.meeting.rename': '{id} — click to rename',
+  'ext.meeting.transcriptLines': '{count} transcript lines',
+  'ext.meeting.transcriptGeneric': 'the transcript',
+  'ext.meeting.confirmDelete':
+    'Delete “{label}”?\n\n{lines}, notes, chat and documents are all deleted permanently. This cannot be undone.',
+  'ext.meeting.deleted': 'Meeting {label} deleted.',
+  'ext.empty.title': 'No meetings recorded yet.',
+  'ext.empty.hint':
+    'Join a Google Meet — captions turn on by themselves, and the transcript and AI notes appear here.',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
 } as const;

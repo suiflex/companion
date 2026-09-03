@@ -57,8 +57,24 @@ export function asLangPref(value: unknown): LangPref {
 // thing to replace, and `t()` is the only place that reads it.
 let current: Lang = 'en';
 
+/**
+ * Anyone that renders `t()` output and needs to know it changed.
+ *
+ * `t` reads a module-level language, so a UI framework has no way of seeing
+ * that every string on screen just became different. One subscription is
+ * cheaper than making every call site reactive.
+ */
+const listeners = new Set<() => void>();
+
+export function onLangChange(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
 export function setLang(lang: Lang): void {
+  if (lang === current) return;
   current = lang;
+  for (const fn of listeners) fn();
 }
 
 export function getLang(): Lang {

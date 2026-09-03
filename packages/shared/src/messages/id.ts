@@ -96,6 +96,67 @@ export const id: Record<keyof typeof en, string> = {
   'lang.en': 'Inggris',
   'lang.id': 'Indonesia',
 
+  // -- extension: settings shell -------------------------------------------
+  'ext.settings.title': 'Setelan',
+  'ext.settings.sections': 'Bagian setelan',
+  'ext.settings.close': 'Tutup setelan',
+  'ext.settings.tab.provider': 'AI Provider',
+  'ext.settings.tab.integrations': 'Integrasi',
+  'ext.settings.tab.templates': 'Template',
+  'ext.settings.tab.data': 'Data & MCP',
+  'ext.settings.save': 'Simpan',
+  'ext.settings.testConnection': 'Tes koneksi',
+  'ext.settings.testing': 'Menguji…',
+
+  // -- extension: language --------------------------------------------------
+  'ext.settings.language': 'Bahasa',
+  'ext.settings.languageHint':
+    '“Ikut sistem” memakai bahasa browser. Ini hanya mengubah antarmuka — notulen rapat tetap memakai bahasa yang dipakai saat rapat.',
+
+  // -- extension: provider panel -------------------------------------------
+  'ext.provider.label': 'Provider',
+  'ext.provider.builtinHint':
+    'Tanpa konfigurasi — pakai AI bawaan browser (Gemini Nano) bila tersedia. Untuk hasil terbaik pilih provider cloud atau lokal di atas.',
+  'ext.provider.apiKey': 'API Key',
+  'ext.provider.apiKeyOptional': 'API Key (opsional)',
+  'ext.provider.apiKeyPlaceholder': 'kosongkan jika endpoint tanpa auth',
+  'ext.provider.apiKeyHintRequired': 'Dikirim sebagai {header} · disimpan terenkripsi (AES-GCM).',
+  'ext.provider.apiKeyHintOptional':
+    'Dikirim sebagai {header} bila diisi · disimpan terenkripsi (AES-GCM).',
+  'ext.provider.baseUrl': 'Base URL',
+  'ext.provider.azureHint': 'Endpoint resource Azure, model = nama deployment.',
+  'ext.provider.model': 'Model',
+  'ext.provider.modelPlaceholder': 'nama model / deployment',
+  'ext.provider.loadModels': 'Muat model',
+  'ext.provider.loadingModels': 'Memuat…',
+  'ext.provider.modelsAvailable':
+    '{count} model tersedia — klik kolom untuk memilih, atau ketik sendiri.',
+  'ext.provider.modelsPrompt': 'Klik “Muat model” untuk mengambil daftar dari provider.',
+  'ext.provider.retention': 'Simpan riwayat',
+  'ext.provider.retentionForever': 'Selamanya (default)',
+  'ext.provider.retentionDays': 'Hapus otomatis setelah {days} hari',
+  'ext.provider.retentionHintForever': 'Tidak ada yang dihapus otomatis.',
+  'ext.provider.retentionHintDays':
+    'Meeting yang tidak aktif lebih dari {days} hari dihapus permanen — transcript, notulen, chat dan dokumen. Tidak bisa dibatalkan.',
+
+  // -- extension: dashboard shell -------------------------------------------
+  'ext.tab.summary': 'Ringkasan',
+  'ext.tab.transcript': 'Transcript',
+  'ext.tab.diagram': 'Diagram',
+  'ext.tab.ask': 'Tanya',
+  'ext.tab.docs': 'Dokumen',
+  'ext.meeting.views': 'Tampilan meeting',
+  'ext.meeting.nameLabel': 'Nama meeting',
+  'ext.meeting.rename': '{id} — klik untuk ganti nama',
+  'ext.meeting.transcriptLines': '{count} baris transcript',
+  'ext.meeting.transcriptGeneric': 'transcript',
+  'ext.meeting.confirmDelete':
+    'Hapus “{label}”?\n\n{lines}, notulen, chat dan dokumen ikut terhapus permanen. Tindakan ini tidak bisa dibatalkan.',
+  'ext.meeting.deleted': 'Meeting {label} dihapus.',
+  'ext.empty.title': 'Belum ada meeting terekam.',
+  'ext.empty.hint':
+    'Join Google Meet — caption nyala otomatis, transcript dan notulen AI muncul di sini.',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
 };

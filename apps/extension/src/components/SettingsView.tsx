@@ -19,15 +19,22 @@ import {
 import { useToast } from '../toast';
 import { DataPanel, IntegrationsPanel, TemplatesPanel } from './SettingsPanels';
 import { SignInPanel } from './SignInPanel';
+import { t, LANGS, type LangPref } from '@meetcc/shared/i18n';
+import { applyLang, loadLangPref, saveLangPref } from '../lib/lang';
 
 type Panel = 'provider' | 'integrations' | 'templates' | 'data';
 
-const PANEL_LABEL: Record<Panel, string> = {
-  provider: 'AI Provider',
-  integrations: 'Integrasi',
-  templates: 'Template',
-  data: 'Data & MCP',
+// Looked up per render rather than frozen at module load, so switching the
+// language relabels the tabs without a reload.
+const PANEL_LABEL: Record<Panel, Parameters<typeof t>[0]> = {
+  provider: 'ext.settings.tab.provider',
+  integrations: 'ext.settings.tab.integrations',
+  templates: 'ext.settings.tab.templates',
+  data: 'ext.settings.tab.data',
 };
+
+const langLabel = (p: LangPref): string =>
+  p === 'system' ? t('pref.system') : p === 'en' ? t('lang.en') : t('lang.id');
 
 const PROVIDERS = Object.entries(PROVIDER_PRESETS) as [
   ProviderId,
@@ -42,6 +49,10 @@ export function SettingsView({
   selectedMeeting?: string | null;
 }) {
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [langPref, setLangPref] = useState<LangPref>('system');
+  useEffect(() => {
+    void loadLangPref().then(setLangPref);
+  }, []);
   const [testing, setTesting] = useState(false);
   const [panel, setPanel] = useState<Panel>('provider');
   const [models, setModels] = useState<string[]>([]);
@@ -190,9 +201,9 @@ export function SettingsView({
     <div className="settings">
       <header className="toolbar">
         <div className="toolbar-title">
-          <h1>Settings</h1>
+          <h1>{t('ext.settings.title')}</h1>
         </div>
-        <nav className="tabs" role="tablist" aria-label="Bagian settings">
+        <nav className="tabs" role="tablist" aria-label={t('ext.settings.sections')}>
           {(Object.keys(PANEL_LABEL) as Panel[]).map((p) => (
             <button
               key={p}
@@ -201,11 +212,11 @@ export function SettingsView({
               className={`tab ${panel === p ? 'active' : ''}`}
               onClick={() => setPanel(p)}
             >
-              {PANEL_LABEL[p]}
+              {t(PANEL_LABEL[p])}
             </button>
           ))}
         </nav>
-        <button onClick={onClose} aria-label="Tutup settings">
+        <button onClick={onClose} aria-label={t('ext.settings.close')}>
           ✕
         </button>
       </header>
@@ -218,7 +229,30 @@ export function SettingsView({
         {panel === 'provider' && (
         <>
         <label className="field">
-          <span>Provider</span>
+          <span>{t('ext.settings.language')}</span>
+          {/* Persisted on change, not on Save: the language is stored beside
+              the theme rather than inside the encrypted settings blob, because
+              it has to be readable before the first paint. */}
+          <select
+            value={langPref}
+            onChange={(e) => {
+              const next = e.target.value as LangPref;
+              setLangPref(next);
+              applyLang(next);
+              saveLangPref(next);
+            }}
+          >
+            {(['system', ...LANGS] as LangPref[]).map((l) => (
+              <option key={l} value={l}>
+                {langLabel(l)}
+              </option>
+            ))}
+          </select>
+          <span className="hint">{t('ext.settings.languageHint')}</span>
+        </label>
+
+        <label className="field">
+          <span>{t('ext.provider.label')}</span>
           <select
             value={settings.provider}
             onChange={(e) => setSettings(switchProvider(settings, e.target.value as ProviderId))}
@@ -232,10 +266,7 @@ export function SettingsView({
         </label>
 
         {settings.provider === 'builtin' && (
-          <p className="hint">
-            Tanpa konfigurasi — pakai AI bawaan browser (Gemini Nano) bila tersedia.
-            Untuk hasil terbaik pilih provider cloud/lokal di atas.
-          </p>
+          <p className="hint">{t('ext.provider.builtinHint')}</p>
         )}
 
         {preset.needsSignIn && (
@@ -248,24 +279,34 @@ export function SettingsView({
 
         {settings.provider !== 'builtin' && !preset.needsSignIn && (
           <label className="field">
-            <span>API Key{preset.needsKey ? '' : ' (opsional)'}</span>
+            <span>{preset.needsKey ? t('ext.provider.apiKey') : t('ext.provider.apiKeyOptional')}</span>
             <input
               type="password"
               value={settings.apiKey}
               autoComplete="off"
-              placeholder={preset.needsKey ? 'sk-…' : 'kosongkan jika endpoint tanpa auth'}
+              placeholder={preset.needsKey ? 'sk-…' : t('ext.provider.apiKeyPlaceholder')}
               onChange={(e) => set({ apiKey: e.target.value })}
             />
             <span className="hint">
-              Dikirim sebagai <code>Authorization: Bearer</code>
-              {preset.needsKey ? '' : ' bila diisi'} · disimpan terenkripsi (AES-GCM).
+              {(preset.needsKey
+                ? t('ext.provider.apiKeyHintRequired', { header: '\u0000' })
+                : t('ext.provider.apiKeyHintOptional', { header: '\u0000' })
+              )
+                .split('\u0000')
+                .flatMap((part, i) =>
+                  // The header name is code, not prose: it is spliced back in as
+                  // an element so the sentence around it stays translatable.
+                  i === 0
+                    ? [part]
+                    : [<code key={i}>Authorization: Bearer</code>, part],
+                )}
             </span>
           </label>
         )}
 
         {(preset.needsBaseUrl || settings.baseUrl) && (
           <label className="field">
-            <span>Base URL</span>
+            <span>{t('ext.provider.baseUrl')}</span>
             <input
               type="url"
               value={settings.baseUrl}
@@ -273,24 +314,24 @@ export function SettingsView({
               onChange={(e) => set({ baseUrl: e.target.value })}
             />
             {settings.provider === 'azure' && (
-              <span className="hint">Endpoint resource Azure, model = nama deployment.</span>
+              <span className="hint">{t('ext.provider.azureHint')}</span>
             )}
           </label>
         )}
 
         {settings.provider !== 'builtin' && (
           <label className="field">
-            <span>Model</span>
+            <span>{t('ext.provider.model')}</span>
             <div className="field-row">
               <input
                 type="text"
                 list="model-options"
                 value={settings.model}
-                placeholder={preset.model || 'nama model / deployment'}
+                placeholder={preset.model || t('ext.provider.modelPlaceholder')}
                 onChange={(e) => set({ model: e.target.value })}
               />
               <button onClick={refreshModels} disabled={loadingModels}>
-                {loadingModels ? 'Memuat…' : 'Muat model'}
+                {loadingModels ? t('ext.provider.loadingModels') : t('ext.provider.loadModels')}
               </button>
             </div>
             <datalist id="model-options">
@@ -301,28 +342,30 @@ export function SettingsView({
             <span className="hint">
               {modelsNote ||
                 (models.length
-                  ? `${models.length} model tersedia — klik kolom untuk memilih, atau ketik sendiri.`
-                  : 'Klik "Muat model" untuk mengambil daftar dari provider.')}
+                  ? t('ext.provider.modelsAvailable', { count: models.length })
+                  : t('ext.provider.modelsPrompt'))}
             </span>
           </label>
         )}
 
         <label className="field">
-          <span>Simpan riwayat</span>
+          <span>{t('ext.provider.retention')}</span>
           <select
             value={settings.retentionDays}
             onChange={(e) => set({ retentionDays: Number(e.target.value) })}
           >
             {RETENTION_OPTIONS.map((d) => (
               <option key={d} value={d}>
-                {d === 0 ? 'Selamanya (default)' : `Hapus otomatis setelah ${d} hari`}
+                {d === 0
+                  ? t('ext.provider.retentionForever')
+                  : t('ext.provider.retentionDays', { days: d })}
               </option>
             ))}
           </select>
           <span className="hint">
             {settings.retentionDays === 0
-              ? 'Tidak ada yang dihapus otomatis.'
-              : `Meeting yang tidak aktif lebih dari ${settings.retentionDays} hari dihapus permanen (transcript, notulen, chat, dokumen) — tidak bisa dibatalkan.`}
+              ? t('ext.provider.retentionHintForever')
+              : t('ext.provider.retentionHintDays', { days: settings.retentionDays })}
           </span>
         </label>
         </>
@@ -332,12 +375,12 @@ export function SettingsView({
           <div className="subbar">
             {panel === 'provider' && (
               <button onClick={test} disabled={testing}>
-                {testing ? 'Menguji…' : 'Test koneksi'}
+                {testing ? t('ext.settings.testing') : t('ext.settings.testConnection')}
               </button>
             )}
             <span className="spacer" />
             <button className="primary" onClick={save}>
-              Simpan
+              {t('ext.settings.save')}
             </button>
           </div>
         )}

@@ -4,7 +4,7 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { openDatabase, type SqlDriver } from '@meetcc/store'
 import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
-import { t, formatDate, type LangPref, LANGS } from '@meetcc/shared/i18n'
+import { t, formatDate, onLangChange, type LangPref, LANGS } from '@meetcc/shared/i18n'
 import { applyLang, loadLangPref, saveLangPref } from './lang'
 import { DateField } from './DateField'
 import {
@@ -248,8 +248,10 @@ export default function App() {
   const [dirty, setDirty] = useState(false)
   // Search fell back to titles because the SQLite index would not open.
   const [indexDown, setIndexDown] = useState(false)
-  // Bumped when the language changes, purely to force a re-render.
+  // Bumped when the language changes, purely to force a re-render: `t()` reads
+  // a module-level language that React cannot see.
   const [, setLangTick] = useState(0)
+  useEffect(() => onLangChange(() => setLangTick((n) => n + 1)), [])
   const [themePref, setThemePref] = useState<ThemePref>(loadThemePref)
   const [langPref, setLangPref] = useState<LangPref>(loadLangPref)
 
@@ -258,9 +260,6 @@ export default function App() {
   useEffect(() => {
     applyLang(langPref)
     saveLangPref(langPref)
-    // Re-render everything: `t()` reads a module-level language, so React has
-    // no way of knowing the strings changed underneath it.
-    setLangTick((n) => n + 1)
   }, [langPref])
 
   // Applied on change, and re-applied when the OS flips while on `system` —

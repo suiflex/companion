@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { resolveTheme } from './lib/theme';
+import { applyLang, loadLangPref } from './lib/lang';
 import './styles.css';
 
 // always opened as a detached window by background.js (?meeting=<id> selects
@@ -17,6 +18,10 @@ const { theme } = await chrome.storage.local.get('theme');
 document.body.dataset.theme = resolveTheme(
   theme === 'light' || theme === 'dark' || theme === 'system' ? theme : 'system',
 );
+
+// Same reason as the theme: resolved before first paint, so the dashboard
+// never renders one language and then swaps to another.
+applyLang(await loadLangPref());
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
