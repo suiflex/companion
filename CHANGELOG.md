@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.9.0](https://github.com/suiflex/companion/compare/v1.8.1...v1.9.0) (2026-09-03)
+
+
+### Features
+
+* **desktop:** check for updates and install them in place ([49cf7ec](https://github.com/suiflex/companion/commit/49cf7ecb9bd0d09d9e7c542cdbee4815a9ec1b6c))
+* **desktop:** check for updates and install them in place ([ce6967b](https://github.com/suiflex/companion/commit/ce6967b9a1b8f424e2fac77394065fd8ecc3c0c1))
+* **extension:** let users generate a MoM while the meeting runs ([78979ea](https://github.com/suiflex/companion/commit/78979ead6d344b88d5f6987f44f248e877d2ddeb))
+
+
+### Bug Fixes
+
+* **ci:** stop the updater manifest matching a signature as its bundle ([b14c1b3](https://github.com/suiflex/companion/commit/b14c1b317e07db9dc61920323e10e86be40b3bc1))
+* **ci:** stop the updater manifest matching a signature as its bundle ([64d2e12](https://github.com/suiflex/companion/commit/64d2e128c9ee66a3530472e06d88d513c0946bc7))
+* **extension:** keep Tanya history, and allow a MoM mid-meeting ([2047d9a](https://github.com/suiflex/companion/commit/2047d9a1d2be37537bee3ef0d41982bd0065ecd6))
+* **extension:** stop the Tanya tab losing questions and answers ([f315b33](https://github.com/suiflex/companion/commit/f315b33f4218343d8dd2916a3e5509530a696ba0))
+* recover the desktop release and harden its failure modes ([e540860](https://github.com/suiflex/companion/commit/e540860533106d8ca396fd5d07ce6bf45d85a368))
+* **vault:** stop listNotes ordering test racing the clock ([bfcb6b8](https://github.com/suiflex/companion/commit/bfcb6b89ec6ca59ae560d98ad42488172e5b3be5))
+
 ## [1.8.1](https://github.com/suiflex/companion/compare/v1.8.0...v1.8.1) (2026-09-02)
 
 
