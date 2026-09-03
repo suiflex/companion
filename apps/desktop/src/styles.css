@@ -318,16 +318,35 @@ body {
   font: 13px 'Avenir Next', Avenir, sans-serif;
 }
 
-.body-input {
+/* Crepe ships a themed shell of its own; only the frame and the type are
+   re-pointed at ours, so an upgrade cannot silently restyle the whole note. */
+.body-editor {
   flex: 1;
   min-height: 300px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #0d1119;
-  color: var(--fg);
+  overflow: auto;
+}
+
+.body-editor .milkdown {
+  --crepe-color-background: #0d1119;
+  --crepe-color-on-background: var(--fg);
+  --crepe-color-surface: #0d1119;
+  --crepe-color-surface-low: #121722;
+  --crepe-color-outline: var(--border);
+  --crepe-color-primary: var(--accent);
+  --crepe-font-title: 'Avenir Next', Avenir, sans-serif;
+  --crepe-font-default: 'Avenir Next', Avenir, sans-serif;
+  --crepe-font-code: ui-monospace, 'SF Mono', Menlo, monospace;
+  background: transparent;
+  height: 100%;
+}
+
+.body-editor .ProseMirror {
   padding: 16px;
-  font: 14px/1.7 ui-monospace, 'SF Mono', Menlo, monospace;
-  resize: none;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .editor-actions {

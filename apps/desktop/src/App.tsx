@@ -4,6 +4,7 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { openDatabase, type SqlDriver } from '@meetcc/store'
 import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
+import { NoteEditor } from './NoteEditor'
 import UpdateBanner from './UpdateBanner'
 
 /** Vault & bridge settings. Small on purpose: the only thing here that changes
@@ -546,12 +547,13 @@ export default function App() {
                 }}
               />
               <TicketFields note={note} onChange={(patch) => { setNote({ ...note, ...patch }); setDirty(true) }} />
-              <textarea
-                className="body-input"
+              {/* Keyed by the note: the editor owns its document, so opening
+                  another note is a remount rather than a value push. */}
+              <NoteEditor
+                key={selected ?? note.id}
                 value={note.body}
-                placeholder="Tulis di sini…"
-                onChange={(e) => {
-                  setNote({ ...note, body: e.target.value })
+                onChange={(body) => {
+                  setNote({ ...note, body })
                   setDirty(true)
                 }}
               />
