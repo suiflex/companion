@@ -957,15 +957,34 @@ body[data-theme='light'] .bubble-assistant {
 
 .settings { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
+/* The dashboard window is 980px wide (background.ts opens it that way) and the
+   toolbar above already spans all of it, so a single 460px column left most of
+   the surface empty. Columns are filled by available width rather than a fixed
+   count — same shape as .kb-cols below, which is the only other responsive
+   block in this sheet. */
 .settings-body {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  max-width: 460px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-content: start;
+  align-items: start;
+  gap: 14px 18px;
 }
+
+/* Action rows and the checkboxes that gate a whole section read as headings
+   for what follows them; splitting either into a column breaks that. */
+.settings-body > .subbar,
+.settings-body > .checkbox-field,
+.settings-body > .bridge-status { grid-column: 1 / -1; }
+
+/* the grid supplies the rhythm now; the stacked-layout margin doubled it */
+.settings-body > .field-group { margin-bottom: 0; }
+
+/* No breakpoint: auto-fill already drops to one column when the pane is too
+   narrow for two, and it measures the pane rather than the viewport — which is
+   what actually matters here, since the sidebar collapses independently. */
 
 .field { display: flex; flex-direction: column; gap: 5px; }
 
