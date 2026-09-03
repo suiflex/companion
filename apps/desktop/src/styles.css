@@ -62,6 +62,7 @@ body {
 .rail {
   width: 52px;
   flex: none;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -378,6 +379,175 @@ body {
   padding: 0 10px;
   font: 13px 'Avenir Next', Avenir, sans-serif;
   line-height: normal;
+}
+
+/* Tooltips, drawn by us.
+   macOS renders this window in WKWebView, which does not surface the HTML
+   `title` attribute on hover — the rail read as a row of unlabelled glyphs
+   because of it. `data-tip` replaces `title` rather than joining it, so the
+   platforms that *do* have native tooltips (WebView2) don't show two. The
+   accessible name still comes from aria-label. */
+[data-tip] { position: relative; }
+
+/* A disabled control gets no hover events, so anything that needs a tip while
+   disabled wears it on this wrapper instead. */
+.tip-wrap { display: inline-flex; }
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--fg);
+  font: 11.5px/1.3 'Avenir Next', Avenir, sans-serif;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 90ms ease 220ms;
+}
+
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after { opacity: 1; }
+
+/* The rail is a narrow left edge; a tooltip below it would be clipped by the
+   next button, so those sit beside it instead. */
+[data-tip-side='right']::after {
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tip]::after { transition: none; }
+}
+
+/* Date field: the calendar is ours because the browser's own panel cannot be
+   themed. The trigger is sized exactly like the inputs beside it. */
+.datefield { position: relative; }
+
+.datefield-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  color: var(--fg);
+  font: 13px 'Avenir Next', Avenir, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.datefield-button:hover { border-color: var(--fg-muted); }
+.datefield-button .placeholder { color: var(--fg-muted); }
+
+.datefield-clear {
+  flex: none;
+  padding: 0 2px;
+  color: var(--fg-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.datefield-clear:hover { color: var(--danger); }
+
+.calendar {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  /* Anchored to the trigger's right edge: this is the last field in the row,
+     so a left-anchored popover 244px wide runs off the window. Right-anchoring
+     is safe in both directions here — the editor's own padding and the sidebar
+     leave far more than that to the left. */
+  right: 0;
+  width: 244px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.35);
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.calendar-head strong { font-size: 12.5px; font-weight: 600; }
+
+.calendar-head button {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+.calendar-head button:hover { background: var(--bg-raised); color: var(--fg); }
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendar-dow {
+  text-align: center;
+  padding-bottom: 4px;
+  font: 600 9.5px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.calendar-day {
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font: 12px 'Avenir Next', Avenir, sans-serif;
+  cursor: pointer;
+}
+
+.calendar-day:hover { background: var(--bg-raised); }
+.calendar-day.outside { color: var(--fg-muted); opacity: 0.5; }
+.calendar-day.today { box-shadow: inset 0 0 0 1px var(--border); }
+
+.calendar-day.selected {
+  background: var(--accent);
+  color: var(--fg-on-accent);
+  font-weight: 600;
+}
+
+.calendar-foot {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  text-align: right;
+}
+
+.calendar-foot button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: 12px 'Avenir Next', Avenir, sans-serif;
+  cursor: pointer;
 }
 
 /* WebKit gives a select its own metrics and stepper glyph; drop both and draw

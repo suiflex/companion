@@ -4,6 +4,7 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { openDatabase, type SqlDriver } from '@meetcc/store'
 import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
+import { DateField } from './DateField'
 import {
   applyTheme,
   loadThemePref,
@@ -196,11 +197,7 @@ function TicketFields({
       </label>
       <label>
         <span>Tenggat</span>
-        <input
-          type="date"
-          value={note.dueDate ?? ''}
-          onChange={(e) => onChange({ dueDate: pick(e.target.value) })}
-        />
+        <DateField value={note.dueDate ?? ''} onChange={(v) => onChange({ dueDate: pick(v) })} />
       </label>
     </div>
   )
@@ -475,7 +472,7 @@ export default function App() {
         <BrandMark />
         <button
           type="button"
-          title="Catatan"
+          data-tip="Catatan" data-tip-side="right"
           className={view === 'notes' ? 'rail-btn rail-active' : 'rail-btn'}
           aria-label="Catatan"
           aria-current={view === 'notes' ? 'page' : undefined}
@@ -485,7 +482,7 @@ export default function App() {
         </button>
         <button
           type="button"
-          title="Rapat masuk"
+          data-tip="Rapat masuk" data-tip-side="right"
           className={view === 'inbox' ? 'rail-btn rail-active' : 'rail-btn'}
           aria-label="Rapat masuk"
           aria-current={view === 'inbox' ? 'page' : undefined}
@@ -497,7 +494,7 @@ export default function App() {
         <button
           type="button"
           className="rail-btn"
-          title={`Tema: ${THEME_LABELS[themePref]}`}
+          data-tip={`Tema: ${THEME_LABELS[themePref]}`} data-tip-side="right"
           aria-label={`Tema: ${THEME_LABELS[themePref]}. Klik untuk ganti.`}
           onClick={() =>
             setThemePref((p) => (p === 'system' ? 'light' : p === 'light' ? 'dark' : 'system'))
@@ -507,7 +504,7 @@ export default function App() {
         </button>
         <button
           type="button"
-          title="Vault & jembatan"
+          data-tip="Vault & jembatan" data-tip-side="right"
           className={view === 'settings' ? 'rail-btn rail-active' : 'rail-btn'}
           aria-label="Vault & jembatan"
           aria-current={view === 'settings' ? 'page' : undefined}
@@ -522,19 +519,25 @@ export default function App() {
           <div className="sidebar-head">
             <span className="kicker">Vault</span>
             <span className="count">{notes.length} nota</span>
-            {/* The vault opens asynchronously (sqlite wasm) and openNew returns
-                early without it, so until then the button would look live and
-                answer a click with nothing. */}
-            <button
-              type="button"
-              className="add-btn"
-              onClick={() => guard(openNew)}
-              aria-label="Nota baru"
-              disabled={!vault}
-              title={vault ? 'Nota baru' : 'Menyiapkan vault…'}
+            {/* The vault opens asynchronously and openNew returns early without
+                it, so until then the button would look live and answer a click
+                with nothing. The tip lives on the wrapper because a disabled
+                button receives no hover — which is exactly when it most needs
+                to say why it is disabled. */}
+            <span
+              className="tip-wrap"
+              data-tip={vault ? 'Nota baru' : 'Menyiapkan vault…'}
             >
-              ＋
-            </button>
+              <button
+                type="button"
+                className="add-btn"
+                onClick={() => guard(openNew)}
+                aria-label="Nota baru"
+                disabled={!vault}
+              >
+                ＋
+              </button>
+            </span>
           </div>
           <input
             className="search"
@@ -558,7 +561,7 @@ export default function App() {
                     <span className="note-date">{dayOf(n.updatedAt)}</span>
                   </button>
                 ) : (
-                  <span className="note-title muted" title="hasil pencarian isi tubuh nota">
+                  <span className="note-title muted" data-tip="hasil pencarian isi tubuh nota">
                     {n.title}
                   </span>
                 )}
@@ -610,7 +613,7 @@ export default function App() {
         <header className="topbar">
           <span className="vault">{vault?.io.root ?? '…'}</span>
           {note && (
-            <span className="badge" title="Tersimpan lokal, tanpa sinkron">
+            <span className="badge" data-tip="Tersimpan lokal, tanpa sinkron">
               LOKAL
             </span>
           )}
