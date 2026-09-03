@@ -156,9 +156,9 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/); the
   already shows the what.
 - One logical change per commit. Each commit should leave the tree in a
   buildable, testable state so `git revert` stays safe.
-- Do **not** hand-edit the `release-please`-managed sections of either
-  changelog: [CHANGELOG.md](CHANGELOG.md) for the extension,
-  [apps/desktop/CHANGELOG.md](apps/desktop/CHANGELOG.md) for the desktop.
+- Do **not** hand-edit the `release-please`-managed sections of
+  [CHANGELOG.md](CHANGELOG.md). Both products share it — the commit scope is
+  what separates them in it, which is why scoping matters above.
 
 ## Branching & pull requests
 
