@@ -32,6 +32,13 @@ function unframe(buf) {
 }
 
 const home = mkdtempSync(join(tmpdir(), 'companion-host-'));
+
+// Deleted rather than set to undefined: an undefined value in an env object can
+// reach the child as the string "undefined". A runner that sets either of these
+// would otherwise send the spool outside the directory this test cleans up.
+const childEnv = { ...process.env, HOME: home, USERPROFILE: home };
+delete childEnv.XDG_CONFIG_HOME;
+delete childEnv.APPDATA;
 const batch = (id) => ({
   operationId: id,
   roomId: 'meet/abc-defg-hij',
@@ -45,7 +52,7 @@ const batch = (id) => ({
 // host that assumes one message per chunk passes every other test there is.
 const res = spawnSync(bin, ['--native-host'], {
   input: Buffer.concat([frame(batch('op-1')), frame({ type: 'ping' }), frame(batch('op-2'))]),
-  env: { ...process.env, HOME: home },
+  env: childEnv,
 });
 
 const replies = unframe(res.stdout);
@@ -61,11 +68,31 @@ if (!replies[1].pong) fail('ping was not answered');
 if (!replies[2].spooled) fail('second batch was not spooled');
 console.log('HOST FRAMING OK');
 
+// Where the host spools, mirroring `config_dir_from` in src-tauri/src/lib.rs.
+// It was hardcoded to the macOS path and so passed locally while failing on the
+// Linux runner — the host was fine, the assertion was not.
+//
+// It reads no environment: the child's is stripped below, so consulting the
+// runner's here would put the two sides of this test on different paths.
+function spoolDir(base) {
+  if (process.platform === 'darwin') return join(base, 'Library/Application Support');
+  if (process.platform === 'win32') return join(base, 'AppData/Roaming');
+  return join(base, '.config');
+}
+
 // The ping must leave nothing behind: a ping that fell through to the vault
 // writer once created a note in a real vault.
-const spool = join(home, 'Library/Application Support/dev.suiflex.companion/spool');
-const files = readdirSync(spool);
-if (files.length !== 2) fail(`expected 2 spooled batches, found ${files.length}: ${files}`);
+const spool = join(spoolDir(home), 'dev.suiflex.companion', 'spool');
+// Named, not thrown: the first failure of this check on CI was a raw ENOENT
+// stack, which says a directory is missing but not which one was expected or
+// why. The path is the whole finding.
+let files;
+try {
+  files = readdirSync(spool);
+} catch (e) {
+  fail(`no spool at ${spool} (${e.code ?? e.message})`);
+}
+if (files.length !== 2) fail(`expected 2 spooled batches in ${spool}, found ${files.length}: ${files}`);
 console.log('HOST SPOOL OK');
 
 rmSync(home, { recursive: true, force: true });
