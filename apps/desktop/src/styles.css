@@ -182,8 +182,15 @@ body {
   color: var(--fg);
 }
 
+/* ponytail: the CSS `resize` grabber rather than a drag handle of our own —
+   the platform already draws one. It does not persist across launches; add a
+   stored width if that turns out to matter. */
 .sidebar {
-  width: 262px;
+  width: 300px;
+  min-width: 240px;
+  max-width: 520px;
+  resize: horizontal;
+  overflow: hidden;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -227,12 +234,12 @@ body {
 
 .search {
   margin: 10px;
-  padding: 6px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg-sunken);
   color: var(--fg);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .note-list {
@@ -250,7 +257,7 @@ body {
   flex-direction: column;
   gap: 3px;
   text-align: left;
-  padding: 7px 9px;
+  padding: 8px 10px;
   border: 0;
   border-radius: 7px;
   background: transparent;
@@ -268,7 +275,7 @@ body {
 }
 
 .note-title {
-  font-size: 12.5px;
+  font-size: 13.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -289,7 +296,7 @@ body {
   border: 0;
   background: transparent;
   color: var(--fg-muted);
-  font: 600 11px/1.4 'Avenir Next', Avenir, sans-serif;
+  font: 600 12px/1.4 'Avenir Next', Avenir, sans-serif;
   text-align: left;
   cursor: pointer;
 }
@@ -735,8 +742,15 @@ body {
   position: absolute;
   z-index: 25;
   top: calc(100% + 6px);
-  left: 0;
+  /* Anchored to the control's right edge and sized to its longest option, not
+     to the control: tying the width to the button made the same list wide or
+     narrow depending on which option happened to be selected, and wrapped
+     folder paths over two lines. */
   right: 0;
+  left: auto;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(340px, 60vw);
   max-height: 220px;
   padding: 4px;
   border: 1px solid var(--border);
@@ -756,7 +770,13 @@ body {
   padding: 7px 9px;
   border-radius: 6px;
   font-size: 13px;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+.select-option .tone-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .select-option.cursor { background: var(--bg-raised); }
