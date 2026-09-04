@@ -613,7 +613,9 @@ export const en = {
   'desktop.vault.rootFolder': 'Vault root',
 
   'desktop.vault.duplicateSessionKey':
-    '{count} notes share a session key with another and are missing from search. Check {path}.',
+    '{path} shares a session key with another note, so it is missing from search.',
+  'desktop.vault.duplicateSessionKeys':
+    '{count} notes share a session key with another and are missing from search, {path} among them.',
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',

@@ -327,6 +327,8 @@ export default function App() {
   const [dirty, setDirty] = useState(false)
   // Search fell back to titles because the SQLite index would not open.
   const [indexDown, setIndexDown] = useState(false)
+  // The duplicate-key warning already shown, so it is not repeated per poll.
+  const reportedRef = useRef('')
   // Bumped when the language changes, purely to force a re-render: `t()` reads
   // a module-level language that React cannot see.
   const [, setLangTick] = useState(0)
@@ -434,11 +436,25 @@ export default function App() {
       const skipped = await createIndex(driverRef.current, v, read, rel)
       // A duplicate session key no longer fails the rebuild, but silently
       // dropping a note from search would be its own trap — say which file.
-      if (skipped.length) {
-        toast('error', t('desktop.vault.duplicateSessionKey', {
-          count: skipped.length,
-          path: skipped[0],
-        }))
+      //
+      // Once, though. This runs on every save and every five-second poll, and
+      // a duplicate is a state that persists until someone opens the vault and
+      // deletes a file — repeating the warning on every tick turns a fact into
+      // noise that buries the toasts that report what just happened.
+      const key = skipped.join('\n')
+      if (key !== reportedRef.current) {
+        reportedRef.current = key
+        if (skipped.length) {
+          toast(
+            'error',
+            skipped.length === 1
+              ? t('desktop.vault.duplicateSessionKey', { path: skipped[0] })
+              : t('desktop.vault.duplicateSessionKeys', {
+                  count: skipped.length,
+                  path: skipped[0],
+                }),
+          )
+        }
       }
     }
     await invoke<string[]>('list_vault_folders').then(setFolders).catch(() => undefined)

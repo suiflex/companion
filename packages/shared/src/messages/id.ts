@@ -610,7 +610,9 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.vault.rootFolder': 'Akar vault',
 
   'desktop.vault.duplicateSessionKey':
-    '{count} nota memakai session key yang sama dengan nota lain dan tidak masuk pencarian. Cek {path}.',
+    '{path} memakai session key yang sama dengan nota lain, jadi tidak masuk pencarian.',
+  'desktop.vault.duplicateSessionKeys':
+    '{count} nota memakai session key yang sama dengan nota lain dan tidak masuk pencarian, salah satunya {path}.',
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
