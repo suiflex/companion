@@ -34,11 +34,24 @@ export class OAuthError extends Error {
   }
 }
 
+/**
+ * Token endpoints are subject to the same CSP as provider calls, so they go
+ * through the same seam. Pure protocol still: this module owns no storage and
+ * chooses no transport, it just uses the one it was given.
+ */
+type Fetch = (url: string, init: RequestInit) => Promise<Response>;
+let doFetch: Fetch = (url, init) => fetch(url, init);
+
+/** Route OAuth requests through `impl`. Called once, at startup. */
+export function setOAuthFetch(impl: Fetch): void {
+  doFetch = impl;
+}
+
 async function request(url: string, init: RequestInit): Promise<Response> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    return await fetch(url, { ...init, signal: ctrl.signal });
+    return await doFetch(url, { ...init, signal: ctrl.signal });
   } catch (e) {
     throw new OAuthError('NETWORK', `Tidak bisa menghubungi ${new URL(url).host}: ${(e as Error).message}`);
   } finally {
