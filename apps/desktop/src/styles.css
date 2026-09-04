@@ -818,9 +818,72 @@ body {
 }
 
 .body-editor .ProseMirror {
-  padding: 16px;
-  font-size: 14px;
-  line-height: 1.7;
+  /* Left padding leaves the gutter the block handle lives in; without it the
+     handle sits on top of the first character. */
+  padding: 20px 24px 40px 44px;
+  font-size: 14.5px;
+  line-height: 1.75;
+}
+
+/* Document rhythm, not form rhythm: blocks need room to read as blocks. */
+.body-editor .ProseMirror > * + * { margin-top: 0.6em; }
+
+.body-editor .ProseMirror h1,
+.body-editor .ProseMirror h2,
+.body-editor .ProseMirror h3 {
+  margin: 1.4em 0 0.3em;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.body-editor .ProseMirror h1 { font-size: 1.7em; }
+.body-editor .ProseMirror h2 { font-size: 1.35em; }
+.body-editor .ProseMirror h3 { font-size: 1.12em; }
+.body-editor .ProseMirror > :first-child { margin-top: 0; }
+
+.body-editor .ProseMirror ul,
+.body-editor .ProseMirror ol { padding-left: 1.4em; }
+.body-editor .ProseMirror li + li { margin-top: 0.2em; }
+
+.body-editor .ProseMirror blockquote {
+  padding-left: 0.9em;
+  border-left: 3px solid var(--border);
+  color: var(--fg-muted);
+}
+
+/* The prompt on every empty block — the thing that advertises the menu. */
+.body-editor .ProseMirror .crepe-placeholder::before,
+.body-editor .ProseMirror [data-placeholder]::before {
+  color: var(--fg-muted);
+  opacity: 0.65;
+}
+
+/* The handle belongs in the margin: present when the row is under the cursor,
+   never competing with the text. 32px was a button; this is a grip. */
+.body-editor .milkdown-block-handle .operation-item {
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+  opacity: 0.55;
+}
+
+.body-editor .milkdown-block-handle .operation-item:hover { opacity: 1; }
+.body-editor .milkdown-block-handle .operation-item svg { width: 18px; height: 18px; }
+
+/* The slash menu wears the same panel as the select and the calendar. Three
+   different popover styles in one window is worse than one that is a little
+   less like the app it was modelled on. */
+.body-editor .milkdown-slash-menu {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.35);
+}
+
+.body-editor .milkdown-slash-menu .menu-item {
+  border-radius: 6px;
+  font-size: 13px;
 }
 
 .editor-actions {
