@@ -11,11 +11,13 @@ export interface SponsorLink {
   id: string
   url: string
   label: MessageKey
+  /** One glyph per destination — two identical hearts name neither of them. */
+  icon: string
 }
 
 export const SPONSOR_LINKS: SponsorLink[] = [
-  { id: 'github', url: 'https://github.com/sponsors/suiflex', label: 'sponsor.github' },
-  { id: 'saweria', url: 'https://saweria.co/suiflex', label: 'sponsor.saweria' },
+  { id: 'github', url: 'https://github.com/sponsors/suiflex', label: 'sponsor.github', icon: '♥' },
+  { id: 'saweria', url: 'https://saweria.co/suiflex', label: 'sponsor.saweria', icon: '☕' },
 ]
 
 export const activeSponsorLinks = (): SponsorLink[] => SPONSOR_LINKS.filter((l) => l.url)
