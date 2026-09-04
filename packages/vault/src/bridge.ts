@@ -69,6 +69,9 @@ export async function applyBatch(
     platform: batch.platform,
     startedAt: batch.startedAt,
     participants: batch.participants,
+    // Data, not UI: this tag is written into note frontmatter and is what
+    // existing vaults are already filtered by. Renaming it with the interface
+    // language would split one vault across two vocabularies.
     tags: ['rapat'],
     // must match where appendTranscript writes it, below
     transcript: `.transcript/${id}.jsonl`,
