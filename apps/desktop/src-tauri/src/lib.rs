@@ -1,7 +1,25 @@
+pub mod host;
+mod install;
 mod settings;
 mod vault;
 
 use tauri::Manager;
+
+/// Where this install keeps its state when the GUI is not running.
+///
+/// The host mode starts before Tauri does — it must not open a window — so it
+/// cannot ask the app handle for the config dir and resolves it the same way
+/// Tauri would instead.
+pub fn config_dir() -> std::path::PathBuf {
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
+    #[cfg(target_os = "macos")]
+    let base = std::path::PathBuf::from(&home).join("Library/Application Support");
+    #[cfg(not(target_os = "macos"))]
+    let base = std::env::var("XDG_CONFIG_HOME")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| std::path::PathBuf::from(&home).join(".config"));
+    base.join("dev.suiflex.companion")
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -55,6 +73,11 @@ pub fn run() {
             settings::save_ai_settings,
             settings::load_secret,
             settings::save_secret,
+            host::take_spool,
+            host::drop_spooled,
+            install::list_browsers,
+            install::register_bridge,
+            install::unregister_bridge,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Companion Desktop");

@@ -40,7 +40,7 @@ ci: ci-js ci-rust ## Everything CI runs — the gate before a PR
 # libraries — while a developer still runs the whole thing with `make ci`.
 check-all-js: typecheck typecheck-desktop lint ## Linters and typecheckers that need no Rust toolchain
 ci-js: check-all-js test build-extension smoke smoke-mcp smoke-sync ## The JS half of the gate
-ci-rust: rust-fmt rust-lint rust-check ## The Rust half of the gate
+ci-rust: rust-fmt rust-lint rust-check rust-test smoke-host ## The Rust half of the gate
 
 ## ---- verification ----
 
@@ -162,6 +162,13 @@ smoke: build-host ## Smoke the native host: two identical frames in one write
 		test "$$(cat $$tmp/.transcript/*.jsonl | wc -l | tr -d ' ')" = "1" || { echo "HOST SMOKE FAIL: transcript not appended exactly once"; exit 1; }; \
 		echo "HOST SMOKE OK"; \
 		rm -rf $$tmp
+
+rust-test: ## cargo test for the desktop crate
+	cd apps/desktop/src-tauri && cargo test
+
+smoke-host: ## The desktop binary answers native messaging in --native-host mode
+	@cd apps/desktop/src-tauri && cargo build --quiet
+	@node scripts/smoke-host-rs.mjs apps/desktop/src-tauri/target/debug/companion-desktop
 
 smoke-mcp: build-mcp ## The built MCP bin answers over stdio
 	npm run smoke -w @meetcc/mcp

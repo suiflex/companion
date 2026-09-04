@@ -14,6 +14,7 @@ import { activeSponsorLinks } from './sponsor'
 import { NoteTree } from './NoteTree'
 import { saveTarget } from './saveTarget'
 import { AIProviderPanel } from './AIProviderPanel'
+import { drainSpool } from './spool'
 import { buildTree, folderPaths, withEmptyFolders } from './tree'
 import {
   applyTheme,
@@ -492,6 +493,14 @@ export default function App() {
       // Never while editing: refresh replaces the note list the editor's
       // selection is addressed against, and unsaved work is not ours to drop.
       if (dirty) return
+      // Deliveries land in the spool first now: the host writes them there and
+      // the note is only created here, so a drain has to happen before the
+      // file list is compared or a new meeting looks like nothing happened.
+      void drainSpool(vault)
+        .then((r) => {
+          if (r.applied) return refresh(vault)
+        })
+        .catch(() => undefined)
       void vault.io
         .listMarkdown()
         .then((abs) => {

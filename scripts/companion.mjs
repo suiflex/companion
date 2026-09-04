@@ -110,22 +110,26 @@ function detectBrowsers() {
   const found = [];
 
   if (p === 'darwin') {
-    // the macOS .app binary is the display name (spaces and all), except Arc
-    // and Opera which ship lowercase
+    // The macOS .app binary is usually the display name, spaces and all — but
+    // not always, and guessing wrong means the browser is simply not found.
+    // Arc was listed as lowercase `arc` and ships as `Arc`, so an install on a
+    // machine whose only browser is Arc detected nothing at all.
     const apps = [
-      ['Google Chrome', 'Google Chrome'],
-      ['Google Chrome Canary', 'Google Chrome Canary'],
-      ['Chromium', 'Chromium'],
-      ['Microsoft Edge', 'Microsoft Edge'],
-      ['Brave Browser', 'Brave Browser'],
-      ['Arc', 'arc'],
-      ['Vivaldi', 'Vivaldi'],
-      ['Opera', 'Opera'],
-      ['Firefox', 'firefox', 'gecko'],
+      ['Google Chrome', ['Google Chrome']],
+      ['Google Chrome Canary', ['Google Chrome Canary']],
+      ['Chromium', ['Chromium']],
+      ['Microsoft Edge', ['Microsoft Edge']],
+      ['Brave Browser', ['Brave Browser']],
+      ['Arc', ['Arc', 'arc']],
+      ['Vivaldi', ['Vivaldi']],
+      ['Opera', ['Opera', 'opera']],
+      ['Firefox', ['firefox'], 'gecko'],
     ];
-    for (const [name, binName, engine = 'chromium'] of apps) {
-      const bin = `/Applications/${name}.app/Contents/MacOS/${binName}`;
-      if (existsSync(bin)) found.push({ name, binary: bin, tag: slug(name), engine });
+    for (const [name, binNames, engine = 'chromium'] of apps) {
+      const bin = binNames
+        .map((b) => `/Applications/${name}.app/Contents/MacOS/${b}`)
+        .find((b) => existsSync(b));
+      if (bin) found.push({ name, binary: bin, tag: slug(name), engine });
     }
   } else if (p === 'linux') {
     for (const [name, cmds, tag, engine = 'chromium'] of [
