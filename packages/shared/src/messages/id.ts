@@ -9,6 +9,7 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.nav.notes': 'Catatan',
   'desktop.nav.inbox': 'Rapat masuk',
   'desktop.nav.settings': 'Vault & jembatan',
+  'desktop.nav.install': 'Sambungkan browser',
   'desktop.nav.theme': 'Tema: {mode}',
   'desktop.badge.local': 'Tersimpan lokal, tanpa sinkron',
 
@@ -657,6 +658,26 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.ai.signInUnavailable':
     'Masuk dengan akun belum tersedia di aplikasi desktop \u2014 alurnya butuh perjalanan lewat browser yang tidak bisa diselesaikan jendela ini. Pakai provider dengan API key di sini, atau jalankan analisisnya di extension.',
   'desktop.ai.readMore': 'Baca selengkapnya',
+
+  // -- desktop: bridge installer --------------------------------------------
+  'desktop.install.title': 'Sambungkan browser',
+  'desktop.install.intro':
+    'Mendaftarkan aplikasi ini sebagai jembatan tempat extension mengirim rapat. Tidak ada yang perlu dipasang lagi \u2014 aplikasinya sendiri yang jadi host-nya.',
+  'desktop.install.looking': 'Mencari browser\u2026',
+  'desktop.install.noBrowsers': 'Tidak ada profil browser yang didukung di komputer ini.',
+  'desktop.install.isRegistered': 'Tersambung. Muat ulang extension kalau di sana masih tertulis sebaliknya.',
+  'desktop.install.notRegistered': 'Belum tersambung.',
+  'desktop.install.register': 'Sambungkan',
+  'desktop.install.remove': 'Putuskan',
+  'desktop.install.registered': 'Tersambung ke {browser}. Tutup dan buka lagi browsernya, lalu muat ulang extension.',
+  'desktop.install.removed': 'Diputus dari {browser}.',
+  'desktop.install.extension': 'Extension-nya',
+  'desktop.install.extensionHint':
+    'Menyambungkan baru separuhnya: kalau extension-nya belum terpasang, tidak ada yang dikirim. Muat extension dari rilis sebagai unpacked, lalu nyalakan \u201cKirim rapat yang selesai\u201d di setelannya.',
+  'desktop.install.getExtension': 'Ambil extension',
+  'desktop.install.firefox': 'Firefox',
+  'desktop.install.firefoxHint':
+    'Firefox belum bisa disambungkan dari sini. Add-on yang sudah ditandatangani tidak bisa dipasang manual, jadi belum ada yang bisa didaftarkan sampai listing di addons.mozilla.org terbit \u2014 itu sedang menyusul.',
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',

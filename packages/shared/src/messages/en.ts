@@ -13,6 +13,7 @@ export const en = {
   'desktop.nav.notes': 'Notes',
   'desktop.nav.inbox': 'Incoming meetings',
   'desktop.nav.settings': 'Vault & bridge',
+  'desktop.nav.install': 'Connect a browser',
   'desktop.nav.theme': 'Theme: {mode}',
   'desktop.badge.local': 'Saved locally, never synced',
 
@@ -660,6 +661,26 @@ export const en = {
   'desktop.ai.signInUnavailable':
     'Signing in with an account is not available in the desktop app yet \u2014 it needs a browser round trip this window cannot complete. Use an API key provider here, or run the analysis in the extension.',
   'desktop.ai.readMore': 'Read more',
+
+  // -- desktop: bridge installer --------------------------------------------
+  'desktop.install.title': 'Connect a browser',
+  'desktop.install.intro':
+    'Registers this app as the bridge the extension delivers meetings to. Nothing else has to be installed \u2014 the app is the host.',
+  'desktop.install.looking': 'Looking for browsers\u2026',
+  'desktop.install.noBrowsers': 'No supported browser profile found on this computer.',
+  'desktop.install.isRegistered': 'Connected. Reload the extension if it still says otherwise.',
+  'desktop.install.notRegistered': 'Not connected yet.',
+  'desktop.install.register': 'Connect',
+  'desktop.install.remove': 'Disconnect',
+  'desktop.install.registered': 'Connected to {browser}. Restart it, then reload the extension.',
+  'desktop.install.removed': 'Disconnected from {browser}.',
+  'desktop.install.extension': 'The extension',
+  'desktop.install.extensionHint':
+    'Connecting is only half of it: with no extension installed there is nothing to deliver. Load the unpacked extension from the release, then turn on \u201cSend finished meetings\u201d in its settings.',
+  'desktop.install.getExtension': 'Get the extension',
+  'desktop.install.firefox': 'Firefox',
+  'desktop.install.firefoxHint':
+    'Firefox is not connected from here. A signed add-on cannot be side-loaded, so there is nothing to register until the listing on addons.mozilla.org is published \u2014 that is coming.',
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
