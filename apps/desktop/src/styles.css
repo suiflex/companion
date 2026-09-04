@@ -256,6 +256,29 @@ body {
   min-height: 0;
 }
 
+.note-tree .note-item {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 7px;
+}
+
+/* Which kind of note this is, at the start of the row where a scan lands.
+   A delivered meeting is an archive: editing it copies rather than rewrites,
+   so the difference has to be visible before the click, not after. */
+.note-kind {
+  flex: none;
+  width: 11px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--fg-muted);
+  opacity: 0.5;
+}
+
+.note-kind.delivered {
+  color: var(--accent);
+  opacity: 1;
+}
+
 .note-item {
   width: 100%;
   display: flex;

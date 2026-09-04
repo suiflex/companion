@@ -122,23 +122,33 @@ export function NoteTree({
   const renderChildren = (folder: TreeFolder, depth: number) => (
     <ul className="tree-list">
       {folder.folders.map((f) => renderFolder(f, depth))}
-      {folder.notes.map((n) => (
-        <li key={n.rel}>
-          <button
-            type="button"
-            draggable
-            className={selected === n.rel ? 'note-item active' : 'note-item'}
-            style={{ paddingLeft: `${8 + depth * 12}px` }}
-            onClick={() => onOpen(n.rel)}
-            onDragStart={(e) => {
-              e.dataTransfer.setData('text/plain', n.rel)
-              e.dataTransfer.effectAllowed = 'move'
-            }}
-          >
-            <span className="note-title">{n.title}</span>
-          </button>
-        </li>
-      ))}
+      {folder.notes.map((n) => {
+        const delivered = Boolean(n.platform && n.platform !== 'manual')
+        return (
+          <li key={n.rel}>
+            <button
+              type="button"
+              draggable
+              className={selected === n.rel ? 'note-item active' : 'note-item'}
+              style={{ paddingLeft: `${8 + depth * 12}px` }}
+              onClick={() => onOpen(n.rel)}
+              onDragStart={(e) => {
+                e.dataTransfer.setData('text/plain', n.rel)
+                e.dataTransfer.effectAllowed = 'move'
+              }}
+            >
+              {/* Two kinds of note share this list, and which is which decides
+                  whether editing it rewrites an archive. A badge at the end of
+                  the row was too quiet to separate them while scanning, so the
+                  mark leads. */}
+              <span className={delivered ? 'note-kind delivered' : 'note-kind'} aria-hidden="true">
+                {delivered ? '▤' : '·'}
+              </span>
+              <span className="note-title">{n.title}</span>
+            </button>
+          </li>
+        )
+      })}
     </ul>
   )
 

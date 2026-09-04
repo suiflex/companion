@@ -7,6 +7,8 @@
 export interface TreeNote {
   rel: string
   title: string
+  /** The meeting platform, or 'manual' for a note written in the app. */
+  platform?: string
 }
 
 export interface TreeFolder {
