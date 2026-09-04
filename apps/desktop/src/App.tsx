@@ -340,6 +340,10 @@ export default function App() {
   // directory has no note path to be derived from, so it would vanish the
   // moment it was made.
   const [folders, setFolders] = useState<string[]>([])
+  const [namingFolder, setNamingFolder] = useState(false)
+  // Where an unsaved note will land. Null means "wherever the session key
+  // says", which is what happened before folders existed.
+  const [target, setTarget] = useState<string | null>(null)
   const [defaultRoot, setDefaultRoot] = useState<string | null>(null)
   useEffect(() => {
     void invoke<string>('default_vault_root').then(setDefaultRoot).catch(() => undefined)
@@ -423,7 +427,7 @@ export default function App() {
         hasBody: Boolean(n.body.trim()),
       })),
     )
-    if (driverRef.current) await createIndex(driverRef.current, v, read)
+    if (driverRef.current) await createIndex(driverRef.current, v, read, rel)
     await invoke<string[]>('list_vault_folders').then(setFolders).catch(() => undefined)
   }
 
@@ -478,35 +482,43 @@ export default function App() {
     if (!vault) return
     const n = await vault.readNote(rel)
     setSelected(rel)
+    setTarget(null)
     setNote(n)
     setDirty(false)
     setError(null)
   }
 
-  async function newFolder() {
-    const name = window.prompt(t('desktop.vault.folderName'))?.trim()
-    if (!name) return
+  // `window.prompt` is a no-op in this window — the WebView has no dialog for
+  // it and returns null without showing anything, so the button appeared dead.
+  // The name is typed in the sidebar instead.
+  async function createFolder(name: string) {
+    const trimmed = name.trim()
+    if (!trimmed) return setNamingFolder(false)
     try {
-      // Slashes would make one prompt create a whole path, which is more than
-      // the button promises; the rest is left alone so a folder can be named
+      // Slashes would make one field create a whole path, which is more than
+      // the control promises; the rest is left alone so a folder can be named
       // in any language.
-      const rel = name.replace(/[/\\]/g, '-')
+      const rel = trimmed.replace(/[/\\]/g, '-')
       await invoke('create_vault_folder', { rel })
       if (vault) await refresh(vault)
       toast('success', t('desktop.vault.folderCreated', { name: rel }))
     } catch (e) {
       setError(String(e))
+    } finally {
+      setNamingFolder(false)
     }
   }
 
-  async function moveNote(folder: string) {
-    if (!vault || !selected) return
-    const file = selected.split('/').pop() ?? selected
+  const moveNote = (folder: string) => (selected ? moveNoteFrom(selected, folder) : undefined)
+
+  async function moveNoteFrom(from: string, folder: string) {
+    if (!vault) return
+    const file = from.split('/').pop() ?? from
     const to = folder ? `${folder}/${file}` : file
-    if (to === selected) return
+    if (to === from) return
     try {
-      await invoke('move_vault_file', { from: selected, to })
-      setSelected(to)
+      await invoke('move_vault_file', { from, to })
+      if (selected === from) setSelected(to)
       await refresh(vault)
       toast('success', t('desktop.vault.moved', { folder: folder || t('desktop.vault.rootFolder') }))
     } catch (e) {
@@ -524,7 +536,11 @@ export default function App() {
       title: t('desktop.editor.newNoteTitle'),
       body: '',
     }
-    // nothing on disk yet, so there is no vault path to select
+    // A new note belongs where you were looking, but `selected` has to stay
+    // null: it means "this note has a file", and `remove()` reads it to decide
+    // between trashing a file and simply dropping an unsaved draft. The folder
+    // travels separately until the first save gives the note a path.
+    setTarget(selected ? selected.split('/').slice(0, -1).join('/') : null)
     setSelected(null)
     setNote(fresh)
     setDirty(false)
@@ -535,11 +551,20 @@ export default function App() {
     if (!vault || !note) return
     try {
       note.updatedAt = new Date().toISOString()
-      await vault.writeNote(note)
+      // A note that already has a path is written back to it. Deriving the
+      // path here would put a second copy at the location the session key
+      // implies and leave the original where it is — two files, one session
+      // key, and a UNIQUE violation the moment the index is rebuilt.
+      const derived = vault.relPath(note)
+      const rel =
+        selected ??
+        (target ? `${target}/${derived.split('/').pop()}` : derived)
+      await vault.writeNoteAt(rel, note)
       // `selected` addresses a file, so it has to become the path the note was
       // just written to — otherwise trashing a freshly created note aims at
       // its session key and misses.
-      setSelected(vault.relPath(note))
+      setSelected(rel)
+      setTarget(null)
       setNote({ ...note })
       setDirty(false)
       await refresh(vault)
@@ -763,7 +788,7 @@ export default function App() {
               <button
                 type="button"
                 className="add-btn"
-                onClick={() => void newFolder()}
+                onClick={() => setNamingFolder(true)}
                 aria-label={t('desktop.vault.newFolder')}
                 disabled={!vault}
               >
@@ -785,6 +810,19 @@ export default function App() {
               </button>
             </span>
           </div>
+          {namingFolder && (
+            <input
+              className="search"
+              autoFocus
+              placeholder={t('desktop.vault.folderName')}
+              aria-label={t('desktop.vault.folderName')}
+              onBlur={(e) => void createFolder(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void createFolder(e.currentTarget.value)
+                if (e.key === 'Escape') setNamingFolder(false)
+              }}
+            />
+          )}
           <input
             className="search"
             placeholder={
@@ -799,7 +837,12 @@ export default function App() {
             disabled={!vault}
           />
           {!query.trim() ? (
-            <NoteTree root={tree} selected={selected} onOpen={(rel) => guard(() => open(rel))} />
+            <NoteTree
+              root={tree}
+              selected={selected}
+              onOpen={(rel) => guard(() => open(rel))}
+              onMove={(rel, folder) => void moveNoteFrom(rel, folder)}
+            />
           ) : (
           <ul className="note-list">
             {filtered.map((n) => (

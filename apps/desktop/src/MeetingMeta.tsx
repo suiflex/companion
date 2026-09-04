@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { formatDateTime, t } from '@meetcc/shared/i18n'
 import { useToast } from './toast'
+import { copyText } from './clipboard'
 import type { Vault, VaultNote } from '@meetcc/vault'
 
 /**
@@ -86,17 +87,16 @@ export function MeetingMeta({ note, vault }: { note: VaultNote; vault: Vault | n
     }
   }
 
-  // Two faults lived here: the label said "Copied" for the rest of the session
-  // after one click, and a rejection set the same state as never having
-  // clicked — so a failure looked exactly like doing nothing. `?.` on the
-  // clipboard also short-circuited to silence where the API is absent.
+  // The async Clipboard API is not reliably available in this window, so
+  // `copyText` falls back to a selection-based copy that needs no permission.
+  // Either way the outcome is reported: a copy that did not happen used to
+  // look exactly like not having clicked.
   const copy = (): void => {
-    const clipboard = navigator.clipboard
-    if (!clipboard) return toast('error', t('desktop.toast.copyFailed'))
-    void clipboard
-      .writeText(url)
-      .then(() => toast('success', t('desktop.toast.linkCopied')))
-      .catch(() => toast('error', t('desktop.toast.copyFailed')))
+    void copyText(url).then((ok) =>
+      ok
+        ? toast('success', t('desktop.toast.linkCopied'))
+        : toast('error', t('desktop.toast.copyFailed')),
+    )
   }
 
   return (

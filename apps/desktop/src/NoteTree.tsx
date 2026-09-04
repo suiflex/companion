@@ -30,12 +30,18 @@ export function NoteTree({
   root,
   selected,
   onOpen,
+  onMove,
 }: {
   root: TreeFolder
   selected: string | null
   onOpen: (rel: string) => void
+  /** Drop a note onto a folder. `folder` is '' for the vault root. */
+  onMove: (rel: string, folder: string) => void
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed)
+  // The folder currently under a dragged note, so the drop target is visible.
+  // Without it the whole gesture is invisible and you are guessing.
+  const [over, setOver] = useState<string | null>(null)
 
   const toggle = (path: string): void => {
     setCollapsed((prev) => {
@@ -57,10 +63,25 @@ export function NoteTree({
       <li key={folder.path}>
         <button
           type="button"
-          className="tree-folder"
+          className={over === folder.path ? 'tree-folder drop-over' : 'tree-folder'}
           style={{ paddingLeft: `${8 + depth * 12}px` }}
           aria-expanded={!isCollapsed}
           onClick={() => toggle(folder.path)}
+          onDragOver={(e) => {
+            // preventDefault is what marks this a valid drop target; without
+            // it the browser refuses the drop and the gesture does nothing.
+            e.preventDefault()
+            e.stopPropagation()
+            setOver(folder.path)
+          }}
+          onDragLeave={() => setOver((p) => (p === folder.path ? null : p))}
+          onDrop={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setOver(null)
+            const rel = e.dataTransfer.getData('text/plain')
+            if (rel) onMove(rel, folder.path)
+          }}
         >
           <span className={isCollapsed ? 'tree-caret' : 'tree-caret open'} aria-hidden="true" />
           <span className="tree-name">{folder.name}</span>
@@ -78,9 +99,14 @@ export function NoteTree({
         <li key={n.rel}>
           <button
             type="button"
+            draggable
             className={selected === n.rel ? 'note-item active' : 'note-item'}
             style={{ paddingLeft: `${8 + depth * 12}px` }}
             onClick={() => onOpen(n.rel)}
+            onDragStart={(e) => {
+              e.dataTransfer.setData('text/plain', n.rel)
+              e.dataTransfer.effectAllowed = 'move'
+            }}
           >
             <span className="note-title">{n.title}</span>
           </button>
@@ -92,5 +118,24 @@ export function NoteTree({
   const empty = root.folders.length === 0 && root.notes.length === 0
   if (empty) return <ul className="note-list"><li className="empty-hint">{t('desktop.vault.empty')}</li></ul>
 
-  return <div className="note-tree">{renderChildren(root, 0)}</div>
+  return (
+    <div
+      className={over === '' ? 'note-tree drop-over' : 'note-tree'}
+      onDragOver={(e) => {
+        e.preventDefault()
+        setOver('')
+      }}
+      onDragLeave={() => setOver((p) => (p === '' ? null : p))}
+      onDrop={(e) => {
+        e.preventDefault()
+        setOver(null)
+        const rel = e.dataTransfer.getData('text/plain')
+        // Dropping on the background means the vault root — the way back out
+        // of a folder, which a folder-only target list cannot express.
+        if (rel) onMove(rel, '')
+      }}
+    >
+      {renderChildren(root, 0)}
+    </div>
+  )
 }
