@@ -272,7 +272,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
                       <span className="kb-rev-index">{i + 1}</span>
                       <span>{d.decision}</span>
                       {d.reason && <em className="dim"> — {d.reason}</em>}
-                      {!d.supersededBy && <span className="kb-standing">berlaku</span>}
+                      {!d.supersededBy && <span className="kb-standing">{t('ext.kb.standing')}</span>}
                     </button>
                   ))}
                 </li>
@@ -282,7 +282,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
             <p className="section-empty">{t('ext.kb.noRepeatedTopics')}</p>
           )}
 
-          <h2 className="section-label">Kronologi</h2>
+          <h2 className="section-label">{t('ext.kb.chronology')}</h2>
           {story?.events.length ? (
             <ol className="kb-timeline">
               {story.events.slice(-40).map((e, i) => (

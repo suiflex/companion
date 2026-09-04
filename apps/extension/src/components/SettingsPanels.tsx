@@ -166,7 +166,7 @@ export function IntegrationsPanel({
             placeholder={i.tracker.provider === 'jira' ? 'email@org.com:api-token' : 'API key'}
             onChange={(e) => patch({ tracker: { ...i.tracker, token: e.target.value } })}
           />
-          <span className="hint">Disimpan terenkripsi (AES-GCM), sama seperti API key provider.</span>
+          <span className="hint">{t('ext.tracker.tokenHint')}</span>
         </label>
         <label className="field">
           <span>
@@ -260,7 +260,7 @@ export function IntegrationsPanel({
           <span className="hint">{t('ext.transcription.endpointHint')}</span>
         </label>
         <label className="field">
-          <span>API key transkripsi</span>
+          <span>{t('ext.transcription.apiKey')}</span>
           <input
             type="password"
             autoComplete="off"
@@ -277,7 +277,7 @@ export function IntegrationsPanel({
           />
         </label>
         <label className="field">
-          <span>Google OAuth client id (kalender)</span>
+          <span>{t('ext.integrations.calendarClientId')}</span>
           <input
             type="text"
             value={i.calendarClientId}
@@ -345,7 +345,7 @@ export function TemplatesPanel() {
       </p>
 
       <label className="field">
-        <span>Nama</span>
+        <span>{t('ext.templates.name')}</span>
         <input
           type="text"
           value={draft.name}
@@ -464,7 +464,7 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
             })
           }
         >
-          {busy === 'import' ? 'Mengimpor…' : 'Impor transcript / audio'}
+          {busy === 'import' ? t('ext.data.importing') : t('ext.data.importAction')}
         </button>
       </fieldset>
 
@@ -530,7 +530,7 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
               })
             }
           >
-            Impor berkas share
+            {t('ext.data.importShare')}
           </button>
         </div>
       </fieldset>
@@ -661,7 +661,7 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
               })
             }
           >
-            Ekspor log audit (JSON)
+            {t('ext.data.exportAudit')}
           </button>
         </div>
       </fieldset>

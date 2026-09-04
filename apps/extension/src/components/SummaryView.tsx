@@ -263,7 +263,7 @@ export function SummaryView({ meeting, record, live }: Props) {
   }
 
   if (record?.status === 'processing') {
-    const steps = ['Transcript', 'AI Processing', 'Menyimpan'];
+    const steps = ['Transcript', 'AI Processing', t('ext.summary.step.saving')];
     const active = record.step === 'ai' ? 1 : 2;
     // taking too long usually means a crashed/hung run — offer a manual restart
     const slow = Date.now() - Date.parse(record.startedAt) > 45_000;

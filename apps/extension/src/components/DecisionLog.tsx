@@ -62,7 +62,7 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
     <div className="settings">
       <header className="toolbar">
         <div className="toolbar-title">
-          <h1>Keputusan &amp; Carry-over</h1>
+          <h1>{t('ext.decisions.title')}</h1>
         </div>
         <button onClick={onClose} aria-label={t('ext.decisions.close')}>
           ✕

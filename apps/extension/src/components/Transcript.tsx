@@ -263,7 +263,7 @@ export function Transcript({ meeting, live, onClear }: Props) {
 
       {highlights.length > 0 && view === 'raw' && (
         <div className='hl-strip'>
-          <span className='section-label'>Sorotan</span>
+          <span className='section-label'>{t('ext.transcript.highlights')}</span>
           {highlights.slice(-8).map((h) => (
             <button
               key={h.id}

@@ -145,7 +145,7 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
               disabled={anyRunning}
               aria-label={t('ext.docs.template')}
             >
-              <option value="">Standar</option>
+              <option value="">{t('ext.docgen.standardTemplate')}</option>
               {templates.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}

@@ -295,7 +295,7 @@ export function Sidebar({
             {past.length ? (
               past.map(item)
             ) : (
-              <p className='section-empty'>Kosong</p>
+              <p className='section-empty'>{t('ext.sidebar.historyEmpty')}</p>
             )}
           </section>
         </>

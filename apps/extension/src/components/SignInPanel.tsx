@@ -180,7 +180,7 @@ export function SignInPanel({
 
   return (
     <div className="field">
-      <span>Akun</span>
+      <span>{t('ext.signin.account')}</span>
       <p className="hint">
         {t('ext.signin.accountHint')}
       </p>
