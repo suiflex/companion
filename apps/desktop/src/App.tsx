@@ -15,6 +15,7 @@ import { NoteTree } from './NoteTree'
 import { saveTarget } from './saveTarget'
 import { AIProviderPanel } from './AIProviderPanel'
 import { drainSpool } from './spool'
+import { InstallView } from './InstallView'
 import { buildTree, folderPaths, withEmptyFolders } from './tree'
 import {
   applyTheme,
@@ -334,7 +335,7 @@ export default function App() {
   const [note, setNote] = useState<VaultNote | null>(null)
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'notes' | 'inbox' | 'settings'>('notes')
+  const [view, setView] = useState<'notes' | 'inbox' | 'settings' | 'install'>('notes')
   const [dirty, setDirty] = useState(false)
   // Search fell back to titles because the SQLite index would not open.
   const [indexDown, setIndexDown] = useState(false)
@@ -825,6 +826,16 @@ export default function App() {
         </button>
         <button
           type="button"
+          data-tip={t('desktop.nav.install')} data-tip-side="right"
+          className={view === 'install' ? 'rail-btn rail-active' : 'rail-btn'}
+          aria-label={t('desktop.nav.install')}
+          aria-current={view === 'install' ? 'page' : undefined}
+          onClick={() => setView('install')}
+        >
+          ⇄
+        </button>
+        <button
+          type="button"
           data-tip={t('desktop.nav.settings')} data-tip-side="right"
           className={view === 'settings' ? 'rail-btn rail-active' : 'rail-btn'}
           aria-label={t('desktop.nav.settings')}
@@ -990,7 +1001,9 @@ export default function App() {
         </header>
 
         <section className="editor-wrap">
-          {view === 'settings' ? (
+          {view === 'install' ? (
+            <InstallView />
+          ) : view === 'settings' ? (
             <Settings
               root={vault?.io.root ?? '…'}
               noteCount={notes.length}

@@ -9,7 +9,8 @@
       "@meetcc/ai": ["../../packages/ai/src"],
       "@meetcc/meeting": ["../../packages/meeting/src"],
       "@meetcc/store": ["../../packages/store/src"],
-      "@meetcc/vault": ["../../packages/vault/src"]
+      "@meetcc/vault": ["../../packages/vault/src"],
+      "@meetcc/vault/nodeIo": ["../../packages/vault/src/nodeIo"]
     }
   },
   "include": ["src"]
