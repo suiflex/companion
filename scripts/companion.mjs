@@ -21,7 +21,7 @@
 // it launches, which is what lets the extension hand finished meetings to
 // Companion Desktop. See scripts/nativeHost.mjs for why it has to be per-profile.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { mkdir, rm, readdir, stat, copyFile } from 'node:fs/promises';
 import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
@@ -36,6 +36,13 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const COMPANION_HOME = process.env.COMPANION_HOME || null;
 
 const REPO = 'suiflex/companion';
+
+// What a standalone install consists of. `scripts/install.sh` writes exactly
+// these, and `companion update` refreshes exactly these — scripts/installer.test.mjs
+// fails if this list, that one, or the CLI's own imports drift apart. They did
+// once: the CLI gained an import the installer never copied, and every
+// standalone `companion` died with ERR_MODULE_NOT_FOUND.
+export const CLI_MODULES = ['companion.mjs', 'unzip.mjs', 'picker.mjs', 'nativeHost.mjs'];
 // Ask for the list and pick by tag rather than hitting `/releases/latest`. The
 // two products now share one tag, so that endpoint would usually be right, but
 // it is repository-wide: it answers with whatever released last, and this repo
@@ -210,6 +217,34 @@ async function downloadAsset(rel, match, what) {
   const dl = await fetch(asset.browser_download_url, { headers: { 'User-Agent': 'companion-installer' } });
   if (!dl.ok) throw new Error(`Download failed (HTTP ${dl.status}).`);
   return Buffer.from(await dl.arrayBuffer());
+}
+
+/**
+ * Bring the CLI itself up to the release the dist came from.
+ *
+ * Without this, a fix shipped in the CLI never reaches anyone who already ran
+ * the curl installer: `update` refreshed only the extension, so they kept the
+ * CLI they first installed forever.
+ *
+ * Everything is fetched before anything is replaced. A half-written CLI is a
+ * `companion` that cannot start, which is exactly the failure this whole
+ * change exists to prevent.
+ */
+async function refreshCli(release) {
+  const base = `https://raw.githubusercontent.com/${REPO}/${release.tag_name}/scripts`;
+  console.log('Updating the CLI...');
+  const fetched = [];
+  for (const name of CLI_MODULES) {
+    const res = await fetch(`${base}/${name}`, { headers: { 'User-Agent': 'companion-installer' } });
+    if (!res.ok) throw new Error(`Could not fetch ${name} (HTTP ${res.status}).`);
+    fetched.push([name, Buffer.from(await res.arrayBuffer())]);
+  }
+  for (const [name, body] of fetched) {
+    const target = join(COMPANION_HOME, name);
+    const tmp = `${target}.${process.pid}.tmp`;
+    writeFileSync(tmp, body, { mode: 0o755 });
+    renameSync(tmp, target);
+  }
 }
 
 async function downloadLatestDist(distDir, rel = null) {
@@ -563,7 +598,9 @@ async function cmdUpdate() {
     console.log('`update` only applies to a standalone curl install. Run `node scripts/companion.mjs install` in the repo instead.');
     return;
   }
-  await downloadLatestDist(join(COMPANION_HOME, 'dist'));
+  const release = await fetchLatestRelease();
+  await downloadLatestDist(join(COMPANION_HOME, 'dist'), release);
+  await refreshCli(release);
   console.log('Done. Restart Companion to pick up the update.');
   console.log('(Firefox updates itself from addons.mozilla.org, and the desktop app');
   console.log(' updates itself in-app — this command is the extension\'s.)');
