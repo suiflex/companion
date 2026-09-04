@@ -208,15 +208,20 @@ body {
 }
 
 .kicker {
-  font: 600 9.5px/1 ui-monospace, 'SF Mono', Menlo, monospace;
-  letter-spacing: 0.16em;
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--fg-muted);
 }
 
 .count {
   margin-left: auto;
-  font: 400 10px/1 ui-monospace, Menlo, monospace;
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
   color: var(--fg-muted);
 }
 
@@ -274,12 +279,28 @@ body {
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
+.note-item:hover .note-title,
+.note-item.active .note-title { color: var(--fg); }
+
+/* A leaf sits below its folder in weight as well as in the tree: same face,
+   one step lighter, so the structure is legible without reading the words. */
 .note-title {
-  font-size: 13.5px;
+  font-weight: 400;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--fg-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* One type scale for the whole sidebar.
+   It had three: monospace for the counts and the kicker, 600-weight Avenir for
+   the folders, and the body face for the notes — in a 300px column that reads
+   as three unrelated lists stacked on top of each other rather than one tree.
+   Everything below is the body face at two sizes; the counts keep tabular
+   figures so the column of numbers stays straight, which is the one thing the
+   monospace was actually buying. */
 
 /* The folder tree. Indentation is applied per row rather than by nesting
    padding, so a deep note still starts its hit area at the sidebar edge. */
@@ -295,13 +316,15 @@ body {
   padding: 5px 8px;
   border: 0;
   background: transparent;
-  color: var(--fg-muted);
-  font: 600 12px/1.4 'Avenir Next', Avenir, sans-serif;
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 12.5px;
+  line-height: 1.5;
   text-align: left;
   cursor: pointer;
 }
 
-.tree-folder:hover { color: var(--fg); }
+.tree-folder:hover .tree-name { color: var(--accent); }
 
 /* The folder a dragged note would land in. Without a visible target the
    gesture is a guess. */
@@ -348,8 +371,11 @@ body {
 .tree-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .tree-count {
-  font: 400 9.5px/1 ui-monospace, Menlo, monospace;
-  opacity: 0.7;
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -367,7 +393,9 @@ body {
   padding: 1px 5px;
   border: 1px solid var(--border);
   border-radius: 4px;
-  font: 400 9px/1.4 ui-monospace, Menlo, monospace;
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 1.4;
   letter-spacing: 0.04em;
   color: var(--fg-muted);
   white-space: nowrap;
