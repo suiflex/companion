@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { t } from '@meetcc/shared/i18n';
+import { locale, t } from '@meetcc/shared/i18n';
 import {
   CHAT_PREFIX,
   clearChat,
@@ -23,7 +23,7 @@ const SUGGESTIONS = [
 ] as const;
 
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 /** The four grades are the point of Ask v2: "partial" and "inferred" are real

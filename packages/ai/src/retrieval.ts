@@ -219,6 +219,8 @@ function clockOf(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? '--:--'
+    // Fixed locale on purpose: this timestamp is model input, not something
+    // the reader sees, so it must not drift with the interface language.
     : d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -231,7 +233,7 @@ export function renderSpans(entries: Entry[], spans: Span[]): string {
   const parts: string[] = [];
   let prevEnd = -1;
   for (const s of spans) {
-    if (prevEnd >= 0 && s.start > prevEnd + 1) parts.push('[... bagian lain rapat ...]');
+    if (prevEnd >= 0 && s.start > prevEnd + 1) parts.push('[... other parts of the meeting ...]');
     for (let i = s.start; i <= s.end; i++) parts.push(formatEntryLine(entries[i], i));
     prevEnd = s.end;
   }

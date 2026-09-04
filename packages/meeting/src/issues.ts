@@ -1,3 +1,4 @@
+import { locale, t } from '@meetcc/shared/i18n';
 import type { ActionRow, SessionRow } from '@meetcc/store';
 
 // P2.9 — push action items to the tracker the team already uses. Every
@@ -32,17 +33,17 @@ export function isoDue(due: string): string {
 
 export function draftIssue(action: ActionRow, session: SessionRow | null): IssueDraft {
   const where = session ? `${session.title || session.id}` : action.sessionId;
-  const when = session?.startedAt ? new Date(session.startedAt).toLocaleString('id-ID') : '';
+  const when = session?.startedAt ? new Date(session.startedAt).toLocaleString(locale()) : '';
   return {
     title: action.task.slice(0, 200),
     description: [
       action.task,
       '',
-      `Sumber: rapat ${where}${when ? ` (${when})` : ''}`,
-      action.owner ? `Owner (dari rapat): ${action.owner}` : '',
-      action.dueAt ? `Due (dari rapat): ${action.dueAt}` : '',
+      t('pkg.issue.source', { where: `${where}${when ? ` (${when})` : ''}` }),
+      action.owner ? t('pkg.issue.owner', { owner: action.owner }) : '',
+      action.dueAt ? t('pkg.issue.due', { due: action.dueAt }) : '',
       '',
-      'Dibuat otomatis oleh Companion.',
+      t('pkg.issue.footer'),
     ]
       .filter((l) => l !== undefined)
       .join('\n'),
@@ -142,11 +143,11 @@ export function buildRequest(config: TrackerConfig, draft: IssueDraft): Endpoint
 }
 
 export function validateTracker(config: TrackerConfig): string | null {
-  if (!config.token) return 'Token integrasi belum diisi.';
-  if (!config.target) return 'Project / team / database id belum diisi.';
+  if (!config.token) return t('pkg.tracker.noToken');
+  if (!config.target) return t('pkg.tracker.noTarget');
   if (config.provider === 'jira') {
     if (!/^https:\/\//.test(config.baseUrl)) return 'Base URL Jira harus https://';
-    if (!config.token.includes(':')) return 'Token Jira harus berformat email:api-token.';
+    if (!config.token.includes(':')) return t('pkg.tracker.jiraTokenFormat');
   }
   return null;
 }

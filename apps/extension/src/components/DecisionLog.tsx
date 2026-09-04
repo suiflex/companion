@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { t } from '@meetcc/shared/i18n';
+import { locale, t } from '@meetcc/shared/i18n';
 import {
   ANALYSIS_PREFIX,
   RESOLVED_PREFIX,
@@ -107,7 +107,7 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
                     <div className="decision-rejected">Ditolak: {d.rejected.join('; ')}</div>
                   )}
                   <button className="dl-link" onClick={() => onOpenMeeting(d.meetingId)}>
-                    ↳ {d.meetingId} · {new Date(d.generatedAt).toLocaleDateString('id-ID')}
+                    ↳ {d.meetingId} · {new Date(d.generatedAt).toLocaleDateString(locale())}
                   </button>
                 </li>
               ))}

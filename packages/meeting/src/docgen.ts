@@ -1,5 +1,6 @@
 import type { AIClient, DocTemplate } from '@meetcc/ai';
 import { generateDoc } from '@meetcc/ai';
+import { t } from '@meetcc/shared/i18n';
 import type {
   Analysis,
   DocProgressRecord,
@@ -62,9 +63,9 @@ async function runDocGenInner(
   const startedAt = deps.now();
   try {
     const meeting = await deps.getMeeting(id);
-    if (!meeting) return { ok: false, reason: 'not-found', error: 'Meeting tidak ditemukan.' };
+    if (!meeting) return { ok: false, reason: 'not-found', error: t('pkg.meeting.notFound') };
     if (!meeting.entries.length) {
-      return { ok: false, reason: 'empty', error: 'Transcript masih kosong.' };
+      return { ok: false, reason: 'empty', error: t('pkg.meeting.emptyTranscript') };
     }
     await deps.saveProgress(id, {
       type: docType,

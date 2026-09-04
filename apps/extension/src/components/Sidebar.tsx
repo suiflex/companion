@@ -9,7 +9,7 @@ import {
 
 import { listProjects, listSessions } from '../lib/db'
 import { resolveTheme, watchSystemTheme, type ThemePref } from '../lib/theme'
-import { t } from '@meetcc/shared/i18n'
+import { locale, t } from '@meetcc/shared/i18n'
 
 const themeLabel = (p: ThemePref): string =>
   t('ext.sidebar.theme', {
@@ -73,9 +73,9 @@ function fmtDate(iso: string | null): string {
   if (!iso) return '—'
   const d = new Date(iso)
   return (
-    d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) +
+    d.toLocaleDateString(locale(), { day: '2-digit', month: 'short' }) +
     ' · ' +
-    d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+    d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
   )
 }
 

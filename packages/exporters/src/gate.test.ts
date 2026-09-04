@@ -112,6 +112,6 @@ describe('describeGate', () => {
   });
 
   it('says nothing exported when empty', () => {
-    expect(describeGate(gateSummary([], NOW))).toContain('belum ada ekspor');
+    expect(describeGate(gateSummary([], NOW))).toContain('no Obsidian export');
   });
 });

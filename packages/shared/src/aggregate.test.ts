@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { t } from './i18n';
 import type { Analysis, AnalysisRecord } from './types';
 import {
   TITLE_MAX_CHARS,
@@ -90,7 +91,7 @@ describe('buildAgenda', () => {
   });
 
   it('says so when nothing is open', () => {
-    expect(buildAgenda([])).toContain('Tidak ada pertanyaan terbuka');
+    expect(buildAgenda([])).toContain(t('pkg.agenda.noOpenQuestions'));
   });
 });
 

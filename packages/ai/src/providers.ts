@@ -1,5 +1,6 @@
 import type { Settings } from '@meetcc/shared';
 import { AIError, resolveConfig, type AIClient, type CompletionRequest } from './client';
+import { t } from '@meetcc/shared/i18n';
 
 // A hung provider (no response, no error) would leave the pipeline stuck on
 // "AI Processing" forever. Abort after this long so it fails as retryable.
@@ -314,7 +315,7 @@ function builtin(): AIClient {
       const LM = (globalThis as any).LanguageModel;
       if (!LM?.create) {
         throw new AIError(
-          'AI bawaan browser tidak tersedia di browser ini. Pilih provider di Settings.',
+          t('pkg.ai.noBuiltin'),
           false,
         );
       }

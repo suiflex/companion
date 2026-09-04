@@ -9,6 +9,7 @@
 // So: one file, every meeting, no secrets.
 
 import { TRANSCRIPT_PREFIX } from './storage';
+import { t } from './i18n';
 
 /** Never leaves the browser. The AES key sits beside the data it protects, so
  *  a file carrying both is a plaintext API key with extra steps. */
@@ -79,13 +80,13 @@ export function readBackup(text: string): BackupFile {
     throw new Error('Berkas ini bukan JSON.');
   }
   const b = parsed as Partial<BackupFile>;
-  if (!b || typeof b !== 'object' || Array.isArray(b)) throw new Error('Berkas backup tidak dikenali.');
+  if (!b || typeof b !== 'object' || Array.isArray(b)) throw new Error(t('pkg.backup.unrecognised'));
   if (b.format !== BACKUP_FORMAT) throw new Error('Berkas ini bukan backup Companion.');
   if (typeof b.version !== 'number' || b.version > BACKUP_VERSION) {
     throw new Error(`Backup versi ${String(b.version)} lebih baru dari yang bisa dibaca versi ini.`);
   }
   if (!b.data || typeof b.data !== 'object' || Array.isArray(b.data)) {
-    throw new Error('Backup tidak berisi data.');
+    throw new Error(t('pkg.backup.empty'));
   }
   // A backup written by a future build could carry a key we now refuse; drop it
   // rather than trusting the file's own filtering.

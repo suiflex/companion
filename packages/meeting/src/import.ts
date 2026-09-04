@@ -1,3 +1,4 @@
+import { t } from '@meetcc/shared/i18n';
 import type { Entry } from '@meetcc/shared';
 
 // P2.10 — bring meetings in that Companion did not capture live: a Zoom
@@ -141,7 +142,7 @@ export async function transcribeAudio(
   config: TranscriptionConfig,
   fetchImpl: typeof fetch = fetch,
 ): Promise<string> {
-  if (!config.endpoint) throw new Error('Endpoint transkripsi belum diisi di Settings.');
+  if (!config.endpoint) throw new Error(t('pkg.meeting.noTranscriptionEndpoint'));
   const form = new FormData();
   form.append('file', file, filename);
   form.append('model', config.model || 'whisper-1');

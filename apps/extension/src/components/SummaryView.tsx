@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { t } from '@meetcc/shared/i18n';
+import { locale, t } from '@meetcc/shared/i18n';
 import type { Analysis, AnalysisRecord, Meeting } from '@meetcc/shared';
 import { appendAudit } from '@meetcc/shared';
 import { toMarkdown } from '@meetcc/exporters/markdown';
@@ -253,7 +253,7 @@ export function SummaryView({ meeting, record, live }: Props) {
       <>
         {actions(record.analysis)}
         <div className="summary-meta dim">
-          Provider: {record.provider} · {new Date(record.generatedAt).toLocaleString('id-ID')}
+          Provider: {record.provider} · {new Date(record.generatedAt).toLocaleString(locale())}
           {record.provisional &&
             ' · MoM sementara dari transcript sejauh ini — diganti otomatis setelah meeting selesai'}
         </div>

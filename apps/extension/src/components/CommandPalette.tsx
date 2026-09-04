@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SearchHit } from '@meetcc/store';
 import { displayMeetingId } from '@meetcc/shared';
-import { t } from '@meetcc/shared/i18n';
+import { locale, t } from '@meetcc/shared/i18n';
 import { search } from '../lib/db';
 
 // P1.6 — ⌘K search over every meeting: transcript lines and the structured
@@ -28,7 +28,7 @@ function fmt(time: string | null): string {
   const d = new Date(time);
   return Number.isNaN(d.getTime())
     ? ''
-    : d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    : d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 export function CommandPalette({

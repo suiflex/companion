@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { t, formatDateTime } from '@meetcc/shared/i18n'
+import { locale, t, formatDateTime } from '@meetcc/shared/i18n'
 import {
   CLEAN_PREFIX,
   cleanChanges,
@@ -27,7 +27,7 @@ function Avatar({ src, name }: { src?: string; name: string }) {
 }
 
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('id-ID', {
+  return new Date(iso).toLocaleTimeString(locale(), {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',

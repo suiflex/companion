@@ -69,7 +69,7 @@ describe('parseCallbackUrl', () => {
   });
 
   it('rejects a URL from a different sign-in rather than exchanging it', () => {
-    expect(() => parseCallbackUrl(url('code=abc&state=other'), 's1')).toThrow(/sign-in yang lain/);
+    expect(() => parseCallbackUrl(url('code=abc&state=other'), 's1')).toThrow(/different sign-in/);
   });
 
   it('surfaces a refused consent, which Google reports in the query string', () => {

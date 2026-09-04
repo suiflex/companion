@@ -507,6 +507,65 @@ export const en = {
   'ext.transcript.newSinceFull':
     '+{count} new lines since it was cleaned (not yet corrected). Click “{button}” to clean all of them.',
 
+  // -- packages: AI ---------------------------------------------------------
+  'pkg.ai.badJson': 'The AI returned invalid JSON',
+  'pkg.ai.emptyAnswer': 'The AI returned an empty answer',
+  'pkg.ai.emptyQuestion': 'Empty question',
+  'pkg.ai.emptySummary': 'executiveSummary is empty',
+  'pkg.ai.emptyMerged': 'The merged summary is empty',
+  'pkg.ai.emptyResponse': 'The AI response was empty',
+  'pkg.ai.emptyDraft': 'The document draft is empty',
+  'pkg.ai.noBuiltin':
+    'This browser has no built-in AI. Pick a provider in Settings.',
+
+  // -- packages: OAuth ------------------------------------------------------
+  'pkg.oauth.noJson': 'The auth service did not return JSON',
+  'pkg.oauth.noAccessToken': 'The response carried no access token',
+  'pkg.oauth.noDeviceCode': 'The response carried no device code',
+  'pkg.oauth.noAuthCode': 'The approval carried no authorization code',
+  'pkg.oauth.stateMismatch': 'That URL belongs to a different sign-in attempt. Start again.',
+  'pkg.oauth.noCodeInUrl': 'That URL carries no authorization code.',
+  'pkg.oauth.noProject':
+    'Code Assist did not create one. Fill in the Project ID below and sign in again.',
+  'pkg.oauth.needProject': 'Fill in your Google Cloud Project ID below and sign in again.',
+  'pkg.oauth.onboardTimeout': 'Onboarding did not finish. Try signing in again.',
+
+  // -- packages: meeting ----------------------------------------------------
+  'pkg.meeting.noTranscriptionEndpoint': 'No transcription endpoint is set in Settings.',
+  'pkg.meeting.invalidBundle': 'Invalid meeting bundle.',
+  'pkg.meeting.notFound': 'Meeting not found.',
+  'pkg.meeting.emptyTranscript': 'The transcript is still empty.',
+  'pkg.meeting.notifyReady': 'Notes ready ✓',
+  'pkg.meeting.notifyReadyBody': 'Meeting {id} has been analysed.',
+  'pkg.meeting.notifyFailed': 'Analysis failed',
+  'pkg.tracker.noToken': 'The integration token is not set.',
+  'pkg.tracker.noTarget': 'The project / team / database id is not set.',
+  'pkg.tracker.jiraTokenFormat': 'A Jira token must be formatted as email:api-token.',
+
+  // -- packages: shared -----------------------------------------------------
+  'pkg.backup.unrecognised': 'That backup file was not recognised.',
+  'pkg.backup.empty': 'The backup holds no data.',
+  'pkg.crypto.emptyPassphrase': 'The passphrase is empty.',
+  'pkg.crypto.unknownFormat': 'Unknown encrypted format.',
+
+  // -- packages: exporters --------------------------------------------------
+  'pkg.export.transcriptLines': '- **Transcript lines**: {count}',
+  'pkg.export.participants': 'Participants:',
+  'pkg.export.lines': '{count} lines',
+  'pkg.export.noActionItems': '- [ ] (no action items)',
+
+  'pkg.issue.source': 'Source: meeting {where}',
+  'pkg.issue.owner': 'Owner (from the meeting): {owner}',
+  'pkg.issue.due': 'Due (from the meeting): {due}',
+  'pkg.issue.footer': 'Created automatically by Companion.',
+  'pkg.docgen.footer':
+    '_Draft document written by Meet Companion AI — powered by suiflex. Review it before use._',
+
+  'pkg.ask.noRelevantPart': 'No part of the meeting covers this.',
+  'pkg.ask.noRelevantMeeting': 'No stored meeting covers this.',
+  'pkg.agenda.noOpenQuestions': '_No open questions remain._',
+  'pkg.digest.noActivity': '_No meeting activity in this period._',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
 } as const;

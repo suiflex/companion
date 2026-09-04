@@ -504,6 +504,65 @@ export const id: Record<keyof typeof en, string> = {
   'ext.transcript.newSinceFull':
     '+{count} baris baru sejak dirapikan (belum dikoreksi). Klik “{button}” untuk merapikan semuanya.',
 
+  // -- packages: AI ---------------------------------------------------------
+  'pkg.ai.badJson': 'JSON dari AI tidak valid',
+  'pkg.ai.emptyAnswer': 'Jawaban kosong dari AI',
+  'pkg.ai.emptyQuestion': 'Pertanyaan kosong',
+  'pkg.ai.emptySummary': 'executiveSummary kosong',
+  'pkg.ai.emptyMerged': 'Ringkasan gabungan kosong',
+  'pkg.ai.emptyResponse': 'Respons AI kosong',
+  'pkg.ai.emptyDraft': 'Draft dokumen kosong',
+  'pkg.ai.noBuiltin':
+    'AI bawaan browser tidak tersedia di browser ini. Pilih provider di Setelan.',
+
+  // -- packages: OAuth ------------------------------------------------------
+  'pkg.oauth.noJson': 'Auth service tidak mengembalikan JSON',
+  'pkg.oauth.noAccessToken': 'Respons tidak memuat access token',
+  'pkg.oauth.noDeviceCode': 'Respons tidak memuat device code',
+  'pkg.oauth.noAuthCode': 'Persetujuan tidak memuat authorization code',
+  'pkg.oauth.stateMismatch': 'URL itu milik proses sign-in yang lain. Ulangi.',
+  'pkg.oauth.noCodeInUrl': 'URL itu tidak memuat authorization code.',
+  'pkg.oauth.noProject':
+    'Code Assist tidak membuatkannya. Isi Project ID di bawah lalu masuk lagi.',
+  'pkg.oauth.needProject': 'Isi Project ID Google Cloud di bawah lalu masuk lagi.',
+  'pkg.oauth.onboardTimeout': 'Onboarding tidak selesai. Coba masuk lagi.',
+
+  // -- packages: meeting ----------------------------------------------------
+  'pkg.meeting.noTranscriptionEndpoint': 'Endpoint transkripsi belum diisi di Setelan.',
+  'pkg.meeting.invalidBundle': 'Bundle rapat tidak valid.',
+  'pkg.meeting.notFound': 'Meeting tidak ditemukan.',
+  'pkg.meeting.emptyTranscript': 'Transcript masih kosong.',
+  'pkg.meeting.notifyReady': 'Notulen siap ✓',
+  'pkg.meeting.notifyReadyBody': 'Meeting {id} selesai dianalisis.',
+  'pkg.meeting.notifyFailed': 'Analisis gagal',
+  'pkg.tracker.noToken': 'Token integrasi belum diisi.',
+  'pkg.tracker.noTarget': 'Project / team / database id belum diisi.',
+  'pkg.tracker.jiraTokenFormat': 'Token Jira harus berformat email:api-token.',
+
+  // -- packages: shared -----------------------------------------------------
+  'pkg.backup.unrecognised': 'Berkas cadangan tidak dikenali.',
+  'pkg.backup.empty': 'Cadangan tidak berisi data.',
+  'pkg.crypto.emptyPassphrase': 'Passphrase kosong.',
+  'pkg.crypto.unknownFormat': 'Format terenkripsi tidak dikenal.',
+
+  // -- packages: exporters --------------------------------------------------
+  'pkg.export.transcriptLines': '- **Jumlah baris transcript**: {count}',
+  'pkg.export.participants': 'Peserta:',
+  'pkg.export.lines': '{count} baris',
+  'pkg.export.noActionItems': '- [ ] (tidak ada action item)',
+
+  'pkg.issue.source': 'Sumber: rapat {where}',
+  'pkg.issue.owner': 'Owner (dari rapat): {owner}',
+  'pkg.issue.due': 'Due (dari rapat): {due}',
+  'pkg.issue.footer': 'Dibuat otomatis oleh Companion.',
+  'pkg.docgen.footer':
+    '_Dokumen draft dibuat oleh Meet Companion AI — powered by suiflex. Tinjau sebelum digunakan._',
+
+  'pkg.ask.noRelevantPart': 'Tidak ada bagian rapat yang membahas hal ini.',
+  'pkg.ask.noRelevantMeeting': 'Tidak ada rapat tersimpan yang membahas hal ini.',
+  'pkg.agenda.noOpenQuestions': '_Tidak ada pertanyaan terbuka yang tersisa._',
+  'pkg.digest.noActivity': '_Tidak ada aktivitas rapat pada periode ini._',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
 };

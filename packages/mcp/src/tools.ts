@@ -40,11 +40,11 @@ const num = (v: unknown, fallback: number): number => (typeof v === 'number' ? v
 export const TOOL_DEFINITIONS = [
   {
     name: 'list_meetings',
-    description: 'Daftar rapat tersimpan (terbaru dulu), lengkap dengan peserta dan durasi.',
+    description: 'Stored meetings, newest first, with participants and duration.',
     inputSchema: {
       type: 'object',
       properties: {
-        limit: { type: 'number', description: 'Maksimal jumlah rapat (default 30)' },
+        limit: { type: 'number', description: 'Maximum number of meetings (default 30)' },
         projectId: { type: 'string' },
       },
     },
@@ -52,7 +52,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'search_meetings',
     description:
-      'Cari lintas rapat pada transcript, keputusan, action item, open question, dan dokumen (FTS5/BM25).',
+      'Search across meetings over transcripts, decisions, action items, open questions and documents (FTS5/BM25).',
     inputSchema: {
       type: 'object',
       properties: { query: { type: 'string' }, limit: { type: 'number' } },
@@ -61,12 +61,12 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'get_meeting',
-    description: 'Metadata satu rapat plus ringkasan dan memori terstrukturnya.',
+    description: 'One meeting: metadata, summary and structured memory.',
     inputSchema: { type: 'object', properties: { sessionId: { type: 'string' } }, required: ['sessionId'] },
   },
   {
     name: 'get_transcript',
-    description: 'Transcript satu rapat. variant "clean" mengembalikan versi hasil perapian AI.',
+    description: 'The transcript of one meeting. variant "clean" returns the AI-cleaned version.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -79,7 +79,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'ask_meeting',
     description:
-      'Ambil potongan transcript yang relevan dengan pertanyaan dari SATU rapat, beserta ID baris sebagai bukti. Jawaban disusun oleh pemanggil dari bukti ini.',
+      'Retrieve the transcript passages relevant to a question from ONE meeting, with line ids as evidence. The caller composes the answer from that evidence.',
     inputSchema: {
       type: 'object',
       properties: { sessionId: { type: 'string' }, question: { type: 'string' } },
@@ -89,7 +89,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'ask_meetings',
     description:
-      'Sama seperti ask_meeting tetapi lintas seluruh arsip rapat: mengembalikan bukti per rapat.',
+      'Like ask_meeting but across the whole archive: returns evidence per meeting.',
     inputSchema: {
       type: 'object',
       properties: { question: { type: 'string' }, limit: { type: 'number' } },
@@ -98,7 +98,7 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'get_decisions',
-    description: 'Keputusan yang diekstrak, bisa disaring per rapat atau per topik.',
+    description: 'Extracted decisions, filterable by meeting or by topic.',
     inputSchema: {
       type: 'object',
       properties: { sessionId: { type: 'string' }, topic: { type: 'string' } },
@@ -106,7 +106,7 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'get_action_items',
-    description: 'Action item, bisa disaring per rapat, owner, atau status.',
+    description: 'Action items, filterable by meeting, owner or status.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -118,7 +118,7 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'get_open_questions',
-    description: 'Pertanyaan yang belum terjawab, termasuk di rapat mana pertanyaan itu selesai.',
+    description: 'Open questions, including which meeting each one was answered in.',
     inputSchema: { type: 'object', properties: { sessionId: { type: 'string' } } },
   },
 ] as const;
@@ -198,13 +198,13 @@ export function callTool(store: CompanionStore, name: string, args: Record<strin
     case 'ask_meeting': {
       const id = str(args.sessionId);
       const hits = store.search(str(args.question), { sessionId: id, limit: 12 });
-      if (!hits.length) return text({ evidence: [], note: 'Tidak ada bagian rapat yang relevan.' });
+      if (!hits.length) return text({ evidence: [], note: 'No part of the meeting is relevant.' });
       return text({ question: str(args.question), evidence: evidenceFor(store, hits) });
     }
 
     case 'ask_meetings': {
       const hits = store.search(str(args.question), { limit: num(args.limit, 24) });
-      if (!hits.length) return text({ evidence: [], note: 'Tidak ada rapat yang membahas hal ini.' });
+      if (!hits.length) return text({ evidence: [], note: 'No meeting covers this.' });
       return text({ question: str(args.question), evidence: evidenceFor(store, hits) });
     }
 

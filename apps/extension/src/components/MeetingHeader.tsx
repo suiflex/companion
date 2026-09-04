@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { SessionRow } from '@meetcc/store';
 import type { CarryOver } from '@meetcc/meeting';
 import { carryOver, db, getSession, listProjects } from '../lib/db';
-import { t } from '@meetcc/shared/i18n';
+import { locale, t } from '@meetcc/shared/i18n';
 
 // P1.5 — a meeting is more than a room code: date, duration, participants and
 // platform (§21). P1.9/P2.3 ride along here because this is where they matter
@@ -57,7 +57,7 @@ export function MeetingHeader({
 
   const meta = [
     session.startedAt
-      ? new Date(session.startedAt).toLocaleString('id-ID', {
+      ? new Date(session.startedAt).toLocaleString(locale(), {
           day: '2-digit',
           month: 'short',
           year: 'numeric',

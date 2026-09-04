@@ -358,7 +358,7 @@ async function teamsEnableCc() {
       )
       console.warn(
         TAG,
-        'CC menu tidak ketemu. Nyalakan manual: More → Language and speech → ' +
+        'CC menu not found. Turn it on manually: More → Language and speech → ' +
           'Turn on live captions. Permanen: Settings → Accessibility → Always keep captions on.',
       )
     }

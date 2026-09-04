@@ -1,4 +1,5 @@
 import type { Analysis, AnalysisRecord, Decision } from './types';
+import { t } from './i18n';
 
 // Cross-meeting rollups for the decision log + carry-over (F3). Pure functions
 // over the already-loaded analysis records, so they're unit-testable without
@@ -85,7 +86,7 @@ export function buildAgenda(entries: OpenQuestionEntry[]): string {
   const open = entries.filter((e) => !e.resolved);
   const lines = ['# Agenda — carry-over', ''];
   if (!open.length) {
-    lines.push('_Tidak ada pertanyaan terbuka yang tersisa._');
+    lines.push(t('pkg.agenda.noOpenQuestions'));
     return lines.join('\n');
   }
   const byMeeting = new Map<string, string[]>();

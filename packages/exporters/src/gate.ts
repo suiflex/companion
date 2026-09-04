@@ -72,6 +72,6 @@ export function gateSummary(events: AuditEvent[], now: number): GateSummary {
 
 /** One-line human summary for logs/UI — never sent anywhere. */
 export function describeGate(g: GateSummary): string {
-  if (!g.g1Adopted) return 'belum ada ekspor Obsidian dalam window 14 hari'
+  if (!g.g1Adopted) return 'no Obsidian export in the 14-day window'
   return `ekspor pertama ${new Date(g.firstExportAt!).toISOString()}, minggu-1: ${g.week1Exports}×, minggu-2: ${g.week2Exports}×`
 }

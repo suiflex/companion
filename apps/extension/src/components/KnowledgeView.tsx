@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { t } from '@meetcc/shared/i18n';
+import { locale, t } from '@meetcc/shared/i18n';
 import type { AskResult } from '@meetcc/shared';
 import type { ActionRow } from '@meetcc/store';
 import { weeklyDigest, type Chronology } from '@meetcc/meeting';
@@ -15,7 +15,7 @@ interface GlobalAnswer extends AskResult {
 }
 
 const fmtDate = (iso: string | null): string =>
-  iso ? new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+  iso ? new Date(iso).toLocaleDateString(locale(), { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
 /** Keys, not text: resolved at render time so the labels follow the language. */
 const EVENT_LABEL: Record<Chronology['events'][number]['kind'], Parameters<typeof t>[0]> = {

@@ -1,5 +1,6 @@
 import type { Analysis, DocType, Entry, Meeting } from '@meetcc/shared'
 import { formatEntries, formatTranscript } from './analyze'
+import { t } from '@meetcc/shared/i18n';
 import { AIError, type AIClient } from './client'
 
 // Advanced document generation — a grounded, multi-pass (Reflexion) pipeline,
@@ -90,7 +91,7 @@ ${GROUNDING_RULES}`,
 }
 
 const BRANDING =
-  '\n\n---\n\n_Dokumen draft dibuat oleh Meet Companion AI — powered by suiflex. Tinjau sebelum digunakan._'
+  `\n\n---\n\n${t('pkg.docgen.footer')}`
 
 /** Strip a wrapping ```markdown / ``` fence some models add around the doc. */
 export function unfence(text: string): string {
@@ -116,7 +117,7 @@ async function complete1(client: AIClient, system: string, user: string): Promis
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const out = (await client.complete({ system, user })).trim()
-      if (!out) throw new AIError('Respons AI kosong', true)
+      if (!out) throw new AIError(t('pkg.ai.emptyResponse'), true)
       return out
     } catch (e) {
       lastError = e
@@ -268,7 +269,7 @@ export async function generateDoc(
   })
 
   const draft = unfence(await complete1(client, meta.system, draftUser(context, analysis, template)))
-  if (!draft) throw new AIError('Draft dokumen kosong', true)
+  if (!draft) throw new AIError(t('pkg.ai.emptyDraft'), true)
   step += 1
   await tick('Menulis draft')
 

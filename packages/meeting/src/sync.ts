@@ -5,6 +5,7 @@ import {
   type AnalysisRecord,
   type Entry,
 } from '@meetcc/shared';
+import { t } from '@meetcc/shared/i18n';
 import type { CompanionStore } from '@meetcc/store';
 
 // P2.6 / P2.7 / P2.8 — optional sync, workspace and sharing.
@@ -97,7 +98,7 @@ export function buildBundle(store: CompanionStore, sessionId: string): SessionBu
 export function parseBundle(raw: string): SessionBundle {
   const b = JSON.parse(raw) as SessionBundle;
   if (b?.version !== 1 || !b.sessionId || !Array.isArray(b.entries)) {
-    throw new Error('Bundle rapat tidak valid.');
+    throw new Error(t('pkg.meeting.invalidBundle'));
   }
   return b;
 }
@@ -226,7 +227,7 @@ export async function exportShare(
   opts: ShareOptions = {},
 ): Promise<string> {
   const bundle = buildBundle(store, sessionId);
-  if (!bundle) throw new Error('Meeting tidak ditemukan.');
+  if (!bundle) throw new Error(t('pkg.meeting.notFound'));
   if (opts.summaryOnly) bundle.entries = [];
   return encryptWithPassphrase(JSON.stringify(bundle), passphrase);
 }
