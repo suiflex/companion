@@ -59,6 +59,18 @@ export async function applyBatch(
   if (state.seen[batch.operationId]) {
     return { status: 'duplicate', applied: false }
   }
+  // A batch that identifies no meeting cannot be written anywhere sensible.
+  // Without this the derived session key came out `undefined#NaN-NaN-NaNTNaN`
+  // and the note landed in `Rapat/NaN-NaN-Na/undefined-TNaN.md` — a real file
+  // in a real vault, produced by a message that was never a delivery at all.
+  if (!batch.sessionKey) {
+    if (!batch.roomId) {
+      return { status: 'error', applied: false, error: 'batch has no roomId' }
+    }
+    if (!batch.startedAt || Number.isNaN(Date.parse(batch.startedAt))) {
+      return { status: 'error', applied: false, error: 'batch has no usable startedAt' }
+    }
+  }
   const sessionKey = batch.sessionKey ?? sessionKeyFor(batch.roomId, batch.startedAt)
   const all = await deps.vault.readAll()
   const existing = all.find((n) => n.sessionKey === sessionKey)

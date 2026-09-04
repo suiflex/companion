@@ -59,7 +59,10 @@ export class Vault {
     // Every segment is slugged, the date included: `startedAt` arrives from the
     // extension over the bridge, and an unslugged `..` in it would walk the
     // write out of the vault entirely.
-    const day = slug(stamp?.slice(0, 10) || note.startedAt?.slice(0, 10) || '') || 'undated'
+    // A day segment that is not a date is not a day: `undated` is where a note
+    // with no usable start belongs, and it already exists for exactly that.
+    const raw = slug(stamp?.slice(0, 10) || note.startedAt?.slice(0, 10) || '')
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : 'undated'
     const hhmm = slug(stamp?.slice(11, 16).replace(':', '') ?? '')
     const name = hhmm ? `${slug(room)}-${hhmm}` : slug(room)
     return this.io.join(this.io.root, 'Rapat', day, `${name}.md`)

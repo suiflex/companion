@@ -220,3 +220,17 @@ describe('derived index', () => {
     expect(search(driver, 'vault')).toHaveLength(1)
   })
 })
+
+it('parks a note with an unusable date in undated', async () => {
+  // The day segment is part of a path, so a non-date there is a directory
+  // named after the failure — `Rapat/NaN-NaN-Na/` is what that looked like.
+  const rel = vault.relPath({
+    id: 'i',
+    sessionKey: 'meet/abc#not-a-date',
+    platform: 'google-meet',
+    updatedAt: '2026-01-01T00:00:00Z',
+    title: 't',
+    body: '',
+  })
+  expect(rel.split('/')[1]).toBe('undated')
+})
