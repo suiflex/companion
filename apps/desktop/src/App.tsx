@@ -8,6 +8,7 @@ import { t, formatDate, onLangChange, type LangPref, LANGS } from '@meetcc/share
 import { applyLang, loadLangPref, saveLangPref } from './lang'
 import { DateField } from './DateField'
 import { MeetingMeta } from './MeetingMeta'
+import { Select } from './Select'
 import {
   applyTheme,
   loadThemePref,
@@ -195,6 +196,25 @@ const optionLabel = (map: Record<string, string>, value: string): string =>
   value ? t(map[value] as Parameters<typeof t>[0]) : t('desktop.field.none')
 
 /**
+ * The choices to offer, plus whatever the note already holds.
+ *
+ * A note written elsewhere — by hand, or by a future version — can carry a
+ * status this build does not know. Keeping it in the list means selecting
+ * something else is a choice rather than the only way to make the control
+ * agree with the file.
+ */
+function options(
+  values: readonly string[],
+  labels: Record<string, string>,
+  current: string | undefined,
+): { value: string; label: string }[] {
+  const known = values.map((v) => ({ value: v, label: optionLabel(labels, v) }))
+  return current && !values.includes(current)
+    ? [...known, { value: current, label: current }]
+    : known
+}
+
+/**
  * The ticket half of a note: what the body cannot carry as prose.
  *
  * The values are free-form in the file (frontmatter is hand-editable markdown,
@@ -213,25 +233,21 @@ function TicketFields({
     <div className="ticket-fields">
       <label>
         <span>{t('desktop.field.status')}</span>
-        <select value={note.status ?? ''} onChange={(e) => onChange({ status: pick(e.target.value) })}>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>{optionLabel(STATUS_LABEL, s)}</option>
-          ))}
-          {note.status && !(STATUSES as readonly string[]).includes(note.status) && (
-            <option value={note.status}>{note.status}</option>
-          )}
-        </select>
+        <Select
+          label={t('desktop.field.status')}
+          value={note.status ?? ''}
+          options={options(STATUSES, STATUS_LABEL, note.status)}
+          onChange={(v) => onChange({ status: pick(v) })}
+        />
       </label>
       <label>
         <span>{t('desktop.field.priority')}</span>
-        <select value={note.priority ?? ''} onChange={(e) => onChange({ priority: pick(e.target.value) })}>
-          {PRIORITIES.map((s) => (
-            <option key={s} value={s}>{optionLabel(PRIORITY_LABEL, s)}</option>
-          ))}
-          {note.priority && !(PRIORITIES as readonly string[]).includes(note.priority) && (
-            <option value={note.priority}>{note.priority}</option>
-          )}
-        </select>
+        <Select
+          label={t('desktop.field.priority')}
+          value={note.priority ?? ''}
+          options={options(PRIORITIES, PRIORITY_LABEL, note.priority)}
+          onChange={(v) => onChange({ priority: pick(v) })}
+        />
       </label>
       <label>
         <span>{t('desktop.field.assignee')}</span>
