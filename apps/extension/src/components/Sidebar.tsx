@@ -228,21 +228,6 @@ export function Sidebar({
           title={t('ext.sidebar.settings')}>
           ⚙
         </button>
-        {/* One row of controls, not two footers: the links used to sit on a
-            line of their own between this row and the credit, which read as a
-            third footer stacked under the second. */}
-        {activeSponsorLinks().map((link) => (
-          <a
-            key={link.id}
-            className='icon-btn'
-            href={link.url}
-            target='_blank'
-            rel='noreferrer noopener'
-            aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
-            title={`${t('sponsor.title')} · ${t(link.label)}`}>
-            {link.icon}
-          </a>
-        ))}
       </aside>
     )
   }
@@ -330,6 +315,21 @@ export function Sidebar({
           title={t('ext.sidebar.settings')}>
           ⚙
         </button>
+        {/* One row of controls, not two footers: the links used to sit on a
+            line of their own between this row and the credit, which read as a
+            third footer stacked under the second. */}
+        {activeSponsorLinks().map((link) => (
+          <a
+            key={link.id}
+            className='icon-btn'
+            href={link.url}
+            target='_blank'
+            rel='noreferrer noopener'
+            aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
+            title={`${t('sponsor.title')} · ${t(link.label)}`}>
+            {link.icon}
+          </a>
+        ))}
       </div>
       <p className='sidebar-credit'>
         <img className='credit-logo' src='icons/suiflex.svg' alt='' />
