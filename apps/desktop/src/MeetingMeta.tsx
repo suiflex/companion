@@ -6,6 +6,7 @@
 // the note told you nothing about who they were.
 import { useState } from 'react'
 import { formatDateTime, t } from '@meetcc/shared/i18n'
+import { useToast } from './toast'
 import type { Vault, VaultNote } from '@meetcc/vault'
 
 /**
@@ -59,10 +60,10 @@ const PLATFORM_LABELS: Record<string, string> = {
 }
 
 export function MeetingMeta({ note, vault }: { note: VaultNote; vault: Vault | null }) {
+  const toast = useToast()
   const [lines, setLines] = useState<TranscriptLine[] | null>(null)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [copied, setCopied] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
 
   const participants = note.participants ?? []
@@ -85,11 +86,17 @@ export function MeetingMeta({ note, vault }: { note: VaultNote; vault: Vault | n
     }
   }
 
+  // Two faults lived here: the label said "Copied" for the rest of the session
+  // after one click, and a rejection set the same state as never having
+  // clicked — so a failure looked exactly like doing nothing. `?.` on the
+  // clipboard also short-circuited to silence where the API is absent.
   const copy = (): void => {
-    void navigator.clipboard
-      ?.writeText(url)
-      .then(() => setCopied(true))
-      .catch(() => setCopied(false))
+    const clipboard = navigator.clipboard
+    if (!clipboard) return toast('error', t('desktop.toast.copyFailed'))
+    void clipboard
+      .writeText(url)
+      .then(() => toast('success', t('desktop.toast.linkCopied')))
+      .catch(() => toast('error', t('desktop.toast.copyFailed')))
   }
 
   return (
@@ -123,7 +130,7 @@ export function MeetingMeta({ note, vault }: { note: VaultNote; vault: Vault | n
         <span className="mm-label">{t('desktop.meeting.openInExtension')}</span>
         <input className="mm-url" readOnly value={url} onFocus={(e) => e.target.select()} />
         <button type="button" className="btn" onClick={copy}>
-          {copied ? t('desktop.meeting.copied') : t('desktop.meeting.copyLink')}
+          {t('desktop.meeting.copyLink')}
         </button>
       </div>
 
