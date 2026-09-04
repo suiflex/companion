@@ -185,9 +185,9 @@ export function Sidebar({
         <button
           className='icon-btn'
           onClick={() => setOpen(true)}
-          aria-label='Buka sidebar'
+          aria-label={t('ext.sidebar.expand')}
           aria-expanded='false'
-          title='Buka sidebar'>
+          title={t('ext.sidebar.expand')}>
           »
         </button>
         <img className='brand-logo' src='icons/suiflex.svg' alt='Suiflex' />
@@ -239,9 +239,9 @@ export function Sidebar({
         <button
           className='icon-btn'
           onClick={() => setOpen(false)}
-          aria-label='Sembunyikan sidebar'
+          aria-label={t('ext.sidebar.collapse')}
           aria-expanded='true'
-          title='Sembunyikan sidebar'>
+          title={t('ext.sidebar.collapse')}>
           «
         </button>
       </div>

@@ -335,7 +335,6 @@ export const id: Record<keyof typeof en, string> = {
   'ext.signin.disconnected': 'Akun diputus.',
   'ext.signin.withChatgpt': 'Masuk dengan ChatGPT',
   'ext.signin.finish': 'Selesaikan sign-in',
-  'ext.signin.enterCode': 'Masukkan kode {code} di tab yang terbuka',
 
   'ext.ask.emptyHint':
     'Jawaban diambil dari isi rapat {id} dan disertai bukti (timestamp / pembicara).',
@@ -382,7 +381,7 @@ export const id: Record<keyof typeof en, string> = {
     'Kompatibel OpenAI (termasuk Whisper lokal). Kosong = impor file audio dimatikan.',
   'ext.templates.saved': 'Template tersimpan.',
   'ext.templates.intro':
-    'Template mengatur struktur dan penekanan dokumen (mis. notulen retro, MoM klien). Aturannya dikirim ke AI bersama transcript.',
+    'Template mengatur struktur dan penekanan dokumen (mis. notulen retro, MoM klien). Aturan grounding tetap berlaku: template mengubah bentuk, bukan mengizinkan fakta baru.',
   'ext.templates.delete': 'Hapus',
   'ext.data.importMeeting': 'Impor rapat',
   'ext.data.transcriptOrAudio': 'Berkas transcript atau audio',
@@ -464,10 +463,6 @@ export const id: Record<keyof typeof en, string> = {
   'ext.err.noAccessToken': 'Google tidak mengembalikan access token.',
   'ext.err.noCanvas': 'Canvas 2D context tidak tersedia',
 
-  // -- extension: notifications and content script --------------------------
-  'ext.notify.notesReady': 'Notulen siap ✓',
-  'ext.notify.analysisFailed': 'Analisis gagal',
-
   // -- extension: remaining ------------------------------------------------
   'ext.err.meetingNotFound': 'Meeting tidak ditemukan.',
   'ext.err.summaryFirst': 'Buat Ringkasan dulu sebelum diagram.',
@@ -484,7 +479,6 @@ export const id: Record<keyof typeof en, string> = {
   'ext.transcript.noOwner': 'PIC belum disebut',
   'ext.transcript.keywordGuess':
     'Dugaan dari kata kunci — daftar final dibuat AI setelah rapat selesai.',
-  'ext.transcript.newSince': '+{count} baris baru sejak dirapikan (belum dikoreksi)',
   'ext.kb.showDone': 'Tampilkan yang selesai',
   'ext.diagram.nothingToDraw': 'Tidak ada alur/proses yang bisa didiagramkan.',
   'ext.signin.account': 'Akun',
@@ -562,6 +556,14 @@ export const id: Record<keyof typeof en, string> = {
   'pkg.ask.noRelevantMeeting': 'Tidak ada rapat tersimpan yang membahas hal ini.',
   'pkg.agenda.noOpenQuestions': '_Tidak ada pertanyaan terbuka yang tersisa._',
   'pkg.digest.noActivity': '_Tidak ada aktivitas rapat pada periode ini._',
+
+  'ext.kb.actionItems': 'Action item',
+
+  'pkg.docgen.stage.context': 'Menyiapkan konteks',
+  'pkg.docgen.stage.draft': 'Menulis draft',
+  'pkg.docgen.stage.review': 'Memeriksa & memvalidasi',
+  'pkg.docgen.stage.done': 'Selesai',
+  'pkg.oauth.notAUrl': 'Itu bukan URL. Salin seluruh isi address bar.',
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',

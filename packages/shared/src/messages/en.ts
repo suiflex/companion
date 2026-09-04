@@ -338,7 +338,6 @@ export const en = {
   'ext.signin.disconnected': 'Account disconnected.',
   'ext.signin.withChatgpt': 'Sign in with ChatGPT',
   'ext.signin.finish': 'Finish sign-in',
-  'ext.signin.enterCode': 'Enter the code {code} in the tab that opened',
 
   'ext.ask.emptyHint':
     'Answers come from meeting {id} and carry their evidence — timestamp and speaker.',
@@ -385,7 +384,7 @@ export const en = {
     'OpenAI-compatible, including a local Whisper. Empty disables audio file import.',
   'ext.templates.saved': 'Template saved.',
   'ext.templates.intro':
-    'A template sets the structure and emphasis of a document — retro notes, client minutes, and so on. The rules go to the AI along with the transcript.',
+    'A template sets the structure and emphasis of a document — retro notes, client minutes, and so on. The grounding rules still hold: a template changes the shape, it does not license new facts.',
   'ext.templates.delete': 'Delete',
   'ext.data.importMeeting': 'Import a meeting',
   'ext.data.transcriptOrAudio': 'Transcript or audio file',
@@ -467,10 +466,6 @@ export const en = {
   'ext.err.noAccessToken': 'Google returned no access token.',
   'ext.err.noCanvas': 'No 2D canvas context available',
 
-  // -- extension: notifications and content script --------------------------
-  'ext.notify.notesReady': 'Notes ready ✓',
-  'ext.notify.analysisFailed': 'Analysis failed',
-
   // -- extension: remaining ------------------------------------------------
   'ext.err.meetingNotFound': 'Meeting not found.',
   'ext.err.summaryFirst': 'Create the Summary before the diagrams.',
@@ -487,7 +482,6 @@ export const en = {
   'ext.transcript.noOwner': 'no owner named yet',
   'ext.transcript.keywordGuess':
     'A keyword guess — the final list is written by the AI once the meeting ends.',
-  'ext.transcript.newSince': '+{count} new lines since it was cleaned (not yet corrected)',
   'ext.kb.showDone': 'Show finished',
   'ext.diagram.nothingToDraw': 'Nothing in this meeting maps to a flow or a process.',
   'ext.signin.account': 'Account',
@@ -565,6 +559,14 @@ export const en = {
   'pkg.ask.noRelevantMeeting': 'No stored meeting covers this.',
   'pkg.agenda.noOpenQuestions': '_No open questions remain._',
   'pkg.digest.noActivity': '_No meeting activity in this period._',
+
+  'ext.kb.actionItems': 'Action items',
+
+  'pkg.docgen.stage.context': 'Preparing context',
+  'pkg.docgen.stage.draft': 'Writing the draft',
+  'pkg.docgen.stage.review': 'Checking and validating',
+  'pkg.docgen.stage.done': 'Done',
+  'pkg.oauth.notAUrl': 'That is not a URL. Copy the whole address bar.',
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',

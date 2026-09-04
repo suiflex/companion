@@ -107,7 +107,7 @@ async function runPipelineInner(
       provider: client.provider,
     });
     await deps.audit('pipeline.error', `${id}: ${error}`);
-    deps.notify('Analisis gagal', `Meeting ${id}: ${error}`, id);
+    deps.notify(t('pkg.meeting.notifyFailed'), `Meeting ${id}: ${error}`, id);
     return { ok: false, reason: 'ai-failed', error };
   }
 }

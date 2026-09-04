@@ -262,16 +262,16 @@ export async function generateDoc(
     if (onProgress) await onProgress(step, total, label)
   }
 
-  await tick('Menyiapkan konteks')
+  await tick(t('pkg.docgen.stage.context'))
   const context = await prepareContext(client, meeting, async (done) => {
     step = done
-    await tick('Menyiapkan konteks')
+    await tick(t('pkg.docgen.stage.context'))
   })
 
   const draft = unfence(await complete1(client, meta.system, draftUser(context, analysis, template)))
   if (!draft) throw new AIError(t('pkg.ai.emptyDraft'), true)
   step += 1
-  await tick('Menulis draft')
+  await tick(t('pkg.docgen.stage.draft'))
 
   try {
     const critique = await complete1(
@@ -280,10 +280,10 @@ export async function generateDoc(
       critiqueUser(meta.label, draft, context),
     )
     step += 1
-    await tick('Memeriksa & memvalidasi')
+    await tick(t('pkg.docgen.stage.review'))
     if (/TIDAK ADA MASALAH BERARTI/i.test(critique)) {
       step = total
-      await tick('Selesai')
+      await tick(t('pkg.docgen.stage.done'))
       return draft + BRANDING
     }
     const final = unfence(
@@ -294,7 +294,7 @@ export async function generateDoc(
       ),
     )
     step = total
-    await tick('Selesai')
+    await tick(t('pkg.docgen.stage.done'))
     return (final || draft) + BRANDING
   } catch {
     return draft + BRANDING // graceful: draft is still a full document

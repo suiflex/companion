@@ -10,6 +10,7 @@
 // and torn down with it. The parent keys this component by the note, which is
 // what makes "open another note" a rebuild instead of a value push.
 import { Crepe } from '@milkdown/crepe'
+import { t } from '@meetcc/shared/i18n'
 import { useEffect, useRef } from 'react'
 
 // The light frame is the base; every colour it exposes is re-pointed at our own
@@ -50,7 +51,7 @@ export function NoteEditor({
         [Crepe.Feature.TopBar]: true,
       },
       featureConfigs: {
-        [Crepe.Feature.Placeholder]: { text: 'Tulis di sini…' },
+        [Crepe.Feature.Placeholder]: { text: t('desktop.editor.bodyPlaceholder') },
       },
     })
 

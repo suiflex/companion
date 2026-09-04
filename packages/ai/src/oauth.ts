@@ -315,7 +315,7 @@ export function parseCallbackUrl(url: string, expectedState: string): string {
   try {
     query = new URL(url.trim()).searchParams;
   } catch {
-    throw new OAuthError('BAD_URL', 'Itu bukan URL. Salin seluruh isi address bar.');
+    throw new OAuthError('BAD_URL', t('pkg.oauth.notAUrl'));
   }
   const error = query.get('error');
   if (error) throw new OAuthError('CONSENT_DENIED', `Google menolak: ${error}`);

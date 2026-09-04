@@ -223,7 +223,10 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
       <div className="kb-cols">
         <section className="kb-col">
           <h2 className="section-label">
-            Action item {story?.overdueActions.length ? `· ${story.overdueActions.length} lewat due` : ''}
+            {t('ext.kb.actionItems')}{' '}
+            {story?.overdueActions.length
+              ? t('ext.kb.overdue', { count: story.overdueActions.length })
+              : ''}
           </h2>
           <div className="kb-toggle-row">
             <label className="kb-toggle">

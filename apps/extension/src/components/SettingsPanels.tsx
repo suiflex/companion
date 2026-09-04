@@ -96,7 +96,9 @@ export function IntegrationsPanel({
       toast(
         r.failed.length ? 'error' : 'success',
         t('ext.sync.result', { pushed: r.pushed.length, pulled: r.pulled.length }) +
-          (r.failed.length ? `, ${r.failed.length} gagal (${r.failed[0].error})` : ''),
+          (r.failed.length
+          ? t('ext.sync.failedSuffix', { count: r.failed.length, error: r.failed[0].error })
+          : ''),
       );
     } catch (e) {
       toast('error', (e as Error).message);
@@ -132,7 +134,7 @@ export function IntegrationsPanel({
       <fieldset className="field-group">
         <legend>{t('ext.tracker.legend')}</legend>
         <label className="field">
-          <span>Provider</span>
+          <span>{t('ext.tracker.provider')}</span>
           <select
             value={i.tracker.provider}
             onChange={(e) =>
@@ -146,7 +148,7 @@ export function IntegrationsPanel({
         </label>
         {i.tracker.provider === 'jira' && (
           <label className="field">
-            <span>Base URL</span>
+            <span>{t('ext.tracker.baseUrl')}</span>
             <input
               type="url"
               value={i.tracker.baseUrl}
@@ -156,7 +158,7 @@ export function IntegrationsPanel({
           </label>
         )}
         <label className="field">
-          <span>Token</span>
+          <span>{t('ext.tracker.token')}</span>
           <input
             type="password"
             autoComplete="off"
@@ -200,7 +202,7 @@ export function IntegrationsPanel({
           </span>
         </label>
         <label className="field">
-          <span>Endpoint</span>
+          <span>{t('ext.sync.endpoint')}</span>
           <input
             type="url"
             value={i.sync.endpoint}
@@ -209,7 +211,7 @@ export function IntegrationsPanel({
           />
         </label>
         <label className="field">
-          <span>Token</span>
+          <span>{t('ext.sync.token')}</span>
           <input
             type="password"
             autoComplete="off"
@@ -339,8 +341,7 @@ export function TemplatesPanel() {
   return (
     <>
       <p className="hint">
-        Template mengatur struktur dan penekanan dokumen (mis. notulen retro, MoM klien). Aturan
-        grounding tetap berlaku: template mengubah bentuk, bukan mengizinkan fakta baru.
+        {t('ext.templates.intro')}
       </p>
 
       <label className="field">
@@ -488,7 +489,7 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
       <fieldset className="field-group">
         <legend>{t('ext.data.share')}</legend>
         <label className="field">
-          <span>Passphrase</span>
+          <span>{t('ext.data.passphrase')}</span>
           <input
             type="password"
             autoComplete="off"
