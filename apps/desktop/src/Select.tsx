@@ -27,6 +27,9 @@ function Dot({ option }: { option: Option }) {
   return <span className={cls} aria-hidden="true" />
 }
 
+/** Keep in step with `max-height` on `.select-list`. */
+const PANEL_MAX = 232
+
 export function Select({
   value,
   options,
@@ -39,6 +42,10 @@ export function Select({
   label: string
 }) {
   const [open, setOpen] = useState(false)
+  // Which way the panel opens. A select sitting in the editor's action bar is
+  // a few pixels from the window's bottom edge, and a panel that always drops
+  // downwards is simply cut off there — the options exist but cannot be seen.
+  const [up, setUp] = useState(false)
   const [cursor, setCursor] = useState(0)
   const wrap = useRef<HTMLDivElement>(null)
   const list = useRef<HTMLDivElement>(null)
@@ -51,6 +58,14 @@ export function Select({
   useEffect(() => {
     if (open) setCursor(index >= 0 ? index : 0)
   }, [open, index])
+
+  // Measured at the moment of opening, not guessed from where the control
+  // lives: the same select flips as the window is resized.
+  useEffect(() => {
+    if (!open) return
+    const rect = wrap.current?.getBoundingClientRect()
+    if (rect) setUp(rect.bottom + PANEL_MAX > window.innerHeight && rect.top > PANEL_MAX)
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -134,7 +149,7 @@ export function Select({
       </button>
 
       {open && (
-        <div className="select-list" role="listbox" aria-label={label} ref={list}>
+        <div className={up ? 'select-list up' : 'select-list'} role="listbox" aria-label={label} ref={list}>
           {options.map((o, i) => (
             <div
               key={o.value}

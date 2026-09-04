@@ -146,4 +146,32 @@ describe('Select', () => {
     )
     expect(screen.getByLabelText('Status').textContent).toContain('Waiting on legal')
   })
+
+  // The bug this exists for: the folder picker sits in the editor's action bar,
+  // a few pixels above the window's bottom edge, and its panel was drawn off
+  // screen — the options were there and unreachable.
+  it('opens upwards when there is no room below', async () => {
+    const user = userEvent.setup()
+    render(<Select label="Folder" value="" options={OPTIONS} onChange={() => {}} />)
+    const wrap = screen.getByLabelText('Folder').closest('.select') as HTMLElement
+    // jsdom lays nothing out, so the geometry is the thing under test.
+    vi.spyOn(wrap, 'getBoundingClientRect').mockReturnValue({
+      top: 700,
+      bottom: 740,
+    } as DOMRect)
+    window.innerHeight = 800
+    await user.click(screen.getByLabelText('Folder'))
+    expect(wrap.querySelector('.select-list.up')).toBeTruthy()
+  })
+
+  it('opens downwards when it fits', async () => {
+    const user = userEvent.setup()
+    render(<Select label="Folder" value="" options={OPTIONS} onChange={() => {}} />)
+    const wrap = screen.getByLabelText('Folder').closest('.select') as HTMLElement
+    vi.spyOn(wrap, 'getBoundingClientRect').mockReturnValue({ top: 40, bottom: 80 } as DOMRect)
+    window.innerHeight = 800
+    await user.click(screen.getByLabelText('Folder'))
+    expect(wrap.querySelector('.select-list')).toBeTruthy()
+    expect(wrap.querySelector('.select-list.up')).toBeNull()
+  })
 })

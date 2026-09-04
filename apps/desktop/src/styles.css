@@ -320,6 +320,24 @@ body {
 
 .tree-caret.open { transform: rotate(90deg) translateX(-1px); }
 
+/* The per-folder add button. Hidden until the row is touched, so a sidebar
+   of folders is not a wall of icons. */
+.tree-add {
+  flex: none;
+  border: 0;
+  padding: 0 2px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.tree-folder:hover .tree-add,
+.tree-add:focus-visible { opacity: 1; }
+.tree-add:hover { color: var(--accent); }
+
 .tree-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .tree-count {
@@ -727,6 +745,9 @@ body {
   box-shadow: 0 12px 32px rgb(0 0 0 / 0.35);
   overflow-y: auto;
 }
+
+/* Flipped when there is no room below — see PANEL_MAX in Select.tsx. */
+.select-list.up { top: auto; bottom: calc(100% + 6px); }
 
 .select-option {
   display: flex;
