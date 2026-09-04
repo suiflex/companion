@@ -577,29 +577,58 @@ export default function App() {
     setError(null)
   }
 
+  /**
+   * A delivered meeting is an archive, so saving an edit of one copies it
+   * instead of rewriting it.
+   *
+   * The copy is an ordinary note — new id, `manual`, its own session key so
+   * the index does not see two rows for one meeting — and carries `source`
+   * back to the meeting it came from. The archive file is never touched,
+   * which is the whole point: the vault keeps what the extension sent.
+   */
+  function copyForEditing(from: VaultNote): VaultNote {
+    return {
+      ...from,
+      id: uuidV7(),
+      sessionKey: `nota/${Date.now().toString(36)}`,
+      platform: 'manual',
+      source: from.sessionKey,
+      // The sidecar belongs to the archive; the copy links back to it by
+      // `source` rather than claiming to own the raw captions.
+      transcript: undefined,
+    }
+  }
+
   async function save() {
     if (!vault || !note) return
     try {
-      note.updatedAt = new Date().toISOString()
+      const archived = Boolean(note.platform && note.platform !== 'manual')
+      const toWrite = archived ? copyForEditing(note) : note
+      toWrite.updatedAt = new Date().toISOString()
       // A note that already has a path is written back to it. Deriving the
       // path here would put a second copy at the location the session key
       // implies and leave the original where it is — two files, one session
       // key, and a UNIQUE violation the moment the index is rebuilt.
-      const derived = vault.relPath(note)
-      const rel =
-        selected ??
-        (target ? `${target}/${derived.split('/').pop()}` : derived)
-      await vault.writeNoteAt(rel, note)
+      //
+      // A copy is the exception: it has no file yet, so it goes where the
+      // folder picker says, never over the archive it came from.
+      const derived = vault.relPath(toWrite)
+      const rel = archived
+        ? target
+          ? `${target}/${derived.split('/').pop()}`
+          : derived
+        : (selected ?? (target ? `${target}/${derived.split('/').pop()}` : derived))
+      await vault.writeNoteAt(rel, toWrite)
       // `selected` addresses a file, so it has to become the path the note was
       // just written to — otherwise trashing a freshly created note aims at
       // its session key and misses.
       setSelected(rel)
       setTarget(null)
-      setNote({ ...note })
+      setNote({ ...toWrite })
       setDirty(false)
       await refresh(vault)
       setError(null)
-      toast('success', t('desktop.toast.saved'))
+      toast('success', archived ? t('desktop.toast.copiedToNotes') : t('desktop.toast.saved'))
     } catch (e) {
       setError(String(e))
     }
@@ -727,7 +756,11 @@ export default function App() {
   // running the flat result list is what makes sense, so the tree is only the
   // resting state.
   const tree = useMemo(
-    () => withEmptyFolders(buildTree(notes.map((n) => ({ rel: n.rel, title: n.title }))), folders),
+    () =>
+      withEmptyFolders(
+        buildTree(notes.map((n) => ({ rel: n.rel, title: n.title, platform: n.platform }))),
+        folders,
+      ),
     [notes, folders],
   )
 
@@ -1022,8 +1055,14 @@ export default function App() {
                 <button type="button" className="btn danger" onClick={remove}>
                   {t('desktop.editor.trash')}
                 </button>
+                {/* The label says what the button does: for a delivered
+                    meeting it never overwrites the archive, it makes the note
+                    you go on editing. Removing Save here would leave no way to
+                    act on a meeting at all. */}
                 <button type="button" className="btn primary" onClick={save}>
-                  {t('desktop.editor.save')}
+                  {note.platform && note.platform !== 'manual'
+                    ? t('desktop.editor.saveCopy')
+                    : t('desktop.editor.save')}
                 </button>
               </div>
             </>

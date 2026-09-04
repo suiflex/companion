@@ -40,6 +40,7 @@ export const en = {
   'desktop.editor.updated': 'updated {date}',
   'desktop.editor.trash': 'Move to trash',
   'desktop.editor.save': 'Save',
+  'desktop.editor.saveCopy': 'Save a copy',
   'desktop.editor.newNoteTitle': 'New note',
   'desktop.editor.emptyTitle': 'Companion Desktop',
   'desktop.editor.emptyBody':
@@ -590,6 +591,7 @@ export const en = {
   'desktop.editor.blockPlaceholder': "Type '/' for commands",
 
   'desktop.toast.saved': 'Note saved.',
+  'desktop.toast.copiedToNotes': 'Saved as a new note. The delivered meeting is unchanged.',
   'desktop.toast.trashed': 'Moved to trash.',
   'desktop.toast.vaultMoved': 'Vault is now {path}.',
   'desktop.toast.linkCopied': 'Link copied.',

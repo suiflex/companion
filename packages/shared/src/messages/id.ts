@@ -36,6 +36,7 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.editor.updated': 'diperbarui {date}',
   'desktop.editor.trash': 'Pindah ke sampah',
   'desktop.editor.save': 'Simpan',
+  'desktop.editor.saveCopy': 'Simpan salinan',
   'desktop.editor.newNoteTitle': 'Nota baru',
   'desktop.editor.emptyTitle': 'Companion Desktop',
   'desktop.editor.emptyBody':
@@ -587,6 +588,7 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.editor.blockPlaceholder': "Ketik '/' untuk perintah",
 
   'desktop.toast.saved': 'Nota tersimpan.',
+  'desktop.toast.copiedToNotes': 'Tersimpan sebagai nota baru. Rapat yang masuk tidak diubah.',
   'desktop.toast.trashed': 'Dipindahkan ke sampah.',
   'desktop.toast.vaultMoved': 'Vault sekarang di {path}.',
   'desktop.toast.linkCopied': 'Tautan tersalin.',
