@@ -272,6 +272,25 @@ body {
   white-space: nowrap;
 }
 
+.note-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Where a note came from, when it did not come from here. */
+.note-source {
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: 400 9px/1.4 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.note-item.active .note-source { border-color: var(--accent); color: var(--accent); }
+
 .note-date {
   font: 400 9.5px/1 ui-monospace, Menlo, monospace;
   color: var(--fg-muted);
@@ -344,6 +363,98 @@ body {
   color: var(--fg-on-accent);
   font-weight: 600;
 }
+
+/* The meeting a note came from: who was there, when, and how to get back to
+   it. Shown only for delivered notes — a hand-written one has none of this. */
+.meeting-meta {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-sunken);
+}
+
+.mm-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.mm-platform {
+  font: 600 10px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.mm-when { font-size: 12px; color: var(--fg-muted); }
+
+.mm-link {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: 12px 'Avenir Next', Avenir, sans-serif;
+  cursor: pointer;
+}
+
+.mm-people {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.mm-label {
+  font: 600 9.5px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.mm-person {
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-raised);
+  font-size: 12px;
+}
+
+.mm-link-row { display: flex; align-items: center; gap: 8px; }
+
+.mm-url {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  color: var(--fg-muted);
+  font: 11px ui-monospace, Menlo, monospace;
+}
+
+.mm-transcript {
+  max-height: 260px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.mm-line {
+  display: grid;
+  grid-template-columns: 42px 110px 1fr;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.mm-time { font: 10px/1.7 ui-monospace, Menlo, monospace; color: var(--fg-muted); }
+.mm-speaker { color: var(--accent); overflow: hidden; text-overflow: ellipsis; }
 
 /* A grid, not a wrapping flex row: equal columns keep the four controls the
    same width, and a shared height keeps their boxes on one baseline. Left to

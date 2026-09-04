@@ -7,6 +7,7 @@ import { tauriVaultIo } from './vaultIo'
 import { t, formatDate, onLangChange, type LangPref, LANGS } from '@meetcc/shared/i18n'
 import { applyLang, loadLangPref, saveLangPref } from './lang'
 import { DateField } from './DateField'
+import { MeetingMeta } from './MeetingMeta'
 import {
   applyTheme,
   loadThemePref,
@@ -607,7 +608,15 @@ export default function App() {
                     onClick={() => guard(() => open(n.rel))}
                   >
                     <span className="note-title">{n.title}</span>
-                    <span className="note-date">{dayOf(n.updatedAt)}</span>
+                    <span className="note-row-meta">
+                      {/* A delivered meeting stays in this list — it is still a
+                          note — but says where it came from, so the two views
+                          do not read as the same undifferentiated pile. */}
+                      {n.platform && n.platform !== 'manual' && (
+                        <span className="note-source">{platformLabel(n.platform)}</span>
+                      )}
+                      <span className="note-date">{dayOf(n.updatedAt)}</span>
+                    </span>
                   </button>
                 ) : (
                   <span className="note-title muted" data-tip={t('desktop.vault.bodyHit')}>
@@ -689,6 +698,9 @@ export default function App() {
                   setDirty(true)
                 }}
               />
+              {note.platform && note.platform !== 'manual' && (
+                <MeetingMeta note={note} vault={vault} />
+              )}
               <TicketFields note={note} onChange={(patch) => { setNote({ ...note, ...patch }); setDirty(true) }} />
               {/* Keyed by the note id, not its path: the editor owns its
                   document, so opening another note must remount it — but the
