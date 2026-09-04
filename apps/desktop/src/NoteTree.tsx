@@ -31,12 +31,15 @@ export function NoteTree({
   selected,
   onOpen,
   onMove,
+  onAddFolder,
 }: {
   root: TreeFolder
   selected: string | null
   onOpen: (rel: string) => void
   /** Drop a note onto a folder. `folder` is '' for the vault root. */
   onMove: (rel: string, folder: string) => void
+  /** Start naming a new folder inside this one. '' is the vault root. */
+  onAddFolder: (folder: string) => void
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed)
   // The folder currently under a dragged note, so the drop target is visible.
@@ -85,6 +88,30 @@ export function NoteTree({
         >
           <span className={isCollapsed ? 'tree-caret' : 'tree-caret open'} aria-hidden="true" />
           <span className="tree-name">{folder.name}</span>
+          {/* Nesting is what makes folders worth having, and the only place to
+              say which folder a new one belongs to is the folder itself —
+              asking afterwards is a second question for something the click
+              already answered. */}
+          <span
+            role="button"
+            tabIndex={0}
+            className="tree-add"
+            aria-label={t('desktop.vault.newFolderIn', { folder: folder.name })}
+            data-tip={t('desktop.vault.newFolderIn', { folder: folder.name })}
+            onClick={(e) => {
+              // The row toggles; only the inner control adds.
+              e.stopPropagation()
+              onAddFolder(folder.path)
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' && e.key !== ' ') return
+              e.preventDefault()
+              e.stopPropagation()
+              onAddFolder(folder.path)
+            }}
+          >
+            ⊞
+          </span>
           <span className="tree-count">{total}</span>
         </button>
         {!isCollapsed && renderChildren(folder, depth + 1)}

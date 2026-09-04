@@ -340,7 +340,10 @@ export default function App() {
   // directory has no note path to be derived from, so it would vanish the
   // moment it was made.
   const [folders, setFolders] = useState<string[]>([])
-  const [namingFolder, setNamingFolder] = useState(false)
+  // The folder a new folder is being named inside: null is "not naming", ''
+  // is the vault root. Which parent it belongs to comes from the button that
+  // was clicked, so nothing has to be asked afterwards.
+  const [namingFolder, setNamingFolder] = useState<string | null>(null)
   // Where an unsaved note will land. Null means "wherever the session key
   // says", which is what happened before folders existed.
   const [target, setTarget] = useState<string | null>(null)
@@ -501,21 +504,22 @@ export default function App() {
   // `window.prompt` is a no-op in this window — the WebView has no dialog for
   // it and returns null without showing anything, so the button appeared dead.
   // The name is typed in the sidebar instead.
-  async function createFolder(name: string) {
+  async function createFolder(parent: string, name: string) {
     const trimmed = name.trim()
-    if (!trimmed) return setNamingFolder(false)
+    if (!trimmed) return setNamingFolder(null)
     try {
       // Slashes would make one field create a whole path, which is more than
       // the control promises; the rest is left alone so a folder can be named
       // in any language.
-      const rel = trimmed.replace(/[/\\]/g, '-')
+      const safe = trimmed.replace(/[/\\]/g, '-')
+      const rel = parent ? `${parent}/${safe}` : safe
       await invoke('create_vault_folder', { rel })
       if (vault) await refresh(vault)
       toast('success', t('desktop.vault.folderCreated', { name: rel }))
     } catch (e) {
       setError(String(e))
     } finally {
-      setNamingFolder(false)
+      setNamingFolder(null)
     }
   }
 
@@ -758,7 +762,7 @@ export default function App() {
             aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
             onClick={() => void invoke('open_external', { url: link.url })}
           >
-            ♥
+            {link.icon}
           </button>
         ))}
         <button
@@ -798,7 +802,7 @@ export default function App() {
               <button
                 type="button"
                 className="add-btn"
-                onClick={() => setNamingFolder(true)}
+                onClick={() => setNamingFolder('')}
                 aria-label={t('desktop.vault.newFolder')}
                 disabled={!vault}
               >
@@ -820,16 +824,20 @@ export default function App() {
               </button>
             </span>
           </div>
-          {namingFolder && (
+          {namingFolder !== null && (
             <input
               className="search"
               autoFocus
-              placeholder={t('desktop.vault.folderName')}
+              placeholder={
+                namingFolder
+                  ? t('desktop.vault.folderNameIn', { folder: namingFolder })
+                  : t('desktop.vault.folderName')
+              }
               aria-label={t('desktop.vault.folderName')}
-              onBlur={(e) => void createFolder(e.target.value)}
+              onBlur={(e) => void createFolder(namingFolder, e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') void createFolder(e.currentTarget.value)
-                if (e.key === 'Escape') setNamingFolder(false)
+                if (e.key === 'Enter') void createFolder(namingFolder, e.currentTarget.value)
+                if (e.key === 'Escape') setNamingFolder(null)
               }}
             />
           )}
@@ -852,6 +860,7 @@ export default function App() {
               selected={selected}
               onOpen={(rel) => guard(() => open(rel))}
               onMove={(rel, folder) => void moveNoteFrom(rel, folder)}
+              onAddFolder={(folder) => setNamingFolder(folder)}
             />
           ) : (
           <ul className="note-list">
@@ -981,17 +990,19 @@ export default function App() {
                         date: formatDate(note.updatedAt) || '—',
                       })}
                 </span>
-                {selected && (
-                  <Select
-                    label={t('desktop.vault.moveTo')}
-                    value={selected.split('/').slice(0, -1).join('/')}
-                    options={[
-                      { value: '', label: t('desktop.vault.rootFolder') },
-                      ...folderPaths(tree).map((p) => ({ value: p, label: p })),
-                    ]}
-                    onChange={(v) => void moveNote(v)}
-                  />
-                )}
+                {/* A saved note moves its file; an unsaved one only records
+                    where the first save should land — until then there is no
+                    file to move. Same control either way, because "which
+                    folder is this in" is the same question. */}
+                <Select
+                  label={selected ? t('desktop.vault.moveTo') : t('desktop.vault.saveTo')}
+                  value={selected ? selected.split('/').slice(0, -1).join('/') : (target ?? '')}
+                  options={[
+                    { value: '', label: t('desktop.vault.rootFolder') },
+                    ...folderPaths(tree).map((p) => ({ value: p, label: p })),
+                  ]}
+                  onChange={(v) => (selected ? void moveNote(v) : setTarget(v))}
+                />
                 <button type="button" className="btn danger" onClick={remove}>
                   {t('desktop.editor.trash')}
                 </button>

@@ -604,8 +604,11 @@ export const en = {
 
   'desktop.vault.newFolder': 'New folder',
   'desktop.vault.folderName': 'Folder name',
+  'desktop.vault.newFolderIn': 'New folder in {folder}',
+  'desktop.vault.folderNameIn': 'Folder name, inside {folder}',
   'desktop.vault.folderCreated': 'Folder {name} created.',
   'desktop.vault.moveTo': 'Move to…',
+  'desktop.vault.saveTo': 'Save to…',
   'desktop.vault.moved': 'Moved to {folder}.',
   'desktop.vault.rootFolder': 'Vault root',
 

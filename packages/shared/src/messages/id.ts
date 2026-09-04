@@ -601,8 +601,11 @@ export const id: Record<keyof typeof en, string> = {
 
   'desktop.vault.newFolder': 'Folder baru',
   'desktop.vault.folderName': 'Nama folder',
+  'desktop.vault.newFolderIn': 'Folder baru di {folder}',
+  'desktop.vault.folderNameIn': 'Nama folder, di dalam {folder}',
   'desktop.vault.folderCreated': 'Folder {name} dibuat.',
   'desktop.vault.moveTo': 'Pindahkan ke…',
+  'desktop.vault.saveTo': 'Simpan ke…',
   'desktop.vault.moved': 'Dipindahkan ke {folder}.',
   'desktop.vault.rootFolder': 'Akar vault',
 
