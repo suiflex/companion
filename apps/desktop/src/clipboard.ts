@@ -5,16 +5,23 @@
 // simply resolves to nothing — a copy that silently did not happen. The
 // fallback is the old `execCommand` path: deprecated, but it needs no
 // permission and works wherever a selection does.
+// The selection path goes first, and not for style: in this WebView
+// `writeText` can neither resolve nor reject — the permission prompt it is
+// waiting on is never shown — so awaiting it first means the copy silently
+// never finishes and nothing is ever reported. `execCommand` is synchronous
+// and cannot hang, so it decides the outcome and the async API is only the
+// fallback.
 export async function copyText(text: string): Promise<boolean> {
+  if (copyBySelection(text)) return true
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text)
       return true
     }
   } catch {
-    /* denied or unavailable — fall through to the selection path */
+    /* denied or unavailable — nothing left to try */
   }
-  return copyBySelection(text)
+  return false
 }
 
 function copyBySelection(text: string): boolean {
