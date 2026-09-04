@@ -11,13 +11,38 @@ use tauri::Manager;
 /// cannot ask the app handle for the config dir and resolves it the same way
 /// Tauri would instead.
 pub fn config_dir() -> std::path::PathBuf {
-    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-    #[cfg(target_os = "macos")]
-    let base = std::path::PathBuf::from(&home).join("Library/Application Support");
-    #[cfg(not(target_os = "macos"))]
-    let base = std::env::var("XDG_CONFIG_HOME")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|_| std::path::PathBuf::from(&home).join(".config"));
+    config_dir_from(
+        std::env::var("HOME")
+            .ok()
+            .or_else(|| std::env::var("USERPROFILE").ok()),
+        std::env::var("APPDATA").ok(),
+        std::env::var("XDG_CONFIG_HOME").ok(),
+    )
+}
+
+/// The rule itself, taking its environment so it can be exercised directly.
+///
+/// It has to agree with Tauri's `app_config_dir()` on every platform, because
+/// the GUI reads the spool through that and the host writes it through this.
+/// They disagreed on Windows — Tauri uses `%APPDATA%`, this used `~/.config` —
+/// which would have spooled deliveries somewhere the app never looks: visible
+/// success, invisible failure, the exact thing the host mode exists to avoid.
+pub fn config_dir_from(
+    home: Option<String>,
+    appdata: Option<String>,
+    xdg: Option<String>,
+) -> std::path::PathBuf {
+    let home = std::path::PathBuf::from(home.unwrap_or_else(|| ".".into()));
+    let base = if cfg!(target_os = "macos") {
+        home.join("Library/Application Support")
+    } else if cfg!(target_os = "windows") {
+        appdata
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| home.join("AppData/Roaming"))
+    } else {
+        xdg.map(std::path::PathBuf::from)
+            .unwrap_or_else(|| home.join(".config"))
+    };
     base.join("dev.suiflex.companion")
 }
 
@@ -81,4 +106,41 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running Companion Desktop");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::config_dir_from;
+
+    #[test]
+    fn the_config_dir_follows_the_platform_tauri_uses() {
+        let dir = config_dir_from(
+            Some("/home/x".into()),
+            Some("C:/Users/x/AppData/Roaming".into()),
+            None,
+        );
+        let shown = dir.to_string_lossy().into_owned();
+        assert!(shown.ends_with("dev.suiflex.companion"), "{shown}");
+        if cfg!(target_os = "macos") {
+            assert!(
+                shown.starts_with("/home/x/Library/Application Support"),
+                "{shown}"
+            );
+        } else if cfg!(target_os = "windows") {
+            assert!(shown.starts_with("C:/Users/x/AppData/Roaming"), "{shown}");
+        } else {
+            assert!(shown.starts_with("/home/x/.config"), "{shown}");
+        }
+    }
+
+    #[test]
+    fn xdg_config_home_wins_where_it_applies() {
+        let dir = config_dir_from(Some("/home/x".into()), None, Some("/custom".into()));
+        if !cfg!(target_os = "macos") && !cfg!(target_os = "windows") {
+            assert_eq!(
+                dir,
+                std::path::PathBuf::from("/custom/dev.suiflex.companion")
+            );
+        }
+    }
 }
