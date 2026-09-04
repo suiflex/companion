@@ -15,9 +15,7 @@ export interface SponsorLink {
 
 export const SPONSOR_LINKS: SponsorLink[] = [
   { id: 'github', url: 'https://github.com/sponsors/suiflex', label: 'sponsor.github' },
-  // Left empty deliberately: the URL is not known here, and a guessed one is
-  // worse than an absent button. Fill it in and the button appears.
-  { id: 'saweria', url: '', label: 'sponsor.saweria' },
+  { id: 'saweria', url: 'https://saweria.co/suiflex', label: 'sponsor.saweria' },
 ]
 
 export const activeSponsorLinks = (): SponsorLink[] => SPONSOR_LINKS.filter((l) => l.url)
