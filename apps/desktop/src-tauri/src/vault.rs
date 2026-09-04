@@ -125,12 +125,17 @@ fn root(state: &VaultState) -> PathBuf {
 /// vault: these paths originate in the WebView, which in turn takes them from
 /// note frontmatter, so they are data rather than something we control.
 fn abs(state: &VaultState, rel: &str) -> Result<PathBuf, String> {
+    resolve(&root(state), rel)
+}
+
+/// The guard itself, taking a root so it can be exercised directly.
+fn resolve(root: &Path, rel: &str) -> Result<PathBuf, String> {
     let rel = rel.trim_start_matches('/');
     let path = Path::new(rel);
     if path.is_absolute() || path.components().any(|c| c == Component::ParentDir) {
         return Err(format!("path escapes the vault: {rel}"));
     }
-    Ok(root(state).join(path))
+    Ok(root.join(path))
 }
 
 #[tauri::command]
@@ -253,6 +258,80 @@ pub fn vault_mtime(state: State<'_, VaultState>, rel: String) -> Result<f64, Str
         .map_err(|e| e.to_string())
 }
 
+/// Move a note to another folder inside the vault.
+///
+/// Both ends go through `abs()`, which is the whole safety story: these paths
+/// come from the WebView, and a destination is just as capable of climbing out
+/// of the vault as a source is.
+#[tauri::command]
+pub fn move_vault_file(
+    state: State<'_, VaultState>,
+    from: String,
+    to: String,
+) -> Result<(), String> {
+    move_within(&root(&state), &from, &to)
+}
+
+/// The move itself, split from the command so it can be tested without a
+/// Tauri `State`.
+fn move_within(root: &Path, from: &str, to: &str) -> Result<(), String> {
+    let src = resolve(root, from)?;
+    let dest = resolve(root, to)?;
+    // Replacing the destination would destroy a note, which is the one outcome
+    // a move must never have.
+    if dest.exists() {
+        return Err(format!("a note already exists at {to}"));
+    }
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    fs::rename(&src, &dest).map_err(|e| e.to_string())
+}
+
+/// Create an empty folder in the vault.
+///
+/// Empty on purpose: a folder exists before the note that will live in it, and
+/// the sidebar derives its tree from note paths, so the folder has to be real
+/// on disk to survive a refresh.
+#[tauri::command]
+pub fn create_vault_folder(state: State<'_, VaultState>, rel: String) -> Result<(), String> {
+    let dir = abs(&state, &rel)?;
+    fs::create_dir_all(dir).map_err(|e| e.to_string())
+}
+
+/// The folders that exist in the vault, including ones holding no notes.
+#[tauri::command]
+pub fn list_vault_folders(state: State<'_, VaultState>) -> Result<Vec<String>, String> {
+    let root = root(&state);
+    let mut out = Vec::new();
+    walk_dirs(&root, &root, &mut out)?;
+    out.sort();
+    Ok(out)
+}
+
+fn walk_dirs(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), String> {
+    for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        // The sidecar and the bin are storage, not places a note belongs.
+        if name == TRASH || name == TRANSCRIPT {
+            continue;
+        }
+        let rel = path
+            .strip_prefix(root)
+            .map_err(|e| e.to_string())?
+            .to_string_lossy()
+            .into_owned();
+        out.push(rel);
+        walk_dirs(root, &path, out)?;
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn trash_vault_file(state: State<'_, VaultState>, rel: String) -> Result<(), String> {
     let from = abs(&state, &rel)?;
@@ -327,6 +406,76 @@ mod tests {
             fs::write(config_file(&config), junk).unwrap();
             assert_eq!(startup_root(&config), default_root(), "junk: {junk:?}");
         }
+    }
+
+    #[test]
+    fn resolve_refuses_a_path_that_climbs_out_of_the_vault() {
+        // The move command takes *two* paths from the WebView, and a
+        // destination can escape just as easily as a source.
+        let root = tmp("escape");
+        for bad in ["../outside.md", "a/../../outside.md", "a/b/../../../x.md"] {
+            assert!(resolve(&root, bad).is_err(), "allowed: {bad}");
+        }
+        assert!(resolve(&root, "Rapat/2026-09-04/ok.md").is_ok());
+
+        // A leading slash is trimmed rather than rejected, so an absolute-
+        // looking path lands *inside* the vault instead of at the real one.
+        // That is the invariant worth asserting: whatever comes in, the
+        // resolved path never leaves the root.
+        let absolute = resolve(&root, "/etc/passwd").unwrap();
+        assert!(absolute.starts_with(&root), "escaped: {absolute:?}");
+        assert_eq!(absolute, root.join("etc/passwd"));
+    }
+
+    #[test]
+    fn move_refuses_to_overwrite_an_existing_note() {
+        let root = tmp("move-clash");
+        fs::create_dir_all(root.join("a")).unwrap();
+        fs::create_dir_all(root.join("b")).unwrap();
+        fs::write(root.join("a/n.md"), "one").unwrap();
+        fs::write(root.join("b/n.md"), "two").unwrap();
+
+        assert!(move_within(&root, "a/n.md", "b/n.md").is_err());
+        assert_eq!(fs::read_to_string(root.join("b/n.md")).unwrap(), "two");
+        assert!(root.join("a/n.md").exists());
+    }
+
+    #[test]
+    fn move_creates_the_destination_folder() {
+        let root = tmp("move-ok");
+        fs::create_dir_all(root.join("a")).unwrap();
+        fs::write(root.join("a/n.md"), "one").unwrap();
+
+        move_within(&root, "a/n.md", "Projects/Alpha/n.md").unwrap();
+        assert!(!root.join("a/n.md").exists());
+        assert_eq!(
+            fs::read_to_string(root.join("Projects/Alpha/n.md")).unwrap(),
+            "one"
+        );
+    }
+
+    #[test]
+    fn move_refuses_a_destination_outside_the_vault() {
+        let root = tmp("move-escape");
+        fs::write(root.join("n.md"), "one").unwrap();
+        assert!(move_within(&root, "n.md", "../stolen.md").is_err());
+        assert!(root.join("n.md").exists());
+    }
+
+    #[test]
+    fn walk_dirs_skips_storage_directories() {
+        let root = tmp("walk");
+        fs::create_dir_all(root.join("Rapat/2026-09-04")).unwrap();
+        fs::create_dir_all(root.join(TRASH)).unwrap();
+        fs::create_dir_all(root.join(TRANSCRIPT)).unwrap();
+        let mut out = Vec::new();
+        walk_dirs(&root, &root, &mut out).unwrap();
+        out.sort();
+        // `.trash` and `.transcript` are storage, not places a note belongs.
+        assert_eq!(
+            out,
+            vec!["Rapat".to_string(), "Rapat/2026-09-04".to_string()]
+        );
     }
 
     #[test]

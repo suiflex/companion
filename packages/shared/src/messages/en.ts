@@ -602,6 +602,13 @@ export const en = {
   'sponsor.github': 'GitHub Sponsors',
   'sponsor.saweria': 'Saweria',
 
+  'desktop.vault.newFolder': 'New folder',
+  'desktop.vault.folderName': 'Folder name',
+  'desktop.vault.folderCreated': 'Folder {name} created.',
+  'desktop.vault.moveTo': 'Move to…',
+  'desktop.vault.moved': 'Moved to {folder}.',
+  'desktop.vault.rootFolder': 'Vault root',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
 } as const;

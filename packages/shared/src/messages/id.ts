@@ -599,6 +599,13 @@ export const id: Record<keyof typeof en, string> = {
   'sponsor.github': 'GitHub Sponsors',
   'sponsor.saweria': 'Saweria',
 
+  'desktop.vault.newFolder': 'Folder baru',
+  'desktop.vault.folderName': 'Nama folder',
+  'desktop.vault.folderCreated': 'Folder {name} dibuat.',
+  'desktop.vault.moveTo': 'Pindahkan ke…',
+  'desktop.vault.moved': 'Dipindahkan ke {folder}.',
+  'desktop.vault.rootFolder': 'Akar vault',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
 };

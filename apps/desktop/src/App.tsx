@@ -11,6 +11,8 @@ import { MeetingMeta } from './MeetingMeta'
 import { Select, type Option, type Tone } from './Select'
 import { useToast } from './toast'
 import { activeSponsorLinks } from './sponsor'
+import { NoteTree } from './NoteTree'
+import { buildTree, folderPaths, withEmptyFolders } from './tree'
 import {
   applyTheme,
   loadThemePref,
@@ -334,6 +336,10 @@ export default function App() {
   const [langPref, setLangPref] = useState<LangPref>(loadLangPref)
   // The default root is only known to Rust, so ask once rather than rebuilding
   // `~/Companion` in the frontend and hoping the two agree.
+  // Folders that exist on disk, including ones holding no notes — an empty
+  // directory has no note path to be derived from, so it would vanish the
+  // moment it was made.
+  const [folders, setFolders] = useState<string[]>([])
   const [defaultRoot, setDefaultRoot] = useState<string | null>(null)
   useEffect(() => {
     void invoke<string>('default_vault_root').then(setDefaultRoot).catch(() => undefined)
@@ -418,6 +424,7 @@ export default function App() {
       })),
     )
     if (driverRef.current) await createIndex(driverRef.current, v, read)
+    await invoke<string[]>('list_vault_folders').then(setFolders).catch(() => undefined)
   }
 
   // Notes also arrive from outside this window: the extension hands finished
@@ -474,6 +481,37 @@ export default function App() {
     setNote(n)
     setDirty(false)
     setError(null)
+  }
+
+  async function newFolder() {
+    const name = window.prompt(t('desktop.vault.folderName'))?.trim()
+    if (!name) return
+    try {
+      // Slashes would make one prompt create a whole path, which is more than
+      // the button promises; the rest is left alone so a folder can be named
+      // in any language.
+      const rel = name.replace(/[/\\]/g, '-')
+      await invoke('create_vault_folder', { rel })
+      if (vault) await refresh(vault)
+      toast('success', t('desktop.vault.folderCreated', { name: rel }))
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
+  async function moveNote(folder: string) {
+    if (!vault || !selected) return
+    const file = selected.split('/').pop() ?? selected
+    const to = folder ? `${folder}/${file}` : file
+    if (to === selected) return
+    try {
+      await invoke('move_vault_file', { from: selected, to })
+      setSelected(to)
+      await refresh(vault)
+      toast('success', t('desktop.vault.moved', { folder: folder || t('desktop.vault.rootFolder') }))
+    } catch (e) {
+      setError(String(e))
+    }
   }
 
   async function openNew() {
@@ -630,6 +668,14 @@ export default function App() {
     return ordered
   }, [notes, driver, query])
 
+  // Grouped view of the same notes the search filters over — when a query is
+  // running the flat result list is what makes sense, so the tree is only the
+  // resting state.
+  const tree = useMemo(
+    () => withEmptyFolders(buildTree(notes.map((n) => ({ rel: n.rel, title: n.title }))), folders),
+    [notes, folders],
+  )
+
   // Notes the extension delivered, as opposed to ones written here. The split
   // needs no new field: openNew stamps `manual`, applyBatch stamps the meeting
   // platform. Newest meeting first — an inbox is read from the top.
@@ -713,6 +759,17 @@ export default function App() {
                 with nothing. The tip lives on the wrapper because a disabled
                 button receives no hover — which is exactly when it most needs
                 to say why it is disabled. */}
+            <span className="tip-wrap" data-tip={t('desktop.vault.newFolder')}>
+              <button
+                type="button"
+                className="add-btn"
+                onClick={() => void newFolder()}
+                aria-label={t('desktop.vault.newFolder')}
+                disabled={!vault}
+              >
+                ⊞
+              </button>
+            </span>
             <span
               className="tip-wrap"
               data-tip={vault ? t('desktop.vault.newNote') : t('desktop.vault.preparing')}
@@ -741,6 +798,9 @@ export default function App() {
             onChange={(e) => setQuery(e.target.value)}
             disabled={!vault}
           />
+          {!query.trim() ? (
+            <NoteTree root={tree} selected={selected} onOpen={(rel) => guard(() => open(rel))} />
+          ) : (
           <ul className="note-list">
             {filtered.map((n) => (
               <li key={n.rel || n.title}>
@@ -770,6 +830,7 @@ export default function App() {
             ))}
             {filtered.length === 0 && <li className="empty-hint">{t('desktop.vault.empty')}</li>}
           </ul>
+          )}
         </aside>
       )}
 
@@ -867,6 +928,17 @@ export default function App() {
                         date: formatDate(note.updatedAt) || '—',
                       })}
                 </span>
+                {selected && (
+                  <Select
+                    label={t('desktop.vault.moveTo')}
+                    value={selected.split('/').slice(0, -1).join('/')}
+                    options={[
+                      { value: '', label: t('desktop.vault.rootFolder') },
+                      ...folderPaths(tree).map((p) => ({ value: p, label: p })),
+                    ]}
+                    onChange={(v) => void moveNote(v)}
+                  />
+                )}
                 <button type="button" className="btn danger" onClick={remove}>
                   {t('desktop.editor.trash')}
                 </button>
