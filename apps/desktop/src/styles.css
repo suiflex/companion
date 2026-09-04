@@ -1167,8 +1167,33 @@ body {
 .setting-actions {
   display: flex;
   flex: none;
+  align-items: center;
   gap: 8px;
 }
+
+/* The settings screen had no text field until the provider panel: everything
+   before it was a button, a toggle or a select. */
+.text-input {
+  flex: none;
+  width: 260px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* The provider select is the widest control on the screen; let it size to the
+   row rather than to its longest option, which would be an OpenAI-length name
+   deciding the layout. */
+.setting-row .select { flex: none; width: 260px; }
 
 .confirm-bar {
   display: flex;

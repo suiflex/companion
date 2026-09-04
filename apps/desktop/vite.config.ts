@@ -31,6 +31,10 @@ export default defineConfig({
       // Deep path on purpose: the @meetcc/shared barrel re-exports modules that
       // reach for chrome.*, which does not exist in a Tauri window.
       '@meetcc/shared/i18n': p('../../packages/shared/src/i18n'),
+      // Same reason: types and `switchProvider` are pure, the barrel is not.
+      '@meetcc/shared/types': p('../../packages/shared/src/types'),
+      '@meetcc/shared/provider': p('../../packages/shared/src/provider'),
+      '@meetcc/ai': p('../../packages/ai/src'),
       '@meetcc/store': p('../../packages/store/src'),
       '@meetcc/vault': p('../../packages/vault/src'),
     },

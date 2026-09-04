@@ -631,6 +631,33 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.vault.duplicateSessionKeys':
     '{count} nota memakai session key yang sama dengan nota lain dan tidak masuk pencarian, salah satunya {path}.',
 
+  // -- desktop: AI provider -------------------------------------------------
+  'desktop.ai.title': 'Provider AI',
+  'desktop.ai.intro':
+    'Provider yang sama dengan yang ada di extension. API key disimpan di keychain komputer ini, bukan di berkas sebelah nota.',
+  'desktop.ai.loading': 'Membaca setelan\u2026',
+  'desktop.ai.provider': 'Provider',
+  'desktop.ai.apiKey': 'API key',
+  'desktop.ai.apiKeyOptional': 'API key (opsional)',
+  'desktop.ai.keychainHint': 'Disimpan di keychain OS. Mengosongkan kolom ini menghapusnya dari sana juga.',
+  'desktop.ai.baseUrl': 'Base URL',
+  'desktop.ai.model': 'Model',
+  'desktop.ai.modelsAvailable': '{count} model ditawarkan provider ini.',
+  'desktop.ai.modelsPrompt': 'Muat daftarnya, atau ketik nama model.',
+  'desktop.ai.loadModels': 'Muat model',
+  'desktop.ai.loadingModels': 'Memuat\u2026',
+  'desktop.ai.check': 'Koneksi',
+  'desktop.ai.checkHint': 'Mengirim satu permintaan sangat pendek, jadi yang dibuktikan adalah provider-nya menjawab, bukan formulirnya terisi.',
+  'desktop.ai.test': 'Tes koneksi',
+  'desktop.ai.testing': 'Menguji\u2026',
+  'desktop.ai.reachableWith': 'Provider menjawab: {reply}',
+  'desktop.ai.save': 'Simpan',
+  'desktop.ai.saved': 'Setelan provider tersimpan.',
+  'desktop.ai.signIn': 'Provider dengan sign-in',
+  'desktop.ai.signInUnavailable':
+    'Masuk dengan akun belum tersedia di aplikasi desktop \u2014 alurnya butuh perjalanan lewat browser yang tidak bisa diselesaikan jendela ini. Pakai provider dengan API key di sini, atau jalankan analisisnya di extension.',
+  'desktop.ai.readMore': 'Baca selengkapnya',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
 };

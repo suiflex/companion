@@ -13,6 +13,7 @@ import { useToast } from './toast'
 import { activeSponsorLinks } from './sponsor'
 import { NoteTree } from './NoteTree'
 import { saveTarget } from './saveTarget'
+import { AIProviderPanel } from './AIProviderPanel'
 import { buildTree, folderPaths, withEmptyFolders } from './tree'
 import {
   applyTheme,
@@ -132,6 +133,10 @@ function Settings({
           <p className="hint">{t('desktop.settings.indexHint')}</p>
         </div>
       </section>
+
+      {/* Its own component: this screen is already long, and the provider
+          settings carry their own loading and saving. */}
+      <AIProviderPanel />
     </div>
   )
 }

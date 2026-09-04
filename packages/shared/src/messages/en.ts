@@ -634,6 +634,33 @@ export const en = {
   'desktop.vault.duplicateSessionKeys':
     '{count} notes share a session key with another and are missing from search, {path} among them.',
 
+  // -- desktop: AI provider -------------------------------------------------
+  'desktop.ai.title': 'AI provider',
+  'desktop.ai.intro':
+    'The same providers the extension offers. The key is kept in this computer\u2019s keychain, not in a file beside the notes.',
+  'desktop.ai.loading': 'Reading the settings\u2026',
+  'desktop.ai.provider': 'Provider',
+  'desktop.ai.apiKey': 'API key',
+  'desktop.ai.apiKeyOptional': 'API key (optional)',
+  'desktop.ai.keychainHint': 'Stored in the OS keychain. Clearing the field removes it from there too.',
+  'desktop.ai.baseUrl': 'Base URL',
+  'desktop.ai.model': 'Model',
+  'desktop.ai.modelsAvailable': '{count} models offered by this provider.',
+  'desktop.ai.modelsPrompt': 'Load the list, or type a model name.',
+  'desktop.ai.loadModels': 'Load models',
+  'desktop.ai.loadingModels': 'Loading\u2026',
+  'desktop.ai.check': 'Connection',
+  'desktop.ai.checkHint': 'Sends one very short request, so it proves the provider answers rather than that the form is filled in.',
+  'desktop.ai.test': 'Test connection',
+  'desktop.ai.testing': 'Testing\u2026',
+  'desktop.ai.reachableWith': 'The provider answered: {reply}',
+  'desktop.ai.save': 'Save',
+  'desktop.ai.saved': 'Provider settings saved.',
+  'desktop.ai.signIn': 'Sign-in providers',
+  'desktop.ai.signInUnavailable':
+    'Signing in with an account is not available in the desktop app yet \u2014 it needs a browser round trip this window cannot complete. Use an API key provider here, or run the analysis in the extension.',
+  'desktop.ai.readMore': 'Read more',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
 } as const;
