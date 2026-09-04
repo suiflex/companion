@@ -571,7 +571,6 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.meeting.emptyTranscript': 'Berkas transkripnya kosong.',
   'desktop.meeting.openInExtension': 'Buka di extension',
   'desktop.meeting.copyLink': 'Salin tautan',
-  'desktop.meeting.copied': 'Tersalin',
 
   'desktop.settings.resetVault': 'Kembali ke default',
   'desktop.settings.moveHere': 'Pindahkan vault ke sini',
@@ -586,6 +585,15 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.settings.cancel': 'Batal',
 
   'desktop.editor.blockPlaceholder': "Ketik '/' untuk perintah",
+
+  'desktop.toast.saved': 'Nota tersimpan.',
+  'desktop.toast.trashed': 'Dipindahkan ke sampah.',
+  'desktop.toast.vaultMoved': 'Vault sekarang di {path}.',
+  'desktop.toast.linkCopied': 'Tautan tersalin.',
+  'desktop.toast.copyFailed': 'Gagal menyalin — seleksi kolomnya lalu salin manual.',
+
+  'desktop.field.addProperty': 'Tambah properti',
+  'desktop.field.hideEmpty': 'Sembunyikan properti kosong',
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',

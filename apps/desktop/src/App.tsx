@@ -9,6 +9,7 @@ import { applyLang, loadLangPref, saveLangPref } from './lang'
 import { DateField } from './DateField'
 import { MeetingMeta } from './MeetingMeta'
 import { Select, type Option, type Tone } from './Select'
+import { useToast } from './toast'
 import {
   applyTheme,
   loadThemePref,
@@ -243,8 +244,24 @@ function TicketFields({
   onChange: (patch: Partial<VaultNote>) => void
 }) {
   const pick = (value: string): string | undefined => value || undefined
+  const [showEmpty, setShowEmpty] = useState(false)
+
+  // The partition is by value, not by field. A note is a markdown file someone
+  // can edit by hand, so a value can exist in the file without ever having been
+  // set here — hiding a set field would hide the only place it is visible.
+  // Empty ones are what goes away until asked for.
+  const set = {
+    status: Boolean(note.status),
+    priority: Boolean(note.priority),
+    assignee: Boolean(note.assignee),
+    due: Boolean(note.dueDate),
+  }
+  const anyEmpty = Object.values(set).some((v) => !v)
+  const show = (field: keyof typeof set): boolean => set[field] || showEmpty
+
   return (
     <div className="ticket-fields">
+      {show('status') && (
       <label>
         <span>{t('desktop.field.status')}</span>
         <Select
@@ -254,6 +271,8 @@ function TicketFields({
           onChange={(v) => onChange({ status: pick(v) })}
         />
       </label>
+      )}
+      {show('priority') && (
       <label>
         <span>{t('desktop.field.priority')}</span>
         <Select
@@ -263,6 +282,8 @@ function TicketFields({
           onChange={(v) => onChange({ priority: pick(v) })}
         />
       </label>
+      )}
+      {show('assignee') && (
       <label>
         <span>{t('desktop.field.assignee')}</span>
         <input
@@ -271,10 +292,22 @@ function TicketFields({
           onChange={(e) => onChange({ assignee: pick(e.target.value) })}
         />
       </label>
+      )}
+      {show('due') && (
       <label>
         <span>{t('desktop.field.due')}</span>
         <DateField value={note.dueDate ?? ''} onChange={(v) => onChange({ dueDate: pick(v) })} />
       </label>
+      )}
+      {anyEmpty && (
+        <button
+          type="button"
+          className="add-property"
+          onClick={() => setShowEmpty((v) => !v)}
+        >
+          {showEmpty ? t('desktop.field.hideEmpty') : t('desktop.field.addProperty')}
+        </button>
+      )}
     </div>
   )
 }
@@ -296,6 +329,7 @@ export default function App() {
   const [, setLangTick] = useState(0)
   useEffect(() => onLangChange(() => setLangTick((n) => n + 1)), [])
   const [themePref, setThemePref] = useState<ThemePref>(loadThemePref)
+  const toast = useToast()
   const [langPref, setLangPref] = useState<LangPref>(loadLangPref)
   // The default root is only known to Rust, so ask once rather than rebuilding
   // `~/Companion` in the frontend and hoping the two agree.
@@ -471,6 +505,7 @@ export default function App() {
       setDirty(false)
       await refresh(vault)
       setError(null)
+      toast('success', t('desktop.toast.saved'))
     } catch (e) {
       setError(String(e))
     }
@@ -483,6 +518,7 @@ export default function App() {
       if (selected) {
         await vault.trash(selected)
         await refresh(vault)
+        toast('info', t('desktop.toast.trashed'))
       }
       setNote(null)
       setSelected(null)
@@ -510,6 +546,7 @@ export default function App() {
     setDirty(false)
     await refresh(next)
     setError(null)
+    toast('success', t('desktop.toast.vaultMoved', { path }))
   }
 
   async function resetVault() {

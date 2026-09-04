@@ -574,7 +574,6 @@ export const en = {
   'desktop.meeting.emptyTranscript': 'The transcript sidecar is empty.',
   'desktop.meeting.openInExtension': 'Open in the extension',
   'desktop.meeting.copyLink': 'Copy link',
-  'desktop.meeting.copied': 'Copied',
 
   'desktop.settings.resetVault': 'Back to default',
   'desktop.settings.moveHere': 'Move the vault here',
@@ -589,6 +588,15 @@ export const en = {
   'desktop.settings.cancel': 'Cancel',
 
   'desktop.editor.blockPlaceholder': "Type '/' for commands",
+
+  'desktop.toast.saved': 'Note saved.',
+  'desktop.toast.trashed': 'Moved to trash.',
+  'desktop.toast.vaultMoved': 'Vault is now {path}.',
+  'desktop.toast.linkCopied': 'Link copied.',
+  'desktop.toast.copyFailed': 'Could not copy — select the field and copy it by hand.',
+
+  'desktop.field.addProperty': 'Add property',
+  'desktop.field.hideEmpty': 'Hide empty properties',
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',

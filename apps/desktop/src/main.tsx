@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { ToastProvider } from './toast';
 import { applyTheme, loadThemePref } from './theme';
 import { applyLang, loadLangPref } from './lang';
 import './styles.css';
@@ -12,6 +13,8 @@ applyLang(loadLangPref());
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <ToastProvider>
+      <App />
+    </ToastProvider>
   </React.StrictMode>,
 );
