@@ -606,6 +606,9 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.vault.moved': 'Dipindahkan ke {folder}.',
   'desktop.vault.rootFolder': 'Akar vault',
 
+  'desktop.vault.duplicateSessionKey':
+    '{count} nota memakai session key yang sama dengan nota lain dan tidak masuk pencarian. Cek {path}.',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
 };

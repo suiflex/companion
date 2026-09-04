@@ -427,7 +427,17 @@ export default function App() {
         hasBody: Boolean(n.body.trim()),
       })),
     )
-    if (driverRef.current) await createIndex(driverRef.current, v, read, rel)
+    if (driverRef.current) {
+      const skipped = await createIndex(driverRef.current, v, read, rel)
+      // A duplicate session key no longer fails the rebuild, but silently
+      // dropping a note from search would be its own trap — say which file.
+      if (skipped.length) {
+        toast('error', t('desktop.vault.duplicateSessionKey', {
+          count: skipped.length,
+          path: skipped[0],
+        }))
+      }
+    }
     await invoke<string[]>('list_vault_folders').then(setFolders).catch(() => undefined)
   }
 

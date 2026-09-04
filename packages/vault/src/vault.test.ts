@@ -154,15 +154,17 @@ describe('a note that has been moved', () => {
     expect(hit.path).toBe(moved)
   })
 
-  it('does not collide when two notes would derive the same path', async () => {
+  it('skips a duplicate session key instead of failing the whole index', async () => {
+    // Two files can carry one session key — a .md copied in Finder, or a
+    // duplicate an older build wrote. The index can hold only one, but taking
+    // the window down over it is worse than indexing what it can.
     const { driver } = await openDatabase()
     const a = note({ id: 'a', sessionKey: 'nota/same', startedAt: undefined, title: 'One' })
     const b = note({ id: 'b', sessionKey: 'nota/same', startedAt: undefined, title: 'Two' })
-    // Same derived path, different real ones — the index must record what is
-    // actually there.
-    await expect(
-      createIndex(driver, vault, [a, b], ['x/one.md', 'y/two.md']),
-    ).rejects.toThrow(/UNIQUE|session_key/)
+
+    const skipped = await createIndex(driver, vault, [a, b], ['x/one.md', 'y/two.md'])
+    expect(skipped).toEqual(['y/two.md'])
+    expect(search(driver, 'One')[0].path).toBe('x/one.md')
   })
 })
 

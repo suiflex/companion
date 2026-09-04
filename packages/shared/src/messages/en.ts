@@ -609,6 +609,9 @@ export const en = {
   'desktop.vault.moved': 'Moved to {folder}.',
   'desktop.vault.rootFolder': 'Vault root',
 
+  'desktop.vault.duplicateSessionKey':
+    '{count} notes share a session key with another and are missing from search. Check {path}.',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
 } as const;
