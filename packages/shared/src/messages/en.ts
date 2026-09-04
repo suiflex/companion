@@ -577,6 +577,18 @@ export const en = {
   'desktop.meeting.copyLink': 'Copy link',
   'desktop.meeting.copied': 'Copied',
 
+  'desktop.settings.resetVault': 'Back to default',
+  'desktop.settings.moveHere': 'Move the vault here',
+  'desktop.settings.confirmReset':
+    'Go back to the default vault at ~/Companion? Nothing in the current folder is deleted.',
+  'desktop.settings.confirmExistingVault':
+    'Use the Companion vault at {path}? Notes there will appear here; nothing is moved or deleted.',
+  'desktop.settings.confirmForeignFolder':
+    '{path} is not a Companion vault and holds {count} markdown files — all of them would be listed as notes. Companion will create a .transcript folder inside it. Continue?',
+  'desktop.settings.confirmEmptyFolder':
+    'Use {path} as the vault? Companion will create a .transcript folder inside it. Nothing in your current vault is moved or deleted.',
+  'desktop.settings.cancel': 'Cancel',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
 } as const;

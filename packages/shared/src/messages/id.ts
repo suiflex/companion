@@ -574,6 +574,18 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.meeting.copyLink': 'Salin tautan',
   'desktop.meeting.copied': 'Tersalin',
 
+  'desktop.settings.resetVault': 'Kembali ke default',
+  'desktop.settings.moveHere': 'Pindahkan vault ke sini',
+  'desktop.settings.confirmReset':
+    'Kembali ke vault default di ~/Companion? Tidak ada isi folder sekarang yang dihapus.',
+  'desktop.settings.confirmExistingVault':
+    'Pakai vault Companion di {path}? Nota di sana akan muncul di sini; tidak ada yang dipindah atau dihapus.',
+  'desktop.settings.confirmForeignFolder':
+    '{path} bukan vault Companion dan berisi {count} berkas markdown — semuanya akan terdaftar sebagai nota. Companion akan membuat folder .transcript di dalamnya. Lanjutkan?',
+  'desktop.settings.confirmEmptyFolder':
+    'Pakai {path} sebagai vault? Companion akan membuat folder .transcript di dalamnya. Isi vault-mu sekarang tidak dipindah atau dihapus.',
+  'desktop.settings.cancel': 'Batal',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
 };

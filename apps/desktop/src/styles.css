@@ -785,6 +785,12 @@ body {
   padding: 7px 9px;
 }
 
+.setting-actions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
 .confirm-bar {
   display: flex;
   align-items: center;

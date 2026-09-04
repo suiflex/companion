@@ -12,6 +12,10 @@ use tauri::State;
 const TRASH: &str = ".trash";
 const TRANSCRIPT: &str = ".transcript";
 
+/// Where this install keeps its own small state, handed in by `lib.rs` so the
+/// vault module never has to know about the Tauri app handle.
+pub struct ConfigDir(pub PathBuf);
+
 /// Managed Tauri state holding the vault root directory.
 pub struct VaultState {
     pub root: Mutex<PathBuf>,
@@ -25,10 +29,85 @@ impl VaultState {
     }
 }
 
-/// Default vault root: `~/Companion`. Overridable later via a picker.
+/// Default vault root: `~/Companion`.
 pub fn default_root() -> PathBuf {
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
     PathBuf::from(home).join("Companion")
+}
+
+/// Where the chosen root is remembered between launches.
+///
+/// One line of text rather than a store plugin: this is a single path, and a
+/// plugin would mean an npm dependency, a crate and a capability entry for it.
+pub fn config_file(config_dir: &Path) -> PathBuf {
+    config_dir.join("vault-root")
+}
+
+/// The root to start with: the remembered one if it still exists, else the
+/// default. A stored path whose folder has since been deleted or unmounted
+/// must not leave the app pointing at nothing.
+pub fn startup_root(config_dir: &Path) -> PathBuf {
+    match fs::read_to_string(config_file(config_dir)) {
+        Ok(text) => {
+            let saved = PathBuf::from(text.trim());
+            if !saved.as_os_str().is_empty() && saved.is_dir() {
+                saved
+            } else {
+                default_root()
+            }
+        }
+        Err(_) => default_root(),
+    }
+}
+
+/// Remember a root, or forget it when `root` is `None` (back to the default).
+pub fn remember_root(config_dir: &Path, root: Option<&Path>) -> std::io::Result<()> {
+    fs::create_dir_all(config_dir)?;
+    match root {
+        Some(path) => fs::write(config_file(config_dir), path.to_string_lossy().as_bytes()),
+        None => match fs::remove_file(config_file(config_dir)) {
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            other => other,
+        },
+    }
+}
+
+/// What a folder looks like, without touching it.
+///
+/// `set_vault_root` used to create `.transcript/` inside whatever was picked
+/// *before* the user could confirm, so a mis-click left a directory behind in
+/// someone's Documents. This answers the question first; nothing is written.
+#[derive(serde::Serialize)]
+pub struct RootProbe {
+    pub exists: bool,
+    pub markdown: usize,
+    pub is_vault: bool,
+}
+
+/// The default the reset action returns to, so the frontend does not have to
+/// reconstruct `~/Companion` and hope it matches.
+#[tauri::command]
+pub fn default_vault_root() -> String {
+    default_root().to_string_lossy().into_owned()
+}
+
+#[tauri::command]
+pub fn probe_vault_root(path: String) -> RootProbe {
+    let dir = PathBuf::from(path);
+    if !dir.is_dir() {
+        return RootProbe {
+            exists: false,
+            markdown: 0,
+            is_vault: false,
+        };
+    }
+    let mut found = Vec::new();
+    let _ = walk_md(&dir, &dir, &mut found);
+    RootProbe {
+        exists: true,
+        markdown: found.len(),
+        is_vault: dir.join(TRANSCRIPT).is_dir(),
+    }
 }
 
 /// Create the vault skeleton. Called at startup: on a machine that has never
@@ -59,12 +138,34 @@ pub fn vault_root(state: State<'_, VaultState>) -> Result<String, String> {
     Ok(root(&state).to_string_lossy().into_owned())
 }
 
+/// Switch to another root and remember it.
+///
+/// The folder is only prepared once the caller has committed to it — the
+/// frontend confirms against `probe_vault_root` first.
 #[tauri::command]
-pub fn set_vault_root(state: State<'_, VaultState>, path: String) -> Result<(), String> {
+pub fn set_vault_root(
+    state: State<'_, VaultState>,
+    config: State<'_, ConfigDir>,
+    path: String,
+) -> Result<(), String> {
     let new_root = PathBuf::from(path);
     ensure_root(&new_root).map_err(|e| e.to_string())?;
+    remember_root(&config.0, Some(&new_root)).map_err(|e| e.to_string())?;
     *state.root.lock() = new_root;
     Ok(())
+}
+
+/// Forget the chosen root and go back to `~/Companion`.
+#[tauri::command]
+pub fn reset_vault_root(
+    state: State<'_, VaultState>,
+    config: State<'_, ConfigDir>,
+) -> Result<String, String> {
+    let root = default_root();
+    ensure_root(&root).map_err(|e| e.to_string())?;
+    remember_root(&config.0, None).map_err(|e| e.to_string())?;
+    *state.root.lock() = root.clone();
+    Ok(root.to_string_lossy().into_owned())
 }
 
 /// All `.md` relative paths under the vault, excluding `.trash`/`.transcript`.
@@ -174,4 +275,81 @@ pub fn trash_vault_file(state: State<'_, VaultState>, rel: String) -> Result<(),
     }
     fs::rename(&from, dest).map_err(|e| e.to_string())?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    fn tmp(name: &str) -> PathBuf {
+        let dir = env::temp_dir().join(format!("companion-vault-test-{name}"));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn remembers_a_root_and_reads_it_back() {
+        let config = tmp("remember");
+        let picked = tmp("remember-target");
+        remember_root(&config, Some(&picked)).unwrap();
+        assert_eq!(startup_root(&config), picked);
+    }
+
+    #[test]
+    fn forgetting_returns_to_the_default() {
+        let config = tmp("forget");
+        let picked = tmp("forget-target");
+        remember_root(&config, Some(&picked)).unwrap();
+        remember_root(&config, None).unwrap();
+        assert_eq!(startup_root(&config), default_root());
+        // Forgetting twice is not an error; the file is simply already gone.
+        remember_root(&config, None).unwrap();
+    }
+
+    #[test]
+    fn falls_back_when_the_remembered_folder_is_gone() {
+        // A vault on a drive that is no longer mounted must not strand the app
+        // on a root it cannot read.
+        let config = tmp("missing");
+        let picked = tmp("missing-target");
+        remember_root(&config, Some(&picked)).unwrap();
+        fs::remove_dir_all(&picked).unwrap();
+        assert_eq!(startup_root(&config), default_root());
+    }
+
+    #[test]
+    fn falls_back_on_a_corrupt_or_empty_file() {
+        let config = tmp("corrupt");
+        fs::create_dir_all(&config).unwrap();
+        for junk in ["", "   \n", "\u{0}"] {
+            fs::write(config_file(&config), junk).unwrap();
+            assert_eq!(startup_root(&config), default_root(), "junk: {junk:?}");
+        }
+    }
+
+    #[test]
+    fn probe_reports_a_folder_without_touching_it() {
+        let dir = tmp("probe");
+        fs::write(dir.join("a.md"), "# one").unwrap();
+        fs::write(dir.join("b.md"), "# two").unwrap();
+        let probe = probe_vault_root(dir.to_string_lossy().into_owned());
+        assert!(probe.exists);
+        assert_eq!(probe.markdown, 2);
+        assert!(!probe.is_vault);
+        // The whole point: nothing was created by looking.
+        assert!(!dir.join(TRANSCRIPT).exists());
+    }
+
+    #[test]
+    fn probe_recognises_an_existing_vault_and_a_missing_folder() {
+        let dir = tmp("probe-vault");
+        fs::create_dir_all(dir.join(TRANSCRIPT)).unwrap();
+        assert!(probe_vault_root(dir.to_string_lossy().into_owned()).is_vault);
+
+        let gone = probe_vault_root(dir.join("nope").to_string_lossy().into_owned());
+        assert!(!gone.exists);
+        assert_eq!(gone.markdown, 0);
+    }
 }

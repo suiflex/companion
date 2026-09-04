@@ -33,6 +33,8 @@ function Settings({
   root,
   noteCount,
   onMove,
+  onReset,
+  isDefaultRoot,
   themePref,
   onThemeChange,
   langPref,
@@ -41,6 +43,9 @@ function Settings({
   root: string
   noteCount: number
   onMove: () => void
+  onReset: () => void
+  /** Hides the reset action when there is nothing to reset. */
+  isDefaultRoot: boolean
   themePref: ThemePref
   onThemeChange: (pref: ThemePref) => void
   langPref: LangPref
@@ -96,9 +101,16 @@ function Settings({
           <p className="setting-path">{root}</p>
           <p className="hint">{t('desktop.settings.vaultHint', { count: noteCount })}</p>
         </div>
-        <button type="button" className="btn" onClick={onMove}>
-          {t('desktop.settings.moveVault')}
-        </button>
+        <div className="setting-actions">
+          <button type="button" className="btn" onClick={onMove}>
+            {t('desktop.settings.moveVault')}
+          </button>
+          {!isDefaultRoot && (
+            <button type="button" className="btn" onClick={onReset}>
+              {t('desktop.settings.resetVault')}
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="setting-row">
@@ -255,6 +267,13 @@ export default function App() {
   useEffect(() => onLangChange(() => setLangTick((n) => n + 1)), [])
   const [themePref, setThemePref] = useState<ThemePref>(loadThemePref)
   const [langPref, setLangPref] = useState<LangPref>(loadLangPref)
+  // The default root is only known to Rust, so ask once rather than rebuilding
+  // `~/Companion` in the frontend and hoping the two agree.
+  const [defaultRoot, setDefaultRoot] = useState<string | null>(null)
+  useEffect(() => {
+    void invoke<string>('default_vault_root').then(setDefaultRoot).catch(() => undefined)
+  }, [])
+  const isDefaultRoot = !defaultRoot || vault?.io.root === defaultRoot
 
   // Applied and persisted the same way the theme is. `applyLang` also stamps
   // <html lang>, so the document declares the language it is actually showing.
@@ -274,6 +293,14 @@ export default function App() {
   // Leaving a note with unsaved edits used to drop them silently. Hold the
   // action the user asked for until they say what to do with the edits.
   const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
+  // A second confirmation, for actions that are not about unsaved edits. Kept
+  // separate rather than folded into `pending` so the two can chain: leaving a
+  // dirty note *and* moving the vault asks about the note first.
+  const [confirm, setConfirm] = useState<null | {
+    message: string
+    label: string
+    run: () => Promise<void>
+  }>(null)
   const driverRef = useRef<SqlDriver | null>(null)
 
   useEffect(() => {
@@ -444,23 +471,58 @@ export default function App() {
    * rather than mutated because its io carries the root, and the derived index
    * is repopulated from whatever the new folder holds.
    */
+  /** Point the vault at `path`, rebuilding everything that captured the old root. */
+  async function applyRoot(path: string): Promise<void> {
+    const next = new Vault({ io: tauriVaultIo(path) })
+    setVault(next)
+    setNote(null)
+    setSelected(null)
+    setDirty(false)
+    await refresh(next)
+    setError(null)
+  }
+
+  async function resetVault() {
+    setConfirm({
+      message: t('desktop.settings.confirmReset'),
+      label: t('desktop.settings.resetVault'),
+      run: async () => {
+        const root = await invoke<string>('reset_vault_root')
+        await applyRoot(root)
+      },
+    })
+  }
+
   async function moveVault() {
     if (!vault) return
     try {
       const picked = await openDialog({ directory: true, title: t('desktop.settings.pickVault') })
       if (typeof picked !== 'string') return
-      await invoke('set_vault_root', { path: picked })
-      const next = new Vault({ io: tauriVaultIo(picked) })
-      setVault(next)
-      setNote(null)
-      setSelected(null)
-      setDirty(false)
-      await refresh(next)
-      setError(null)
+
+      // Ask before writing. `set_vault_root` prepares the folder, so a
+      // mis-click used to leave a `.transcript/` directory behind somewhere
+      // the user never meant to touch.
+      const probe = await invoke<{ exists: boolean; markdown: number; is_vault: boolean }>(
+        'probe_vault_root',
+        { path: picked },
+      )
+      setConfirm({
+        message: probe.is_vault
+          ? t('desktop.settings.confirmExistingVault', { path: picked })
+          : probe.markdown > 0
+            ? t('desktop.settings.confirmForeignFolder', { path: picked, count: probe.markdown })
+            : t('desktop.settings.confirmEmptyFolder', { path: picked }),
+        label: t('desktop.settings.moveHere'),
+        run: async () => {
+          await invoke('set_vault_root', { path: picked })
+          await applyRoot(picked)
+        },
+      })
     } catch (e) {
       setError(String(e))
     }
   }
+
 
   const filtered = useMemo(() => {
     if (!query.trim()) return notes
@@ -682,6 +744,8 @@ export default function App() {
               root={vault?.io.root ?? '…'}
               noteCount={notes.length}
               onMove={() => guard(moveVault)}
+              onReset={() => guard(resetVault)}
+              isDefaultRoot={isDefaultRoot}
               themePref={themePref}
               onThemeChange={setThemePref}
               langPref={langPref}
@@ -734,6 +798,25 @@ export default function App() {
             <div className="empty">
               <h1>{t('desktop.editor.emptyTitle')}</h1>
               <p>{t('desktop.editor.emptyBody')}</p>
+            </div>
+          )}
+          {confirm && (
+            <div className="confirm-bar" role="alert">
+              <span>{confirm.message}</span>
+              <button type="button" className="btn" onClick={() => setConfirm(null)}>
+                {t('desktop.settings.cancel')}
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => {
+                  const action = confirm.run
+                  setConfirm(null)
+                  void action().catch((e) => setError(String(e)))
+                }}
+              >
+                {confirm.label}
+              </button>
             </div>
           )}
           {pending && (
