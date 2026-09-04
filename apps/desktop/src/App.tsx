@@ -12,6 +12,7 @@ import { Select, type Option, type Tone } from './Select'
 import { useToast } from './toast'
 import { activeSponsorLinks } from './sponsor'
 import { NoteTree } from './NoteTree'
+import { saveTarget } from './saveTarget'
 import { buildTree, folderPaths, withEmptyFolders } from './tree'
 import {
   applyTheme,
@@ -152,6 +153,10 @@ function BrandMark() {
 
 interface NoteHeader {
   rel: string
+  id: string
+  sessionKey: string
+  /** Set when this note is an edited copy of a delivered meeting. */
+  source?: string
   title: string
   updatedAt: string
   /** `manual` for a note written here; the meeting platform for a delivered one. */
@@ -424,6 +429,9 @@ export default function App() {
     setNotes(
       read.map((n, i) => ({
         rel: rel[i],
+        id: n.id,
+        sessionKey: n.sessionKey,
+        source: n.source,
         title: n.title || rel[i],
         updatedAt: n.updatedAt,
         platform: n.platform,
@@ -577,47 +585,20 @@ export default function App() {
     setError(null)
   }
 
-  /**
-   * A delivered meeting is an archive, so saving an edit of one copies it
-   * instead of rewriting it.
-   *
-   * The copy is an ordinary note — new id, `manual`, its own session key so
-   * the index does not see two rows for one meeting — and carries `source`
-   * back to the meeting it came from. The archive file is never touched,
-   * which is the whole point: the vault keeps what the extension sent.
-   */
-  function copyForEditing(from: VaultNote): VaultNote {
-    return {
-      ...from,
-      id: uuidV7(),
-      sessionKey: `nota/${Date.now().toString(36)}`,
-      platform: 'manual',
-      source: from.sessionKey,
-      // The sidecar belongs to the archive; the copy links back to it by
-      // `source` rather than claiming to own the raw captions.
-      transcript: undefined,
-    }
-  }
-
   async function save() {
     if (!vault || !note) return
     try {
-      const archived = Boolean(note.platform && note.platform !== 'manual')
-      const toWrite = archived ? copyForEditing(note) : note
-      toWrite.updatedAt = new Date().toISOString()
-      // A note that already has a path is written back to it. Deriving the
-      // path here would put a second copy at the location the session key
-      // implies and leave the original where it is — two files, one session
-      // key, and a UNIQUE violation the moment the index is rebuilt.
-      //
-      // A copy is the exception: it has no file yet, so it goes where the
-      // folder picker says, never over the archive it came from.
-      const derived = vault.relPath(toWrite)
-      const rel = archived
-        ? target
-          ? `${target}/${derived.split('/').pop()}`
-          : derived
-        : (selected ?? (target ? `${target}/${derived.split('/').pop()}` : derived))
+      // Where this goes and what it writes lives in `saveTarget`, which is
+      // pure and has tests: the rule was three nested ternaries here and was
+      // wrong twice — once writing a second file for a note that already had
+      // one, once making a fresh copy of a meeting on every single save.
+      const { rel, note: toWrite, copied } = saveTarget({
+        note,
+        selected,
+        target,
+        relPath: (n) => vault.relPath(n),
+        existing: notes,
+      })
       await vault.writeNoteAt(rel, toWrite)
       // `selected` addresses a file, so it has to become the path the note was
       // just written to — otherwise trashing a freshly created note aims at
@@ -628,7 +609,7 @@ export default function App() {
       setDirty(false)
       await refresh(vault)
       setError(null)
-      toast('success', archived ? t('desktop.toast.copiedToNotes') : t('desktop.toast.saved'))
+      toast('success', copied ? t('desktop.toast.copiedToNotes') : t('desktop.toast.saved'))
     } catch (e) {
       setError(String(e))
     }
@@ -726,6 +707,9 @@ export default function App() {
           const known = notes.find((n) => n.rel === h.path)
           return {
             rel: h.path,
+            id: known?.id ?? h.path,
+            sessionKey: known?.sessionKey ?? '',
+            source: known?.source,
             title: h.title,
             updatedAt: h.updatedAt,
             platform: known?.platform ?? '',
