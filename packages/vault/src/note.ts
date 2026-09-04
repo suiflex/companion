@@ -17,6 +17,15 @@ export interface VaultNote {
   startedAt?: string
   participants?: string[]
   transcript?: string
+  /**
+   * The `sessionKey` of the delivered meeting this note was copied from.
+   *
+   * A note written by hand has none. A meeting arrives as an archive and is
+   * never rewritten, so editing one produces a copy that carries this back to
+   * the original — the link that makes the archive a backup rather than a
+   * second, diverging copy of unknown origin.
+   */
+  source?: string
   tags?: string[]
   /* Ticket fields. Free-form on purpose: a vault note is a markdown file
      someone can edit in any editor, so nothing here is an enum the parser
@@ -36,6 +45,7 @@ const QUOTED: Record<string, boolean> = {
   id: true,
   sessionKey: true,
   transcript: true,
+  source: true,
   platform: true,
   startedAt: true,
   status: true,
@@ -57,6 +67,7 @@ const ORDER = [
   'startedAt',
   'participants',
   'transcript',
+  'source',
   'tags',
   'status',
   'assignee',
@@ -145,6 +156,7 @@ export function noteFromMarkdown(doc: string, fallbackTitle = ''): VaultNote {
     startedAt: first('startedAt'),
     participants: list('participants'),
     transcript: first('transcript'),
+    source: first('source'),
     tags: list('tags'),
     status: first('status'),
     assignee: first('assignee'),

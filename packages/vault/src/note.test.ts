@@ -21,6 +21,19 @@ describe('note frontmatter', () => {
     expect(parsed).toEqual(NOTE)
   })
 
+  it('round-trips the source key', () => {
+    // A frontmatter key lives in four places; miss one and the value is
+    // dropped silently on the next save. `source` is the link from an edited
+    // copy back to the delivered meeting it came from, so losing it turns the
+    // copy into a note of unknown origin.
+    const copy: VaultNote = {
+      ...NOTE,
+      platform: 'manual',
+      source: 'meet/abc-defg-hij#2026-08-28T14:00',
+    }
+    expect(noteFromMarkdown(noteToMarkdown(copy))).toEqual(copy)
+  })
+
   it('round-trips the ticket fields', () => {
     // A frontmatter key lives in four places — the interface, QUOTED, ORDER and
     // the parser's return literal — and missing any one of them loses the value
