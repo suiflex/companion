@@ -44,7 +44,11 @@ pub fn save_ai_settings(config: State<'_, ConfigDir>, json: String) -> Result<()
 fn entry(name: &str) -> Result<Entry, String> {
     // The name is data from the WebView. Keeping it to a known-safe shape stops
     // it from addressing an entry belonging to something else on this machine.
-    if name.is_empty() || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+    if name.is_empty()
+        || !name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
         return Err(format!("bad secret name: {name}"));
     }
     Entry::new(SERVICE, name).map_err(|e| e.to_string())
