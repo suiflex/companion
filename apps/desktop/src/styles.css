@@ -787,7 +787,10 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg-sunken);
-  overflow: auto;
+  /* Deliberately not a scroll container. .editor-wrap already scrolls, and a
+     second one nested inside it clipped the slash menu at the editor's bottom
+     edge — the menu is positioned within this box, so this box was its
+     horizon. Letting the editor grow moves that horizon out to the pane. */
 }
 
 /* Every colour Crepe's frame theme exposes, so nothing in the editor stays
@@ -884,6 +887,13 @@ body {
 .body-editor .milkdown-slash-menu .menu-item {
   border-radius: 6px;
   font-size: 13px;
+}
+
+/* The scrolling list inside the menu is capped at 420px by Crepe, which is
+   taller than a short window. Cap it against the viewport too, so the last
+   entries stay reachable instead of sitting below the screen. */
+.body-editor .milkdown-slash-menu .menu-groups {
+  max-height: min(420px, 50vh);
 }
 
 .editor-actions {
