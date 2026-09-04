@@ -9,10 +9,22 @@
 // Space choose, Escape closes without changing anything, Home/End jump.
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+/** The five the palette already has; anything unmapped stays neutral. */
+export type Tone = 'neutral' | 'info' | 'warning' | 'danger' | 'success'
+
 export interface Option {
   /** Stored verbatim; not translated, because it goes into the note file. */
   value: string
   label: string
+  /** Colours the dot and tints the label. Absent means neutral. */
+  tone?: Tone
+}
+
+function Dot({ option }: { option: Option }) {
+  // An empty value is "nothing chosen", which is not the same as a grey
+  // status — it gets a hollow dot rather than a filled neutral one.
+  const cls = option.value === '' ? 'tone-dot tone-empty' : `tone-dot tone-${option.tone ?? 'neutral'}`
+  return <span className={cls} aria-hidden="true" />
 }
 
 export function Select({
@@ -114,7 +126,10 @@ export function Select({
         onClick={() => setOpen((o) => !o)}
         onKeyDown={onKeyDown}
       >
-        <span>{current?.label ?? ''}</span>
+        {current && <Dot option={current} />}
+        <span className={`tone-label tone-${current?.value === '' ? 'neutral' : (current?.tone ?? 'neutral')}`}>
+          {current?.label ?? ''}
+        </span>
         <span className="select-chevron" aria-hidden="true" />
       </button>
 
@@ -141,7 +156,10 @@ export function Select({
                 choose(i)
               }}
             >
-              {o.label}
+              <Dot option={o} />
+              <span className={`tone-label tone-${o.value === '' ? 'neutral' : (o.tone ?? 'neutral')}`}>
+                {o.label}
+              </span>
             </div>
           ))}
         </div>

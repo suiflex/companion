@@ -8,7 +8,7 @@ import { t, formatDate, onLangChange, type LangPref, LANGS } from '@meetcc/share
 import { applyLang, loadLangPref, saveLangPref } from './lang'
 import { DateField } from './DateField'
 import { MeetingMeta } from './MeetingMeta'
-import { Select } from './Select'
+import { Select, type Option, type Tone } from './Select'
 import {
   applyTheme,
   loadThemePref,
@@ -192,6 +192,18 @@ const PRIORITY_LABEL: Record<string, string> = {
   High: 'desktop.priority.high',
   Urgent: 'desktop.priority.urgent',
 }
+/** Where each value sits on the palette's existing scale. */
+const TONES: Record<string, Tone> = {
+  'To Do': 'neutral',
+  'In Progress': 'info',
+  Blocked: 'danger',
+  Done: 'success',
+  Low: 'neutral',
+  Medium: 'info',
+  High: 'warning',
+  Urgent: 'danger',
+}
+
 const optionLabel = (map: Record<string, string>, value: string): string =>
   value ? t(map[value] as Parameters<typeof t>[0]) : t('desktop.field.none')
 
@@ -207,8 +219,10 @@ function options(
   values: readonly string[],
   labels: Record<string, string>,
   current: string | undefined,
-): { value: string; label: string }[] {
-  const known = values.map((v) => ({ value: v, label: optionLabel(labels, v) }))
+): Option[] {
+  const known = values.map((v) => ({ value: v, label: optionLabel(labels, v), tone: TONES[v] }))
+  // A value from another version has no tone — neutral is the honest colour
+  // for "this build does not know what this means".
   return current && !values.includes(current)
     ? [...known, { value: current, label: current }]
     : known

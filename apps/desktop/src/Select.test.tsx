@@ -96,6 +96,42 @@ describe('Select', () => {
     expect(screen.queryByRole('listbox')).toBeNull()
   })
 
+  it('colours an option and tints its label', async () => {
+    render(
+      <Select
+        label="Priority"
+        value="Urgent"
+        options={[
+          { value: '', label: '—' },
+          { value: 'Urgent', label: 'Urgent', tone: 'danger' },
+        ]}
+        onChange={() => {}}
+      />,
+    )
+    const trigger = screen.getByLabelText('Priority')
+    expect(trigger.querySelector('.tone-dot.tone-danger')).toBeTruthy()
+    expect(trigger.querySelector('.tone-label.tone-danger')).toBeTruthy()
+  })
+
+  it('shows an unset value as hollow rather than as a grey status', async () => {
+    render(
+      <Select label="Status" value="" options={[{ value: '', label: '—' }]} onChange={() => {}} />,
+    )
+    expect(screen.getByLabelText('Status').querySelector('.tone-dot.tone-empty')).toBeTruthy()
+  })
+
+  it('falls back to neutral for a value with no tone', async () => {
+    render(
+      <Select
+        label="Status"
+        value="Waiting on legal"
+        options={[{ value: 'Waiting on legal', label: 'Waiting on legal' }]}
+        onChange={() => {}}
+      />,
+    )
+    expect(screen.getByLabelText('Status').querySelector('.tone-dot.tone-neutral')).toBeTruthy()
+  })
+
   it('keeps a value it does not recognise selectable', async () => {
     // A note written by another version can hold a status this build has never
     // heard of; dropping it would rewrite the file behind the user's back.

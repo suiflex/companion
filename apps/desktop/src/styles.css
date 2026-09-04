@@ -15,6 +15,7 @@
   --accent: #46e394;
   --danger: #ff6b74;
   --warning: #e0b341;
+  --info: #6aa9f0;
 }
 
 /* Light: the same structure on paper. The signal green darkens so it still
@@ -33,6 +34,7 @@ body[data-theme='light'] {
   --accent: #0c8f60;
   --danger: #d43f49;
   --warning: #a86f0c;
+  --info: #1663b0;
 }
 
 * {
@@ -541,6 +543,35 @@ body {
   [data-tip]::after { transition: none; }
 }
 
+/* Status and priority carry a colour, so a glance at a note says where it
+   stands. The scale is the palette the app already had — muted, blue, amber,
+   red, green — with no value inventing a colour of its own.
+   The dot does the work; the text is only tinted, so the tone is never the
+   sole carrier of meaning for anyone who cannot separate these hues. */
+.tone-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tone, var(--fg-muted));
+}
+
+.tone-neutral { --tone: var(--fg-muted); }
+.tone-info { --tone: var(--info); }
+.tone-warning { --tone: var(--warning); }
+.tone-danger { --tone: var(--danger); }
+.tone-success { --tone: var(--accent); }
+
+/* An unset value stays plain: a hollow dot reads as "nothing chosen" rather
+   than as a colour that happens to be grey. */
+.tone-empty {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.select-button .tone-label,
+.select-option .tone-label { color: var(--tone, inherit); }
+
 /* Dropdown, drawn by us for the same reason the calendar is: a native select's
    open panel is platform chrome that no stylesheet reaches. */
 .select { position: relative; }
@@ -548,8 +579,7 @@ body {
 .select-button {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
   height: 34px;
   padding: 0 10px;
@@ -567,6 +597,7 @@ body {
 
 .select-chevron {
   flex: none;
+  margin-left: auto;
   width: 8px;
   height: 8px;
   border-right: 1.5px solid var(--fg-muted);
@@ -590,6 +621,9 @@ body {
 }
 
 .select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 7px 9px;
   border-radius: 6px;
   font-size: 13px;
