@@ -159,16 +159,14 @@ button:focus-visible, select:focus-visible, input:focus-visible, .meeting:focus-
   border-top: 1px solid var(--hairline);
 }
 
-.sidebar-sponsor {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin: 0 0 6px;
-  font-size: 11px;
+/* The sponsor links live in the icon row now; as anchors they need the
+   button's own centring, which a <button> got for free. */
+a.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
 
-.sidebar-sponsor a { color: var(--text-dim); text-decoration: none; }
-.sidebar-sponsor a:hover { color: var(--phosphor); }
 
 .sidebar-credit {
   padding: 2px 6px 0;
@@ -976,6 +974,9 @@ body[data-theme='light'] .bubble-assistant {
 .settings-body {
   flex: 1;
   overflow-y: auto;
+  /* Whatever overflows belongs to this pane, not to the window: without it an
+     oversized card put a horizontal scrollbar under the whole dashboard. */
+  overflow-x: auto;
   padding: 16px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -992,6 +993,29 @@ body[data-theme='light'] .bubble-assistant {
 
 /* the grid supplies the rhythm now; the stacked-layout margin doubled it */
 .settings-body > .field-group { margin-bottom: 0; }
+
+/* A grid item defaults to `min-width: auto`, which resolves to its min-content
+   width — and these cards hold a native `<input type=file>`, whose intrinsic
+   width is both large and unshrinkable. A <fieldset> compounds it by not
+   negotiating grid min-sizing properly, so the card refused to fit its track
+   and painted over the one beside it. */
+.settings-body > .field-group {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The full-width rule above is a direct-child selector, so it never reached
+   the action rows the Data panel nests inside its cards: those rows kept a
+   no-wrap flex line inside a 320px track and their labels broke over three
+   lines. Inside a card the row wraps and drops the page-level chrome. */
+.field-group .subbar {
+  flex-wrap: wrap;
+  padding: 0;
+  border-bottom: 0;
+}
+
+/* A file input reports a wide intrinsic size and ignores the track otherwise. */
+.field-group input[type='file'] { min-width: 0; max-width: 100%; }
 
 /* No breakpoint: auto-fill already drops to one column when the pane is too
    narrow for two, and it measures the pane rather than the viewport — which is
