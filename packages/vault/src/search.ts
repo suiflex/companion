@@ -55,9 +55,10 @@ export async function createIndex(
   db: SqlDriver,
   vault: Vault,
   notes?: VaultNote[],
+  paths?: readonly string[],
 ): Promise<void> {
   db.exec(SCHEMA)
-  await rebuild(db, vault, notes)
+  await rebuild(db, vault, notes, paths)
 }
 
 /** Repopulate the index from the vault's current .md files. */
@@ -65,10 +66,21 @@ export async function rebuild(
   db: SqlDriver,
   vault: Vault,
   notes?: VaultNote[],
+  /**
+   * Where each note actually is, positionally matched to `notes`.
+   *
+   * Without it the path is derived from the session key, which is only correct
+   * while a note sits where it was first written. A moved note would be
+   * indexed at a path that holds nothing — and two notes deriving the same
+   * path collide on `session_key`, which surfaces as a UNIQUE constraint error
+   * on save rather than as anything a reader could interpret.
+   */
+  paths?: readonly string[],
 ): Promise<void> {
   db.exec('DELETE FROM vault_notes')
-  for (const note of notes ?? (await vault.readAll())) {
-    const path = vault.relPath(note)
+  const rows = notes ?? (await vault.readAll())
+  for (const [i, note] of rows.entries()) {
+    const path = paths?.[i] ?? vault.relPath(note)
     db.run(
       'INSERT INTO vault_notes(id, session_key, title, body, platform, updated_at, path) VALUES (?,?,?,?,?,?,?)',
       [note.id, note.sessionKey, note.title, note.body, note.platform, note.updatedAt, path],

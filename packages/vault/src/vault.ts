@@ -70,9 +70,22 @@ export class Vault {
     return relative(this.io.root, this.notePath(note))
   }
 
-  /** Write a note atomically so a crash never leaves a half-written .md. */
+  /**
+   * Write a note atomically so a crash never leaves a half-written .md.
+   *
+   * The location is derived from the session key, which is right for a note
+   * arriving over the bridge — it has no location yet. It is wrong for a note
+   * that already lives somewhere: saving would write a *second* copy at the
+   * derived path and leave the original where it was, giving two files with
+   * one session key. Use `writeNoteAt` for a note you already have a path for.
+   */
   async writeNote(note: VaultNote): Promise<string> {
-    const path = this.notePath(note)
+    return this.writeNoteAt(this.relPath(note), note)
+  }
+
+  /** Write a note to the path it already occupies, wherever that is. */
+  async writeNoteAt(rel: string, note: VaultNote): Promise<string> {
+    const path = this.io.join(this.io.root, rel)
     await this.io.mkdirs(dirname(path))
     await this.io.writeFileAtomic(path, noteToMarkdown(note))
     return path

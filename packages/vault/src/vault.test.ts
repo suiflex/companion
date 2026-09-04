@@ -118,6 +118,54 @@ describe('vault file ops', () => {
   })
 })
 
+describe('a note that has been moved', () => {
+  it('is saved back where it is, not where its session key implies', async () => {
+    // The bug this pins: `writeNote` derives the path from the session key, so
+    // saving a moved note wrote a *second* copy at the derived location and
+    // left the original behind — two files carrying one session key.
+    const n = note({ sessionKey: 'nota/abc', startedAt: undefined })
+    const derived = vault.relPath(n)
+    await vault.writeNote(n)
+
+    const moved = 'Projects/Alpha/abc.md'
+    await vault.writeNoteAt(moved, { ...n, body: 'edited' })
+    // the original is still where writeNote put it, so remove it the way a
+    // real move does
+    rmSync(join(dir, derived))
+
+    await vault.writeNoteAt(moved, { ...n, body: 'edited twice' })
+
+    const paths = await vault.listNotes()
+    expect(paths).toEqual([moved])
+    expect((await vault.readNote(moved)).body).toBe('edited twice')
+  })
+
+  it('is indexed at the path it occupies', async () => {
+    // Indexing by the derived path meant two notes deriving the same location
+    // collided on session_key, which surfaced as a UNIQUE constraint error on
+    // save rather than as anything a reader could act on.
+    const { driver } = await openDatabase()
+    const n = note({ sessionKey: 'nota/abc', startedAt: undefined })
+    const moved = 'Projects/Alpha/abc.md'
+    await vault.writeNoteAt(moved, n)
+
+    await createIndex(driver, vault, [n], [moved])
+    const hit = search(driver, 'Gate')[0]
+    expect(hit.path).toBe(moved)
+  })
+
+  it('does not collide when two notes would derive the same path', async () => {
+    const { driver } = await openDatabase()
+    const a = note({ id: 'a', sessionKey: 'nota/same', startedAt: undefined, title: 'One' })
+    const b = note({ id: 'b', sessionKey: 'nota/same', startedAt: undefined, title: 'Two' })
+    // Same derived path, different real ones — the index must record what is
+    // actually there.
+    await expect(
+      createIndex(driver, vault, [a, b], ['x/one.md', 'y/two.md']),
+    ).rejects.toThrow(/UNIQUE|session_key/)
+  })
+})
+
 describe('derived index', () => {
   it('rebuilds from source and searches title/body', async () => {
     await vault.writeNote(note())
