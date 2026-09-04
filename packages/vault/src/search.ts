@@ -55,9 +55,10 @@ export async function createIndex(
   db: SqlDriver,
   vault: Vault,
   notes?: VaultNote[],
-): Promise<void> {
+  paths?: readonly string[],
+): Promise<string[]> {
   db.exec(SCHEMA)
-  await rebuild(db, vault, notes)
+  return rebuild(db, vault, notes, paths)
 }
 
 /** Repopulate the index from the vault's current .md files. */
@@ -65,15 +66,37 @@ export async function rebuild(
   db: SqlDriver,
   vault: Vault,
   notes?: VaultNote[],
-): Promise<void> {
+  /**
+   * Where each note actually is, positionally matched to `notes`.
+   *
+   * Without it the path is derived from the session key, which is only correct
+   * while a note sits where it was first written. A moved note would be
+   * indexed at a path that holds nothing — and two notes deriving the same
+   * path collide on `session_key`, which surfaces as a UNIQUE constraint error
+   * on save rather than as anything a reader could interpret.
+   */
+  paths?: readonly string[],
+  /** Returns the paths it could not index, which is never a reason to fail. */
+): Promise<string[]> {
   db.exec('DELETE FROM vault_notes')
-  for (const note of notes ?? (await vault.readAll())) {
-    const path = vault.relPath(note)
-    db.run(
-      'INSERT INTO vault_notes(id, session_key, title, body, platform, updated_at, path) VALUES (?,?,?,?,?,?,?)',
-      [note.id, note.sessionKey, note.title, note.body, note.platform, note.updatedAt, path],
-    )
+  const rows = notes ?? (await vault.readAll())
+  const skipped: string[] = []
+  for (const [i, note] of rows.entries()) {
+    const path = paths?.[i] ?? vault.relPath(note)
+    try {
+      db.run(
+        'INSERT INTO vault_notes(id, session_key, title, body, platform, updated_at, path) VALUES (?,?,?,?,?,?,?)',
+        [note.id, note.sessionKey, note.title, note.body, note.platform, note.updatedAt, path],
+      )
+    } catch {
+      // Two files can carry one session key — someone copies a .md in Finder,
+      // or an older build wrote a duplicate. The index can only hold one, but
+      // failing the rebuild takes the whole window down over data the vault is
+      // entitled to contain. Skip it and let the caller say so.
+      skipped.push(path)
+    }
   }
+  return skipped
 }
 
 interface JoinedRow extends VaultIndexRow {

@@ -8,31 +8,64 @@ import {
 } from '@meetcc/shared'
 
 import { listProjects, listSessions } from '../lib/db'
+import { activeSponsorLinks } from '../lib/sponsor'
+import { resolveTheme, watchSystemTheme, type ThemePref } from '../lib/theme'
+import { locale, t } from '@meetcc/shared/i18n'
 
-type Theme = 'dark' | 'light'
+const themeLabel = (p: ThemePref): string =>
+  t('ext.sidebar.theme', {
+    mode: p === 'system' ? t('pref.system') : p === 'light' ? t('pref.light') : t('pref.dark'),
+  })
 
-/** Dark/light switch; persisted so the next open keeps the choice. */
+const THEME_ICON: Record<ThemePref, string> = {
+  system: '◐',
+  light: '☀',
+  dark: '☾',
+}
+
+const NEXT: Record<ThemePref, ThemePref> = {
+  system: 'light',
+  light: 'dark',
+  dark: 'system',
+}
+
+/** Cycles system → light → dark; persisted so the next open keeps the choice. */
 function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(
-    document.body.dataset.theme === 'light' ? 'light' : 'dark',
-  )
+  const [pref, setPref] = useState<ThemePref>('system')
+
+  // main.tsx already stamped the resolved theme before first paint; this only
+  // recovers which *preference* produced it, so the cycle starts where the
+  // user left off rather than always at `system`.
   useEffect(() => {
-    document.body.dataset.theme = theme
+    void chrome.storage.local
+      .get('theme')
+      .then(({ theme }) => {
+        if (theme === 'light' || theme === 'dark' || theme === 'system') setPref(theme)
+      })
+      .catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
+    document.body.dataset.theme = resolveTheme(pref)
     try {
-      void chrome.storage.local.set({ theme })
+      void chrome.storage.local.set({ theme: pref })
     } catch {
       /* storage unavailable — theme still applies for this session */
     }
-  }, [theme])
+    if (pref !== 'system') return
+    // Follow the OS live, not just on the next open.
+    return watchSystemTheme((t) => {
+      document.body.dataset.theme = t
+    })
+  }, [pref])
+
   return (
     <button
       className='icon-btn'
-      onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-      aria-label={
-        theme === 'dark' ? 'Ganti ke tema terang' : 'Ganti ke tema gelap'
-      }
-      title={theme === 'dark' ? 'Tema terang' : 'Tema gelap'}>
-      {theme === 'dark' ? '☀' : '☾'}
+      onClick={() => setPref((p) => NEXT[p])}
+      aria-label={themeLabel(pref)}
+      title={themeLabel(pref)}>
+      {THEME_ICON[pref]}
     </button>
   )
 }
@@ -41,9 +74,9 @@ function fmtDate(iso: string | null): string {
   if (!iso) return '—'
   const d = new Date(iso)
   return (
-    d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) +
+    d.toLocaleDateString(locale(), { day: '2-digit', month: 'short' }) +
     ' · ' +
-    d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+    d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
   )
 }
 
@@ -130,15 +163,15 @@ export function Sidebar({
         <span className='meeting-body'>
           <span className='meeting-id'>{label}</span>
           <span className='meeting-sub'>
-            {fmtDate(startedAt(m))} · {m.entries.length} baris
+            {fmtDate(startedAt(m))} · {t('ext.sidebar.lines', { count: m.entries.length })}
           </span>
         </span>
         {badge(m)}
       </button>
       <button
         className='meeting-del'
-        aria-label={`Hapus meeting ${label}`}
-        title='Hapus meeting (transcript, notulen, chat)'
+        aria-label={t('ext.sidebar.deleteMeeting', { label })}
+        title={t('ext.sidebar.deleteMeetingHint')}
         onClick={() => onDelete(m.id)}>
         🗑
       </button>
@@ -153,16 +186,16 @@ export function Sidebar({
         <button
           className='icon-btn'
           onClick={() => setOpen(true)}
-          aria-label='Buka sidebar'
+          aria-label={t('ext.sidebar.expand')}
           aria-expanded='false'
-          title='Buka sidebar'>
+          title={t('ext.sidebar.expand')}>
           »
         </button>
         <img className='brand-logo' src='icons/suiflex.svg' alt='Suiflex' />
         {live.length > 0 && (
           <span
             className='rail-live'
-            title={`${live.length} meeting berlangsung`}
+            title={t('ext.sidebar.liveCount', { count: live.length })}
           />
         )}
         <span className='spacer' />
@@ -170,29 +203,29 @@ export function Sidebar({
         <button
           className='icon-btn'
           onClick={onSearch}
-          aria-label='Cari semua rapat'
-          title='Cari semua rapat (⌘K)'>
+          aria-label={t('ext.sidebar.searchAll')}
+          title={t('ext.sidebar.searchAllShortcut')}>
           ⌕
         </button>
         <button
           className='icon-btn'
           onClick={onKnowledge}
-          aria-label='Knowledge base lintas rapat'
-          title='Knowledge base lintas rapat'>
+          aria-label={t('ext.sidebar.knowledge')}
+          title={t('ext.sidebar.knowledge')}>
           ✦
         </button>
         <button
           className='icon-btn'
           onClick={onDecisions}
-          aria-label='Keputusan & carry-over'
-          title='Keputusan & carry-over'>
+          aria-label={t('ext.sidebar.decisions')}
+          title={t('ext.sidebar.decisions')}>
           ▤
         </button>
         <button
           className='icon-btn'
           onClick={onSettings}
-          aria-label='Settings'
-          title='Settings'>
+          aria-label={t('ext.sidebar.settings')}
+          title={t('ext.sidebar.settings')}>
           ⚙
         </button>
       </aside>
@@ -207,18 +240,18 @@ export function Sidebar({
         <button
           className='icon-btn'
           onClick={() => setOpen(false)}
-          aria-label='Sembunyikan sidebar'
+          aria-label={t('ext.sidebar.collapse')}
           aria-expanded='true'
-          title='Sembunyikan sidebar'>
+          title={t('ext.sidebar.collapse')}>
           «
         </button>
       </div>
 
       {projects.length > 0 && (
         <label className='sidebar-filter'>
-          <span className='section-label'>Proyek</span>
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label='Filter proyek'>
-            <option value=''>Semua rapat</option>
+          <span className='section-label'>{t('ext.sidebar.project')}</span>
+          <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label={t('ext.sidebar.projectFilter')}>
+            <option value=''>{t('ext.sidebar.allMeetings')}</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -238,16 +271,16 @@ export function Sidebar({
         <>
           {live.length > 0 && (
             <section>
-              <h2 className='section-label'>Berlangsung</h2>
+              <h2 className='section-label'>{t('ext.sidebar.live')}</h2>
               {live.map(item)}
             </section>
           )}
           <section>
-            <h2 className='section-label'>Riwayat</h2>
+            <h2 className='section-label'>{t('ext.sidebar.history')}</h2>
             {past.length ? (
               past.map(item)
             ) : (
-              <p className='section-empty'>Kosong</p>
+              <p className='section-empty'>{t('ext.sidebar.historyEmpty')}</p>
             )}
           </section>
         </>
@@ -257,31 +290,46 @@ export function Sidebar({
         <button
           className='icon-btn'
           onClick={onSearch}
-          aria-label='Cari semua rapat'
-          title='Cari semua rapat (⌘K)'>
+          aria-label={t('ext.sidebar.searchAll')}
+          title={t('ext.sidebar.searchAllShortcut')}>
           ⌕
         </button>
         <button
           className='icon-btn'
           onClick={onKnowledge}
-          aria-label='Knowledge base lintas rapat'
-          title='Knowledge base lintas rapat'>
+          aria-label={t('ext.sidebar.knowledge')}
+          title={t('ext.sidebar.knowledge')}>
           ✦
         </button>
         <button
           className='icon-btn'
           onClick={onDecisions}
-          aria-label='Keputusan & carry-over'
-          title='Keputusan & carry-over'>
+          aria-label={t('ext.sidebar.decisions')}
+          title={t('ext.sidebar.decisions')}>
           ▤
         </button>
         <button
           className='icon-btn'
           onClick={onSettings}
-          aria-label='Settings'
-          title='Settings'>
+          aria-label={t('ext.sidebar.settings')}
+          title={t('ext.sidebar.settings')}>
           ⚙
         </button>
+        {/* One row of controls, not two footers: the links used to sit on a
+            line of their own between this row and the credit, which read as a
+            third footer stacked under the second. */}
+        {activeSponsorLinks().map((link) => (
+          <a
+            key={link.id}
+            className='icon-btn'
+            href={link.url}
+            target='_blank'
+            rel='noreferrer noopener'
+            aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
+            title={`${t('sponsor.title')} · ${t(link.label)}`}>
+            {link.icon}
+          </a>
+        ))}
       </div>
       <p className='sidebar-credit'>
         <img className='credit-logo' src='icons/suiflex.svg' alt='' />

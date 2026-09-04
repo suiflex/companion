@@ -49,7 +49,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     );
   } catch (e) {
     return {
-      content: [{ type: 'text' as const, text: `Gagal: ${(e as Error).message}` }],
+      content: [{ type: 'text' as const, text: `Failed: ${(e as Error).message}` }],
       isError: true,
     };
   }

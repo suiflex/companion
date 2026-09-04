@@ -155,7 +155,7 @@ describe('renderSpans', () => {
     ]);
     expect(text).toContain('[E1]');
     expect(text).toContain('[E7]');
-    expect(text).toContain('bagian lain rapat');
+    expect(text).toContain('other parts of the meeting');
     expect(text).not.toContain('baris 3');
   });
 });

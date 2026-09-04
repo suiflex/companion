@@ -10,6 +10,7 @@ export default defineConfig({
   base: '',
   resolve: {
     alias: {
+      '@meetcc/shared/i18n': p('../../packages/shared/src/i18n'),
       '@meetcc/shared': p('../../packages/shared/src'),
       '@meetcc/ai': p('../../packages/ai/src'),
       '@meetcc/meeting': p('../../packages/meeting/src'),

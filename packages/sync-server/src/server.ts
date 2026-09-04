@@ -115,10 +115,10 @@ function parseRecord(raw: string, sessionId: string): StoredRecord | string {
     return 'Body bukan JSON.';
   }
   if (typeof body.payload !== 'string' || !body.payload) return 'payload wajib diisi.';
-  if (typeof body.updatedAt !== 'string') return 'updatedAt harus ISO timestamp.';
+  if (typeof body.updatedAt !== 'string') return 'updatedAt must be an ISO timestamp.';
   const instant = Date.parse(body.updatedAt);
-  if (Number.isNaN(instant)) return 'updatedAt harus ISO timestamp.';
-  if (body.sessionId && body.sessionId !== sessionId) return 'sessionId tidak cocok dengan path.';
+  if (Number.isNaN(instant)) return 'updatedAt must be an ISO timestamp.';
+  if (body.sessionId && body.sessionId !== sessionId) return 'sessionId does not match the path.';
   // Canonical form (UTC 'Z', millisecond precision) is required here: the
   // store's LWW, the since() filter and its sort all compare updatedAt as a
   // raw string, so records in mixed shapes would order by their spelling
@@ -128,12 +128,12 @@ function parseRecord(raw: string, sessionId: string): StoredRecord | string {
 
 export async function handle(req: IncomingMessage, res: ServerResponse, opts: ServerOptions): Promise<void> {
   const workspace = authorize(req, opts.tokens);
-  if (workspace === null) return send(res, 401, { error: 'Token tidak dikenal.' });
+  if (workspace === null) return send(res, 401, { error: 'Unknown token.' });
 
   // A token is bound to one workspace, so a client asking for another one is
   // told no rather than quietly served its own.
   const asked = String(req.headers['x-companion-workspace'] ?? '');
-  if (asked !== workspace) return send(res, 403, { error: 'Workspace tidak diizinkan token ini.' });
+  if (asked !== workspace) return send(res, 403, { error: 'This token is not allowed in that workspace.' });
 
   const url = new URL(req.url ?? '/', 'http://localhost');
 
@@ -143,7 +143,7 @@ export async function handle(req: IncomingMessage, res: ServerResponse, opts: Se
 
   if (req.method === 'PUT' && url.pathname.startsWith('/sessions/')) {
     const sessionId = decodeURIComponent(url.pathname.slice('/sessions/'.length));
-    if (!isSafeId(sessionId)) return send(res, 400, { error: 'sessionId tidak valid.' });
+    if (!isSafeId(sessionId)) return send(res, 400, { error: 'Invalid sessionId.' });
     let raw: string;
     try {
       raw = await readBody(req, opts.maxBodyBytes ?? DEFAULT_MAX_BODY);
@@ -158,7 +158,7 @@ export async function handle(req: IncomingMessage, res: ServerResponse, opts: Se
     return send(res, 200, opts.store.put(workspace, record));
   }
 
-  send(res, 404, { error: 'Rute tidak dikenal.' });
+  send(res, 404, { error: 'Unknown route.' });
 }
 
 export function createServer(opts: ServerOptions) {

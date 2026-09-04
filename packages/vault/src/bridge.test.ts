@@ -88,3 +88,26 @@ it('fills a first-delivery note body from markdown (title split off)', async () 
   expect(note.title).toBe('Gate review')
   expect(note.body).toBe('Desktop ditahan sampai verdict.')
 })
+
+// Not hypothetical: a `{type:'ping'}` message sent to a host that predated the
+// ping branch fell through to here, and this wrote
+// `Rapat/NaN-NaN-Na/undefined-TNaN.md` into a real vault before failing on the
+// entries it did not have.
+it('refuses a batch that identifies no meeting', async () => {
+  const noRoom = await applyBatch({ vault, now: () => 'x' }, batch({ roomId: '' }))
+  expect(noRoom.status).toBe('error')
+  const noStart = await applyBatch({ vault, now: () => 'x' }, batch({ startedAt: '' }))
+  expect(noStart.status).toBe('error')
+  const badStart = await applyBatch({ vault, now: () => 'x' }, batch({ startedAt: 'nonsense' }))
+  expect(badStart.status).toBe('error')
+  expect(await vault.readAll()).toEqual([])
+})
+
+it('still accepts a batch that carries its own session key', async () => {
+  // The roomId/startedAt pair only matters when the key has to be derived.
+  const res = await applyBatch(
+    { vault, now: () => '2026-08-28T07:00:00.000Z' },
+    batch({ roomId: '', startedAt: '', sessionKey: 'meet/abc#2026-08-28T14:00' }),
+  )
+  expect(res.status).toBe('ok')
+})

@@ -1,4 +1,5 @@
 import { startedAt, type Analysis, type Meeting } from '@meetcc/shared'
+import { t } from '@meetcc/shared/i18n';
 
 // Turns extracted action items into paste-ready artifacts. No AI, no deps —
 // .ics is plain text (RFC 5545). Two outputs:
@@ -33,7 +34,7 @@ export function toChecklist(analysis: Analysis): string {
       .join(', ')
     return `- [ ] ${a.task}${meta ? ` — ${meta}` : ''}`
   })
-  if (!lines.length) lines.push('- [ ] (tidak ada action item)')
+  if (!lines.length) lines.push(t('pkg.export.noActionItems'))
   return ['## Action Items', '', ...lines, '', '_powered by suiflex_'].join(
     '\n',
   )

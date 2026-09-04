@@ -1,15 +1,35 @@
 import type { Settings } from '@meetcc/shared';
 import { AIError, resolveConfig, type AIClient, type CompletionRequest } from './client';
+import { t } from '@meetcc/shared/i18n';
 
 // A hung provider (no response, no error) would leave the pipeline stuck on
 // "AI Processing" forever. Abort after this long so it fails as retryable.
 const REQUEST_TIMEOUT_MS = 120_000;
 
+/**
+ * The `fetch` every provider call goes through.
+ *
+ * A seam, not indirection for its own sake: the desktop app runs in a WebView
+ * whose CSP allows `connect-src 'self' ipc:` and nothing else, so a request to
+ * a provider is refused before it leaves. Widening the CSP is not available —
+ * base URLs are typed by the user, so there is no host list to enumerate — and
+ * the way out is Rust, whose `fetch` is not subject to the page's CSP.
+ *
+ * The extension leaves this alone and keeps the global.
+ */
+type Fetch = (url: string, init: RequestInit) => Promise<Response>;
+let doFetch: Fetch = (url, init) => fetch(url, init);
+
+/** Route provider requests through `impl`. Called once, at startup. */
+export function setFetch(impl: Fetch): void {
+  doFetch = impl;
+}
+
 export async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
   try {
-    return await fetch(url, { ...init, signal: ctrl.signal });
+    return await doFetch(url, { ...init, signal: ctrl.signal });
   } catch (e) {
     if ((e as Error).name === 'AbortError') {
       throw new AIError(`Timeout: provider tidak merespons dalam ${REQUEST_TIMEOUT_MS / 1000}s`, true);
@@ -314,7 +334,7 @@ function builtin(): AIClient {
       const LM = (globalThis as any).LanguageModel;
       if (!LM?.create) {
         throw new AIError(
-          'AI bawaan browser tidak tersedia di browser ini. Pilih provider di Settings.',
+          t('pkg.ai.noBuiltin'),
           false,
         );
       }

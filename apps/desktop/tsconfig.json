@@ -3,10 +3,14 @@
   "compilerOptions": {
     "paths": {
       "@meetcc/shared": ["../../packages/shared/src"],
+      "@meetcc/shared/i18n": ["packages/shared/src/i18n"],
+      "@meetcc/shared/types": ["../../packages/shared/src/types"],
+      "@meetcc/shared/provider": ["../../packages/shared/src/provider"],
       "@meetcc/ai": ["../../packages/ai/src"],
       "@meetcc/meeting": ["../../packages/meeting/src"],
       "@meetcc/store": ["../../packages/store/src"],
-      "@meetcc/vault": ["../../packages/vault/src"]
+      "@meetcc/vault": ["../../packages/vault/src"],
+      "@meetcc/vault/nodeIo": ["../../packages/vault/src/nodeIo"]
     }
   },
   "include": ["src"]

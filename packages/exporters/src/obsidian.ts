@@ -5,6 +5,7 @@ import {
   type AnalysisRecord,
   type Meeting,
 } from '@meetcc/shared'
+import { locale, t } from '@meetcc/shared/i18n';
 
 // Obsidian-friendly export (unified architecture §13.1) — the Phase 0 demand
 // probe (D2) and its forcing function: wiki-links, tags and a folder layout
@@ -130,7 +131,7 @@ function actionItemsMd(analysis: Analysis): string {
 
 function fmtDate(iso: string | null): string {
   return iso
-    ? new Date(iso).toLocaleString('id-ID', {
+    ? new Date(iso).toLocaleString(locale(), {
         dateStyle: 'full',
         timeStyle: 'short',
       })
@@ -155,7 +156,7 @@ export function toObsidian(meeting: Meeting, analysis: Analysis): string {
         `- **Meeting ID**: ${meeting.id}`,
         `- **companion_id**: ${companionIdFor(meeting)}`,
         `- **Tanggal**: ${fmtDate(startedAt(meeting))}`,
-        `- **Jumlah baris transcript**: ${meeting.entries.length}`,
+        t('pkg.export.transcriptLines', { count: meeting.entries.length }),
       ].join('\n'),
     ),
     section(

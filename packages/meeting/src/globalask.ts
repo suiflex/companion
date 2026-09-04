@@ -1,4 +1,5 @@
 import { AIError, formatEntryLine, verifyEvidence, type AIClient } from '@meetcc/ai';
+import { locale, t } from '@meetcc/shared/i18n';
 import type { AskIntent, AskResult, Entry, EvidenceSpan } from '@meetcc/shared';
 import type { CompanionStore, SearchHit } from '@meetcc/store';
 
@@ -181,7 +182,7 @@ Gunakan bahasa yang sama dengan transcript.`;
 
 export function buildGlobalPrompt(evidence: GlobalEvidence[], question: string): string {
   const blocks = evidence.map((g) => {
-    const when = g.startedAt ? new Date(g.startedAt).toLocaleDateString('id-ID') : '—';
+    const when = g.startedAt ? new Date(g.startedAt).toLocaleDateString(locale()) : '—';
     const lines = g.entries.map((e, i) => formatEntryLine(e, i)).join('\n');
     return `## ${g.sessionTitle} (${when}) [${g.sessionId}]\n${lines}`;
   });
@@ -217,7 +218,7 @@ export async function askMeetings(
   question: string,
 ): Promise<GlobalAskResult> {
   const q = question.trim();
-  if (!q) throw new AIError('Pertanyaan kosong', false);
+  if (!q) throw new AIError(t('pkg.ai.emptyQuestion'), false);
 
   let plan: GlobalPlan;
   try {
@@ -233,7 +234,7 @@ export async function askMeetings(
   const sessions = evidence.map((g) => ({ id: g.sessionId, title: g.sessionTitle, startedAt: g.startedAt }));
   if (!evidence.length) {
     return {
-      answer: 'Tidak ada rapat tersimpan yang membahas hal ini.',
+      answer: t('pkg.ask.noRelevantMeeting'),
       answerability: 'not_found',
       intent: plan.intent,
       confidence: 0.2,
@@ -278,10 +279,10 @@ export function parseGlobalResult(
   try {
     obj = JSON.parse(raw.slice(start, end + 1));
   } catch {
-    throw new AIError('JSON dari AI tidak valid', true);
+    throw new AIError(t('pkg.ai.badJson'), true);
   }
   const answer = typeof obj.answer === 'string' ? obj.answer.trim() : '';
-  if (!answer) throw new AIError('Jawaban kosong dari AI', true);
+  if (!answer) throw new AIError(t('pkg.ai.emptyAnswer'), true);
 
   const ids = Array.isArray(obj.evidence)
     ? obj.evidence.filter((x): x is string => typeof x === 'string')

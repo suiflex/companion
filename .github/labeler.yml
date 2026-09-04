@@ -126,7 +126,6 @@
           - "CHANGELOG.md"
           # release-please bumps the desktop's version files from the root
           # package, so they move on a release like the extension's do.
-          - "apps/desktop/CHANGELOG.md"
           - "apps/desktop/package.json"
           - "apps/desktop/src-tauri/tauri.conf.json"
           - "apps/desktop/src-tauri/Cargo.toml"

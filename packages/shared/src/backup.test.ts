@@ -95,7 +95,7 @@ describe('readBackup', () => {
 
   it('rejects a file with no data object', () => {
     expect(() => readBackup(JSON.stringify({ format: BACKUP_FORMAT, version: 1 }))).toThrow(
-      /tidak berisi data/,
+      /no data/,
     );
   });
 

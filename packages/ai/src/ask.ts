@@ -10,6 +10,7 @@ import {
   type EvidenceSpan,
   type Meeting,
 } from '@meetcc/shared';
+import { t } from '@meetcc/shared/i18n';
 import { AIError, type AIClient } from './client';
 import { renderSpans, selectContext, tokenize, type QueryPlan, type Span } from './retrieval';
 
@@ -231,10 +232,10 @@ export function parseAskResult(raw: string, entries: Entry[], plan: QueryPlan): 
   try {
     obj = JSON.parse(raw.slice(start, end + 1));
   } catch {
-    throw new AIError('JSON dari AI tidak valid', true);
+    throw new AIError(t('pkg.ai.badJson'), true);
   }
   const answer = typeof obj.answer === 'string' ? obj.answer.trim() : '';
-  if (!answer) throw new AIError('Jawaban kosong dari AI', true);
+  if (!answer) throw new AIError(t('pkg.ai.emptyAnswer'), true);
 
   let answerability = ANSWERABILITY.includes(obj.answerability as Answerability)
     ? (obj.answerability as Answerability)
@@ -279,7 +280,7 @@ export async function askMeeting(
   question: string,
 ): Promise<AskResult> {
   const q = question.trim();
-  if (!q) throw new AIError('Pertanyaan kosong', false);
+  if (!q) throw new AIError(t('pkg.ai.emptyQuestion'), false);
 
   const entries = withEntryIds(meeting.entries);
   const plan = await planQuery(client, q);
@@ -288,7 +289,7 @@ export async function askMeeting(
   // Nothing matched after all three passes: answer without burning a call.
   if (!spans.length) {
     return {
-      answer: 'Tidak ada bagian rapat yang membahas hal ini.',
+      answer: t('pkg.ask.noRelevantPart'),
       answerability: 'not_found',
       intent: plan.intent,
       confidence: 0.2,

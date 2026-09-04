@@ -12,6 +12,7 @@ This guide covers how to build, test, and submit changes.
 - **Setup, building, loading the extension** — [INSTALL.md](INSTALL.md)
 - **Where the product is headed** — [docs/06-roadmap.md](docs/06-roadmap.md)
 - **Security policy** — [SECURITY.md](SECURITY.md)
+- **Code of conduct** — [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - **Bugs & feature requests** — [Issues](https://github.com/suiflex/companion/issues/new/choose)
 
 ## How to contribute
@@ -156,9 +157,9 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/); the
   already shows the what.
 - One logical change per commit. Each commit should leave the tree in a
   buildable, testable state so `git revert` stays safe.
-- Do **not** hand-edit the `release-please`-managed sections of either
-  changelog: [CHANGELOG.md](CHANGELOG.md) for the extension,
-  [apps/desktop/CHANGELOG.md](apps/desktop/CHANGELOG.md) for the desktop.
+- Do **not** hand-edit the `release-please`-managed sections of
+  [CHANGELOG.md](CHANGELOG.md). Both products share it — the commit scope is
+  what separates them in it, which is why scoping matters above.
 
 ## Branching & pull requests
 

@@ -32,3 +32,5 @@ tauri-plugin-wdio-webdriver = { version = "1", optional = true }
 tauri-plugin-dialog = "2.7.3"
 tauri-plugin-updater = "2.11.0"
 tauri-plugin-process = "2.3.1"
+keyring = { version = "3.6.3", features = ["apple-native", "windows-native", "sync-secret-service"] }
+tauri-plugin-http = "2.6.0"

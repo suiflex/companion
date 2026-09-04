@@ -9,6 +9,49 @@ const TEAMS = /teams\.(microsoft\.com|live\.com|cloud\.microsoft)/.test(
   location.host,
 )
 const TAG = TEAMS ? '[MeetCC:teams]' : '[MeetCC]'
+
+// This file ships as-is with no build step, so it cannot import the shared
+// catalogue. Its three visible strings get an inline copy instead, reading the
+// same `lang` storage key the rest of the extension writes. Keep these in step
+// with packages/shared/src/messages when they change.
+const MESSAGES = {
+  en: {
+    badge: 'Click: open or close the floating transcript (it follows you to other tabs and apps)',
+    openInDashboard: 'Click: open this meeting in the dashboard',
+    carryOver: '{count} items from the previous meeting are still open',
+  },
+  id: {
+    badge: 'Klik: buka/tutup transcript mengambang (ikut ke tab/app lain)',
+    openInDashboard: 'Klik: buka meeting ini di dashboard',
+    carryOver: '{count} item dari rapat sebelumnya masih terbuka',
+  },
+}
+
+let LANG = 'en'
+const T = (key, vars) =>
+  (MESSAGES[LANG][key] ?? MESSAGES.en[key]).replace(/\{(\w+)\}/g, (whole, name) =>
+    vars && name in vars ? String(vars[name]) : whole,
+  )
+
+const pickLang = (pref) => {
+  if (pref === 'en' || pref === 'id') return pref
+  // `system`, or nothing stored yet: fall back to the browser, then English.
+  const primary = (navigator.languages ?? [navigator.language])
+    .map((tag) => String(tag).toLowerCase().split('-')[0])
+    .find((p) => p in MESSAGES)
+  return primary ?? 'en'
+}
+
+try {
+  chrome.storage.local.get('lang', ({ lang }) => {
+    LANG = pickLang(lang)
+  })
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.lang) LANG = pickLang(changes.lang.newValue)
+  })
+} catch {
+  /* no storage access — English is the default and still correct */
+}
 const TOP = window === window.top
 
 const KNOWN = [
@@ -315,7 +358,7 @@ async function teamsEnableCc() {
       )
       console.warn(
         TAG,
-        'CC menu tidak ketemu. Nyalakan manual: More → Language and speech → ' +
+        'CC menu not found. Turn it on manually: More → Language and speech → ' +
           'Turn on live captions. Permanen: Settings → Accessibility → Always keep captions on.',
       )
     }
@@ -484,7 +527,7 @@ if (TOP) {
   timers.push(setInterval(renderPip, 700))
 
   badge = document.createElement('div')
-  badge.title = 'Klik: buka/tutup transcript mengambang (ikut ke tab/app lain)'
+  badge.title = T('badge')
   badge.style.cssText =
     'position:fixed;top:8px;right:8px;z-index:2147483647;background:#0f131b;' +
     'color:#46e394;border:1px solid #273043;font:11px ui-monospace,Menlo,monospace;' +
@@ -541,12 +584,12 @@ if (TOP) {
       'background:#0f131b;color:#dbe2ee;border:1px solid #273043;border-radius:10px;' +
       'font:11px/1.5 "Avenir Next","Segoe UI",sans-serif;padding:8px 10px;opacity:.95;' +
       'box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:pointer'
-    box.title = 'Klik: buka meeting ini di dashboard'
+    box.title = T('openInDashboard')
     const head = document.createElement('div')
     head.style.cssText =
       'color:#46e394;font-weight:600;font-size:10px;letter-spacing:.1em;' +
       'text-transform:uppercase;margin-bottom:4px'
-    head.textContent = `${total} item dari rapat sebelumnya masih terbuka`
+    head.textContent = T('carryOver', { count: total })
     box.append(head)
     for (const line of lines) {
       const row = document.createElement('div')

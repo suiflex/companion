@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { onLangChange, t } from '@meetcc/shared/i18n';
 import {
   ANALYSIS_PREFIX,
   META_PREFIX,
@@ -29,12 +30,12 @@ import { ToastProvider, useToast } from './toast';
 
 type Tab = 'summary' | 'transcript' | 'diagram' | 'ask' | 'docs';
 
-const TAB_LABELS: Record<Tab, string> = {
-  summary: 'Summary',
-  transcript: 'Transcript',
-  diagram: 'Diagram',
-  ask: 'Tanya',
-  docs: 'Dokumen',
+const TAB_LABELS: Record<Tab, Parameters<typeof t>[0]> = {
+  summary: 'ext.tab.summary',
+  transcript: 'ext.tab.transcript',
+  diagram: 'ext.tab.diagram',
+  ask: 'ext.tab.ask',
+  docs: 'ext.tab.docs',
 };
 const TABS = Object.keys(TAB_LABELS) as Tab[];
 
@@ -63,7 +64,7 @@ function MeetingTitle({ id, title }: { id: string; title: string }) {
         autoFocus
         value={draft}
         placeholder={displayMeetingId(id)}
-        aria-label="Nama meeting"
+        aria-label={t('ext.meeting.nameLabel')}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => {
@@ -79,7 +80,7 @@ function MeetingTitle({ id, title }: { id: string; title: string }) {
 
   return (
     <h1>
-      <button className="title-btn" title={`${id} — klik untuk ganti nama`} onClick={() => setEditing(true)}>
+      <button className="title-btn" title={t('ext.meeting.rename', { id })} onClick={() => setEditing(true)}>
         {title || displayMeetingId(id)}
       </button>
     </h1>
@@ -87,6 +88,11 @@ function MeetingTitle({ id, title }: { id: string; title: string }) {
 }
 
 function Shell({ initialMeeting }: { initialMeeting: string | null }) {
+  // `t()` reads a module-level language, which React cannot see changing, so
+  // one subscription at the root re-renders the tree when it does.
+  const [, setLangTick] = useState(0);
+  useEffect(() => onLangChange(() => setLangTick((n) => n + 1)), []);
+
   const [meetings, setMeetings] = useState<Meeting[] | null>(null); // null = loading
   const [records, setRecords] = useState<Record<string, AnalysisRecord>>({});
   const [titles, setTitles] = useState<Record<string, string>>({});
@@ -157,17 +163,17 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
   const handleDelete = async (id: string) => {
     const m = (meetings ?? []).find((x) => x.id === id);
     const label = titles[id] || id;
-    const lines = m ? `${m.entries.length} baris transcript` : 'transcript';
-    const ok = window.confirm(
-      `Hapus "${label}"?\n\n${lines}, notulen, chat dan dokumen ikut terhapus permanen. Tindakan ini tidak bisa dibatalkan.`,
-    );
+    const lines = m
+      ? t('ext.meeting.transcriptLines', { count: m.entries.length })
+      : t('ext.meeting.transcriptGeneric');
+    const ok = window.confirm(t('ext.meeting.confirmDelete', { label, lines }));
     if (!ok) return;
     await clearMeeting(id);
     // the search index is rebuilt from storage on the next sweep anyway; doing
     // it now means a deleted meeting stops showing up in ⌘K immediately
     void chrome.runtime.sendMessage({ type: 'db', op: 'sync-index' }).catch(() => undefined);
     if (selectedId === id) setSelectedId(null);
-    toast('info', `Meeting ${label} dihapus.`);
+    toast('info', t('ext.meeting.deleted', { label }));
   };
 
   const handleClear = async () => {
@@ -228,16 +234,16 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
                   </span>
                 )}
               </div>
-              <nav className="tabs" role="tablist" aria-label="Tampilan meeting">
-                {TABS.map((t) => (
+              <nav className="tabs" role="tablist" aria-label={t('ext.meeting.views')}>
+                {TABS.map((id) => (
                   <button
-                    key={t}
+                    key={id}
                     role="tab"
-                    aria-selected={tab === t}
-                    className={`tab ${tab === t ? 'active' : ''}`}
-                    onClick={() => setTab(t)}
+                    aria-selected={tab === id}
+                    className={`tab ${tab === id ? 'active' : ''}`}
+                    onClick={() => setTab(id)}
                   >
-                    {TAB_LABELS[t]}
+                    {t(TAB_LABELS[id])}
                   </button>
                 ))}
               </nav>
@@ -270,11 +276,8 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
         ) : (
           <div className="empty-state">
             <div className="empty-glyph">CC</div>
-            <p>Belum ada meeting terekam.</p>
-            <p className="empty-hint">
-              Join Google Meet — caption nyala otomatis, transcript dan notulen AI
-              muncul di sini.
-            </p>
+            <p>{t('ext.empty.title')}</p>
+            <p className="empty-hint">{t('ext.empty.hint')}</p>
           </div>
         )}
       </main>

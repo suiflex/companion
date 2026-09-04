@@ -1,4 +1,5 @@
 import type { ActionRow, CompanionStore, DecisionRow, QuestionRow, SessionRow } from '@meetcc/store';
+import { t } from '@meetcc/shared/i18n';
 
 // P1.9 — meeting continuity. The differentiator is not one meeting's notes but
 // the thread between them: a decision revised three weeks later, a question
@@ -222,6 +223,6 @@ export function weeklyDigest(
     story.openQuestions.map((q) => `- ${q.question}`),
   );
 
-  if (!recent.length) lines.push('', '_Tidak ada aktivitas rapat pada periode ini._');
+  if (!recent.length) lines.push('', t('pkg.digest.noActivity'));
   return lines.join('\n');
 }

@@ -151,7 +151,7 @@ describe('runPipeline', () => {
     expect(res.ok).toBe(true);
     expect(records.map((r) => r.status)).toEqual(['processing', 'processing', 'done']);
     expect(deps.notify).toHaveBeenCalledWith(
-      expect.stringContaining('siap'),
+      expect.stringContaining('Notes ready'),
       expect.any(String),
       'aaa-bbbb-ccc',
     );

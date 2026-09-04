@@ -12,5 +12,9 @@
   },
   "dependencies": {
     "@meetcc/store": "*"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./nodeIo": "./src/nodeIo.ts"
   }
 }

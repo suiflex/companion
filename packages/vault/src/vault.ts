@@ -59,7 +59,10 @@ export class Vault {
     // Every segment is slugged, the date included: `startedAt` arrives from the
     // extension over the bridge, and an unslugged `..` in it would walk the
     // write out of the vault entirely.
-    const day = slug(stamp?.slice(0, 10) || note.startedAt?.slice(0, 10) || '') || 'undated'
+    // A day segment that is not a date is not a day: `undated` is where a note
+    // with no usable start belongs, and it already exists for exactly that.
+    const raw = slug(stamp?.slice(0, 10) || note.startedAt?.slice(0, 10) || '')
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : 'undated'
     const hhmm = slug(stamp?.slice(11, 16).replace(':', '') ?? '')
     const name = hhmm ? `${slug(room)}-${hhmm}` : slug(room)
     return this.io.join(this.io.root, 'Rapat', day, `${name}.md`)
@@ -70,9 +73,22 @@ export class Vault {
     return relative(this.io.root, this.notePath(note))
   }
 
-  /** Write a note atomically so a crash never leaves a half-written .md. */
+  /**
+   * Write a note atomically so a crash never leaves a half-written .md.
+   *
+   * The location is derived from the session key, which is right for a note
+   * arriving over the bridge — it has no location yet. It is wrong for a note
+   * that already lives somewhere: saving would write a *second* copy at the
+   * derived path and leave the original where it was, giving two files with
+   * one session key. Use `writeNoteAt` for a note you already have a path for.
+   */
   async writeNote(note: VaultNote): Promise<string> {
-    const path = this.notePath(note)
+    return this.writeNoteAt(this.relPath(note), note)
+  }
+
+  /** Write a note to the path it already occupies, wherever that is. */
+  async writeNoteAt(rel: string, note: VaultNote): Promise<string> {
+    const path = this.io.join(this.io.root, rel)
     await this.io.mkdirs(dirname(path))
     await this.io.writeFileAtomic(path, noteToMarkdown(note))
     return path

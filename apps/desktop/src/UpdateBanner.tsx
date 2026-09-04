@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { t } from "@meetcc/shared/i18n";
 
 /** Tells you a newer build exists and installs it on request.
  *
@@ -50,8 +51,8 @@ export default function UpdateBanner() {
     <div className="update-banner" role="status">
       <span>
         {failed
-          ? "Gagal memasang pembaruan. Coba lagi, atau unduh manual dari halaman rilis."
-          : `Versi ${update.version} tersedia.`}
+          ? t('desktop.update.failed')
+          : t('desktop.update.available', { version: update.version })}
       </span>
       <button
         type="button"
@@ -59,7 +60,11 @@ export default function UpdateBanner() {
         onClick={() => void install()}
         disabled={busy}
       >
-        {busy ? "Memasang…" : failed ? "Coba lagi" : "Restart & pasang"}
+        {busy
+          ? t('desktop.update.installing')
+          : failed
+            ? t('desktop.update.retry')
+            : t('desktop.update.restart')}
       </button>
       <button
         type="button"

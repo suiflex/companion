@@ -54,7 +54,7 @@ describe('toChecklist', () => {
   })
   it('handles no action items', () => {
     expect(toChecklist({ ...base, actionItems: [] })).toContain(
-      '(tidak ada action item)',
+      '(no action items)',
     )
   })
 })

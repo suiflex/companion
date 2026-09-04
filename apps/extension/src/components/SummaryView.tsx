@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { locale, t } from '@meetcc/shared/i18n';
 import type { Analysis, AnalysisRecord, Meeting } from '@meetcc/shared';
 import { appendAudit } from '@meetcc/shared';
 import { toMarkdown } from '@meetcc/exporters/markdown';
@@ -46,7 +47,7 @@ function ActionItemsToolbar({ meeting, analysis }: { meeting: Meeting; analysis:
         className="ghost"
         onClick={async () => {
           await navigator.clipboard.writeText(toChecklist(analysis));
-          toast('success', 'Checklist disalin.');
+          toast('success', t('ext.summary.checklistCopied'));
         }}
       >
         ⧉ Copy checklist
@@ -54,10 +55,10 @@ function ActionItemsToolbar({ meeting, analysis }: { meeting: Meeting; analysis:
       <button
         className="ghost"
         disabled={!dated}
-        title={dated ? '' : 'Tidak ada action item dengan tanggal terstruktur (yyyy-mm-dd)'}
+        title={dated ? '' : t('ext.summary.noDatedActions')}
         onClick={() => {
           downloadBlob(`${meeting.id}-tasks.ics`, new Blob([toIcs(meeting, analysis)], { type: 'text/calendar' }));
-          toast('success', `${dated} event kalender diunduh.`);
+          toast('success', t('ext.summary.icsDownloaded', { count: dated }));
         }}
       >
         ⬇ .ics{dated ? ` (${dated})` : ''}
@@ -72,7 +73,7 @@ function Result({ meeting, analysis }: { meeting: Meeting; analysis: Analysis })
       <Section title="Executive Summary">
         <p>{analysis.executiveSummary}</p>
       </Section>
-      <Section title="Timeline Pembahasan">
+      <Section title={t('ext.summary.section.timeline')}>
         {analysis.timeline.length ? (
           <ol className="timeline">
             {analysis.timeline.map((t, i) => (
@@ -169,10 +170,10 @@ export function SummaryView({ meeting, record, live }: Props) {
         type: 'regenerate',
         meetingId: meeting.id,
       });
-      if (res?.ok) toast('success', live ? 'MoM sementara dibuat.' : 'Notulen selesai dibuat.');
-      else toast('error', `Gagal: ${res?.error ?? res?.reason ?? 'unknown'}`);
+      if (res?.ok) toast('success', live ? t('ext.summary.momDone') : t('ext.summary.notesDone'));
+      else toast('error', t('ext.failed', { error: res?.error ?? res?.reason ?? t('ext.unknownError') }));
     } catch (e) {
-      toast('error', `Gagal: ${(e as Error).message}`);
+      toast('error', t('ext.failed', { error: (e as Error).message }));
     } finally {
       setBusy(false);
     }
@@ -186,7 +187,7 @@ export function SummaryView({ meeting, record, live }: Props) {
             `${meeting.id}.md`,
             new Blob([toMarkdown(meeting, analysis)], { type: 'text/markdown' }),
           );
-          toast('success', 'Markdown diunduh.');
+          toast('success', t('ext.summary.markdownDownloaded'));
         }}
       >
         ⬇ Markdown
@@ -200,7 +201,7 @@ export function SummaryView({ meeting, record, live }: Props) {
             new Blob([toObsidian(meeting, analysis)], { type: 'text/markdown' }),
           );
           void appendAudit(GATE_EVENT, 'meetings=1').catch(() => undefined);
-          toast('success', 'Catatan Obsidian diunduh (folder Meetings/).');
+          toast('success', t('ext.summary.obsidianDownloaded'));
         }}
       >
         ⬇ Obsidian
@@ -232,7 +233,7 @@ export function SummaryView({ meeting, record, live }: Props) {
             downloadBlob(`${meeting.id}.pdf`, toPdf(meeting, analysis, diagrams, logo));
             toast('success', 'PDF diunduh.');
           } catch (e) {
-            toast('error', `Gagal membuat PDF: ${(e as Error).message}`);
+            toast('error', t('ext.docs.pdfFailed', { error: (e as Error).message }));
           } finally {
             setBusy(false);
           }
@@ -252,7 +253,7 @@ export function SummaryView({ meeting, record, live }: Props) {
       <>
         {actions(record.analysis)}
         <div className="summary-meta dim">
-          Provider: {record.provider} · {new Date(record.generatedAt).toLocaleString('id-ID')}
+          Provider: {record.provider} · {new Date(record.generatedAt).toLocaleString(locale())}
           {record.provisional &&
             ' · MoM sementara dari transcript sejauh ini — diganti otomatis setelah meeting selesai'}
         </div>
@@ -262,7 +263,7 @@ export function SummaryView({ meeting, record, live }: Props) {
   }
 
   if (record?.status === 'processing') {
-    const steps = ['Transcript', 'AI Processing', 'Menyimpan'];
+    const steps = ['Transcript', 'AI Processing', t('ext.summary.step.saving')];
     const active = record.step === 'ai' ? 1 : 2;
     // taking too long usually means a crashed/hung run — offer a manual restart
     const slow = Date.now() - Date.parse(record.startedAt) > 45_000;
@@ -282,7 +283,7 @@ export function SummaryView({ meeting, record, live }: Props) {
               Lama? Proses mungkin terhenti.
             </span>
             <button onClick={regenerate} disabled={busy}>
-              {busy ? 'Memproses…' : '↻ Mulai ulang'}
+              {busy ? t('ext.summary.processing') : t('ext.summary.restart')}
             </button>
           </div>
         )}
@@ -297,11 +298,11 @@ export function SummaryView({ meeting, record, live }: Props) {
     return (
       <div className="empty-state">
         <div className="error-box" role="alert">
-          <strong>Analisis gagal</strong>
+          <strong>{t('ext.summary.analysisFailed')}</strong>
           <p>{record.error}</p>
         </div>
         <button className="primary" onClick={regenerate} disabled={busy}>
-          {busy ? 'Memproses…' : 'Coba lagi'}
+          {busy ? t('ext.summary.processing') : t('ext.summary.retry')}
         </button>
       </div>
     );
@@ -310,14 +311,18 @@ export function SummaryView({ meeting, record, live }: Props) {
   return (
     <div className="empty-state">
       <div className="empty-glyph">AI</div>
-      <p>{live ? 'Meeting masih berlangsung.' : 'Belum ada notulen.'}</p>
+      <p>{live ? t('ext.summary.liveTitle') : t('ext.summary.emptyTitle')}</p>
       <p className="empty-hint">
         {live
-          ? 'Notulen dibuat otomatis begitu meeting selesai — atau buat MoM sementara sekarang dari transcript sejauh ini.'
-          : 'Jalankan analisis AI untuk ringkasan, keputusan, dan action items.'}
+          ? t('ext.summary.liveHint')
+          : t('ext.summary.emptyHint')}
       </p>
       <button className="primary" onClick={regenerate} disabled={busy}>
-        {busy ? 'Memproses…' : live ? 'Buat MoM sekarang' : 'Generate sekarang'}
+        {busy
+          ? t('ext.summary.processing')
+          : live
+            ? t('ext.summary.makeMom')
+            : t('ext.summary.generate')}
       </button>
     </div>
   );

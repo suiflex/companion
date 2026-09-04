@@ -118,6 +118,56 @@ describe('vault file ops', () => {
   })
 })
 
+describe('a note that has been moved', () => {
+  it('is saved back where it is, not where its session key implies', async () => {
+    // The bug this pins: `writeNote` derives the path from the session key, so
+    // saving a moved note wrote a *second* copy at the derived location and
+    // left the original behind — two files carrying one session key.
+    const n = note({ sessionKey: 'nota/abc', startedAt: undefined })
+    const derived = vault.relPath(n)
+    await vault.writeNote(n)
+
+    const moved = 'Projects/Alpha/abc.md'
+    await vault.writeNoteAt(moved, { ...n, body: 'edited' })
+    // the original is still where writeNote put it, so remove it the way a
+    // real move does
+    rmSync(join(dir, derived))
+
+    await vault.writeNoteAt(moved, { ...n, body: 'edited twice' })
+
+    const paths = await vault.listNotes()
+    expect(paths).toEqual([moved])
+    expect((await vault.readNote(moved)).body).toBe('edited twice')
+  })
+
+  it('is indexed at the path it occupies', async () => {
+    // Indexing by the derived path meant two notes deriving the same location
+    // collided on session_key, which surfaced as a UNIQUE constraint error on
+    // save rather than as anything a reader could act on.
+    const { driver } = await openDatabase()
+    const n = note({ sessionKey: 'nota/abc', startedAt: undefined })
+    const moved = 'Projects/Alpha/abc.md'
+    await vault.writeNoteAt(moved, n)
+
+    await createIndex(driver, vault, [n], [moved])
+    const hit = search(driver, 'Gate')[0]
+    expect(hit.path).toBe(moved)
+  })
+
+  it('skips a duplicate session key instead of failing the whole index', async () => {
+    // Two files can carry one session key — a .md copied in Finder, or a
+    // duplicate an older build wrote. The index can hold only one, but taking
+    // the window down over it is worse than indexing what it can.
+    const { driver } = await openDatabase()
+    const a = note({ id: 'a', sessionKey: 'nota/same', startedAt: undefined, title: 'One' })
+    const b = note({ id: 'b', sessionKey: 'nota/same', startedAt: undefined, title: 'Two' })
+
+    const skipped = await createIndex(driver, vault, [a, b], ['x/one.md', 'y/two.md'])
+    expect(skipped).toEqual(['y/two.md'])
+    expect(search(driver, 'One')[0].path).toBe('x/one.md')
+  })
+})
+
 describe('derived index', () => {
   it('rebuilds from source and searches title/body', async () => {
     await vault.writeNote(note())
@@ -169,4 +219,18 @@ describe('derived index', () => {
     await createIndex(driver, vault)
     expect(search(driver, 'vault')).toHaveLength(1)
   })
+})
+
+it('parks a note with an unusable date in undated', async () => {
+  // The day segment is part of a path, so a non-date there is a directory
+  // named after the failure — `Rapat/NaN-NaN-Na/` is what that looked like.
+  const rel = vault.relPath({
+    id: 'i',
+    sessionKey: 'meet/abc#not-a-date',
+    platform: 'google-meet',
+    updatedAt: '2026-01-01T00:00:00Z',
+    title: 't',
+    body: '',
+  })
+  expect(rel.split('/')[1]).toBe('undated')
 })

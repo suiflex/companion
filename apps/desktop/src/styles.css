@@ -1,11 +1,40 @@
+/* Dark is the default; `body[data-theme]` is stamped before first paint by
+   theme.ts, which resolves the "system" preference through matchMedia. Every
+   colour below is a token — a hard-coded hex anywhere else in this file is a
+   colour that cannot follow the theme. */
 :root {
   color-scheme: dark;
   --bg: #0a0d12;
   --bg-panel: #0f131b;
+  --bg-sunken: #0d1119;
+  --bg-raised: #131926;
   --border: #1d2434;
   --fg: #dbe2ee;
   --fg-muted: #8b95a9;
+  --fg-on-accent: #0a0d12;
   --accent: #46e394;
+  --danger: #ff6b74;
+  --warning: #e0b341;
+  --info: #6aa9f0;
+}
+
+/* Light: the same structure on paper. The signal green darkens so it still
+   reads as an accent against white, and the sunken/raised pair inverts —
+   sunken becomes lighter than the page, not darker. */
+body[data-theme='light'] {
+  color-scheme: light;
+  --bg: #eef1f6;
+  --bg-panel: #ffffff;
+  --bg-sunken: #f7f9fc;
+  --bg-raised: #ffffff;
+  --border: #d2dae7;
+  --fg: #1c2433;
+  --fg-muted: #55617a;
+  --fg-on-accent: #ffffff;
+  --accent: #0c8f60;
+  --danger: #d43f49;
+  --warning: #a86f0c;
+  --info: #1663b0;
 }
 
 * {
@@ -35,13 +64,14 @@ body {
 .rail {
   width: 52px;
   flex: none;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   padding: 12px 0;
   border-right: 1px solid var(--border);
-  background: #0d1119;
+  background: var(--bg-sunken);
 }
 
 .rail .brand {
@@ -65,7 +95,7 @@ body {
 }
 
 .rail-btn:hover:not(:disabled) {
-  background: #131926;
+  background: var(--bg-raised);
   color: var(--fg);
 }
 
@@ -100,7 +130,7 @@ body {
   gap: 12px;
   padding: 0 14px;
   border-bottom: 1px solid var(--border);
-  background: #0d1119;
+  background: var(--bg-sunken);
 }
 
 .badge {
@@ -148,12 +178,19 @@ body {
 }
 
 .rail-active {
-  background: #131926;
+  background: var(--bg-raised);
   color: var(--fg);
 }
 
+/* ponytail: the CSS `resize` grabber rather than a drag handle of our own —
+   the platform already draws one. It does not persist across launches; add a
+   stored width if that turns out to matter. */
 .sidebar {
-  width: 262px;
+  width: 300px;
+  min-width: 240px;
+  max-width: 520px;
+  resize: horizontal;
+  overflow: hidden;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -171,15 +208,20 @@ body {
 }
 
 .kicker {
-  font: 600 9.5px/1 ui-monospace, 'SF Mono', Menlo, monospace;
-  letter-spacing: 0.16em;
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--fg-muted);
 }
 
 .count {
   margin-left: auto;
-  font: 400 10px/1 ui-monospace, Menlo, monospace;
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
   color: var(--fg-muted);
 }
 
@@ -197,12 +239,12 @@ body {
 
 .search {
   margin: 10px;
-  padding: 6px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #0d1119;
+  background: var(--bg-sunken);
   color: var(--fg);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .note-list {
@@ -214,13 +256,36 @@ body {
   min-height: 0;
 }
 
+.note-tree .note-item {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 7px;
+}
+
+/* Which kind of note this is, at the start of the row where a scan lands.
+   A delivered meeting is an archive: editing it copies rather than rewrites,
+   so the difference has to be visible before the click, not after. */
+.note-kind {
+  flex: none;
+  width: 11px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--fg-muted);
+  opacity: 0.5;
+}
+
+.note-kind.delivered {
+  color: var(--accent);
+  opacity: 1;
+}
+
 .note-item {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 3px;
   text-align: left;
-  padding: 7px 9px;
+  padding: 8px 10px;
   border: 0;
   border-radius: 7px;
   background: transparent;
@@ -229,28 +294,158 @@ body {
 }
 
 .note-item:hover {
-  background: #131926;
+  background: var(--bg-raised);
 }
 
 .note-item.active {
-  background: #131926;
+  background: var(--bg-raised);
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
+.note-item:hover .note-title,
+.note-item.active .note-title { color: var(--fg); }
+
+/* A leaf sits below its folder in weight as well as in the tree: same face,
+   one step lighter, so the structure is legible without reading the words. */
 .note-title {
+  font-weight: 400;
   font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--fg-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* One type scale for the whole sidebar.
+   It had three: monospace for the counts and the kicker, 600-weight Avenir for
+   the folders, and the body face for the notes — in a 300px column that reads
+   as three unrelated lists stacked on top of each other rather than one tree.
+   Everything below is the body face at two sizes; the counts keep tabular
+   figures so the column of numbers stays straight, which is the one thing the
+   monospace was actually buying. */
+
+/* The folder tree. Indentation is applied per row rather than by nesting
+   padding, so a deep note still starts its hit area at the sidebar edge. */
+.note-tree { padding: 4px 0; overflow-y: auto; }
+
+.note-tree .tree-list { list-style: none; margin: 0; padding: 0; }
+
+.tree-folder {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tree-folder:hover .tree-name { color: var(--accent); }
+
+/* The folder a dragged note would land in. Without a visible target the
+   gesture is a guess. */
+.tree-folder.drop-over,
+.note-tree.drop-over {
+  background: var(--bg-raised);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  border-radius: 6px;
+}
+
+.note-tree .note-item { cursor: grab; }
+.note-tree .note-item:active { cursor: grabbing; }
+
+.tree-caret {
+  flex: none;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;
+  transition: transform 120ms ease;
+}
+
+.tree-caret.open { transform: rotate(90deg) translateX(-1px); }
+
+/* The per-folder add button. Hidden until the row is touched, so a sidebar
+   of folders is not a wall of icons. */
+.tree-add {
+  flex: none;
+  border: 0;
+  padding: 0 2px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.tree-folder:hover .tree-add,
+.tree-add:focus-visible { opacity: 1; }
+.tree-add:hover { color: var(--accent); }
+
+.tree-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.tree-count {
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tree-caret { transition: none; }
+}
+
+.note-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Where a note came from, when it did not come from here. */
+.note-source {
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.note-item.active .note-source { border-color: var(--accent); color: var(--accent); }
 
 .note-date {
   font: 400 9.5px/1 ui-monospace, Menlo, monospace;
   color: var(--fg-muted);
 }
 
+/* One row per delivered meeting: where it came from, when, how many people,
+   and whether the summary has landed yet. */
+.inbox-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font: 400 9.5px/1.4 ui-monospace, Menlo, monospace;
+  color: var(--fg-muted);
+}
+
+.inbox-meta .pending { color: var(--accent); opacity: 0.75; }
+
 .empty-hint {
   padding: 10px;
+  line-height: 1.5;
   color: var(--fg-muted);
   font-size: 12.5px;
 }
@@ -273,16 +468,640 @@ body {
   margin-bottom: 12px;
 }
 
-.body-input {
+/* Ticket metadata sits between the title and the body, the way an issue
+   tracker puts it: visible without opening anything, out of the writing flow. */
+/* Three-way choice shown as one control, so the options read as alternatives
+   rather than three separate buttons. */
+.segmented {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmented .seg {
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  padding: 7px 12px;
+  font: 12px 'Avenir Next', Avenir, sans-serif;
+  cursor: pointer;
+}
+
+.segmented .seg:last-child { border-right: 0; }
+.segmented .seg:hover { color: var(--fg); }
+
+.segmented .seg.active {
+  background: var(--accent);
+  color: var(--fg-on-accent);
+  font-weight: 600;
+}
+
+/* The meeting a note came from: who was there, when, and how to get back to
+   it. Shown only for delivered notes — a hand-written one has none of this. */
+.meeting-meta {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-sunken);
+}
+
+.mm-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.mm-platform {
+  font: 600 10px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.mm-when { font-size: 12px; color: var(--fg-muted); }
+
+.mm-link {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: 12px 'Avenir Next', Avenir, sans-serif;
+  cursor: pointer;
+}
+
+.mm-people {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.mm-label {
+  font: 600 9.5px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.mm-person {
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-raised);
+  font-size: 12px;
+}
+
+.mm-link-row { display: flex; align-items: center; gap: 8px; }
+
+.mm-url {
   flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  color: var(--fg-muted);
+  font: 11px ui-monospace, Menlo, monospace;
+}
+
+.mm-transcript {
+  max-height: 260px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.mm-line {
+  display: grid;
+  grid-template-columns: 42px 110px 1fr;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.mm-time { font: 10px/1.7 ui-monospace, Menlo, monospace; color: var(--fg-muted); }
+.mm-speaker { color: var(--accent); overflow: hidden; text-overflow: ellipsis; }
+
+/* A grid, not a wrapping flex row: equal columns keep the four controls the
+   same width, and a shared height keeps their boxes on one baseline. Left to
+   themselves, a select and a text input measure differently in WebKit and the
+   row comes out ragged. */
+.ticket-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px 18px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ticket-fields label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+/* Direct children only: the date field draws its own value in a nested span,
+   and the broader selector was shouting it in caps. */
+/* Sits in the grid as its own cell, aligned with the controls rather than the
+   labels, so the row reads as one band whether or not any field is showing. */
+.add-property {
+  align-self: end;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: 12.5px 'Avenir Next', Avenir, sans-serif;
+  cursor: pointer;
+}
+
+.add-property:hover { border-color: var(--fg-muted); color: var(--fg); }
+
+.ticket-fields label > span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.ticket-fields input,
+.ticket-fields select {
+  width: 100%;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  color: var(--fg);
+  padding: 0 10px;
+  font: 13px 'Avenir Next', Avenir, sans-serif;
+  line-height: normal;
+}
+
+/* Transient feedback, bottom-right. Re-tokenised rather than copied from the
+   extension: the palettes use different variable names. */
+.toasts {
+  position: fixed;
+  bottom: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 99;
+}
+
+.toast {
+  max-width: 320px;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg-panel);
+  font-size: 12.5px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+  animation: toast-rise 180ms ease-out;
+}
+
+.toast-success { border-color: var(--accent); color: var(--accent); }
+.toast-error { border-color: var(--danger); color: var(--danger); }
+
+@keyframes toast-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}
+
+/* Tooltips, drawn by us.
+   macOS renders this window in WKWebView, which does not surface the HTML
+   `title` attribute on hover — the rail read as a row of unlabelled glyphs
+   because of it. `data-tip` replaces `title` rather than joining it, so the
+   platforms that *do* have native tooltips (WebView2) don't show two. The
+   accessible name still comes from aria-label. */
+[data-tip] { position: relative; }
+
+/* A disabled control gets no hover events, so anything that needs a tip while
+   disabled wears it on this wrapper instead. */
+.tip-wrap { display: inline-flex; }
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--fg);
+  font: 11.5px/1.3 'Avenir Next', Avenir, sans-serif;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 90ms ease 220ms;
+}
+
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after { opacity: 1; }
+
+/* The rail is a narrow left edge; a tooltip below it would be clipped by the
+   next button, so those sit beside it instead. */
+[data-tip-side='right']::after {
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tip]::after { transition: none; }
+}
+
+/* Status and priority carry a colour, so a glance at a note says where it
+   stands. The scale is the palette the app already had — muted, blue, amber,
+   red, green — with no value inventing a colour of its own.
+   The dot does the work; the text is only tinted, so the tone is never the
+   sole carrier of meaning for anyone who cannot separate these hues. */
+.tone-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tone, var(--fg-muted));
+}
+
+.tone-neutral { --tone: var(--fg-muted); }
+.tone-info { --tone: var(--info); }
+.tone-warning { --tone: var(--warning); }
+.tone-danger { --tone: var(--danger); }
+.tone-success { --tone: var(--accent); }
+
+/* An unset value stays plain: a hollow dot reads as "nothing chosen" rather
+   than as a colour that happens to be grey. */
+.tone-empty {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.select-button .tone-label,
+.select-option .tone-label { color: var(--tone, inherit); }
+
+/* Dropdown, drawn by us for the same reason the calendar is: a native select's
+   open panel is platform chrome that no stylesheet reaches. */
+.select { position: relative; }
+
+.select-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  color: var(--fg);
+  font: 13px 'Avenir Next', Avenir, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.select-button:hover { border-color: var(--fg-muted); }
+.select-button:focus-visible { outline: none; border-color: var(--accent); }
+
+.select-chevron {
+  flex: none;
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid var(--fg-muted);
+  border-bottom: 1.5px solid var(--fg-muted);
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.select-list {
+  position: absolute;
+  z-index: 25;
+  top: calc(100% + 6px);
+  /* Anchored to the control's right edge and sized to its longest option, not
+     to the control: tying the width to the button made the same list wide or
+     narrow depending on which option happened to be selected, and wrapped
+     folder paths over two lines. */
+  right: 0;
+  left: auto;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(340px, 60vw);
+  max-height: 220px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.35);
+  overflow-y: auto;
+}
+
+/* Flipped when there is no room below — see PANEL_MAX in Select.tsx. */
+.select-list.up { top: auto; bottom: calc(100% + 6px); }
+
+.select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.select-option .tone-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.select-option.cursor { background: var(--bg-raised); }
+
+.select-option.selected {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.select-option.selected.cursor { background: var(--bg-raised); }
+
+/* Date field: the calendar is ours because the browser's own panel cannot be
+   themed. The trigger is sized exactly like the inputs beside it. */
+.datefield { position: relative; }
+
+.datefield-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  color: var(--fg);
+  font: 13px 'Avenir Next', Avenir, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.datefield-button:hover { border-color: var(--fg-muted); }
+.datefield-button .placeholder { color: var(--fg-muted); }
+
+.datefield-clear {
+  flex: none;
+  padding: 0 2px;
+  color: var(--fg-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.datefield-clear:hover { color: var(--danger); }
+
+.calendar {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  /* Anchored to the trigger's right edge: this is the last field in the row,
+     so a left-anchored popover 244px wide runs off the window. Right-anchoring
+     is safe in both directions here — the editor's own padding and the sidebar
+     leave far more than that to the left. */
+  right: 0;
+  width: 244px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.35);
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.calendar-head strong { font-size: 12.5px; font-weight: 600; }
+
+.calendar-head button {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+.calendar-head button:hover { background: var(--bg-raised); color: var(--fg); }
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendar-dow {
+  text-align: center;
+  padding-bottom: 4px;
+  font: 600 9.5px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.calendar-day {
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font: 12px 'Avenir Next', Avenir, sans-serif;
+  cursor: pointer;
+}
+
+.calendar-day:hover { background: var(--bg-raised); }
+.calendar-day.outside { color: var(--fg-muted); opacity: 0.5; }
+.calendar-day.today { box-shadow: inset 0 0 0 1px var(--border); }
+
+.calendar-day.selected {
+  background: var(--accent);
+  color: var(--fg-on-accent);
+  font-weight: 600;
+}
+
+.calendar-foot {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  text-align: right;
+}
+
+.calendar-foot button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: 12px 'Avenir Next', Avenir, sans-serif;
+  cursor: pointer;
+}
+
+/* WebKit gives a select its own metrics and stepper glyph; drop both and draw
+   one chevron, so it matches the inputs beside it exactly. */
+.ticket-fields select {
+  appearance: none;
+  padding-right: 28px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--fg-muted) 50%),
+    linear-gradient(135deg, var(--fg-muted) 50%, transparent 50%);
+  background-position: calc(100% - 15px) center, calc(100% - 10px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.ticket-fields input:focus,
+.ticket-fields select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Crepe ships a themed shell of its own; only the frame and the type are
+   re-pointed at ours, so an upgrade cannot silently restyle the whole note. */
+.body-editor {
+  /* Grows with the document rather than being sized by the flex line. It was
+     `flex: 1`, which resolved against the pane's own height, while the text
+     inside it did not — so a long note painted straight past the bottom edge
+     of this box and over the actions that follow it in flow: the "updated"
+     line, the folder picker and Save. `1 0 auto` lets the box be as tall as
+     what it holds, which is what puts the action bar back underneath it. */
+  flex: 1 0 auto;
   min-height: 300px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #0d1119;
-  color: var(--fg);
-  padding: 16px;
-  font: 14px/1.7 ui-monospace, 'SF Mono', Menlo, monospace;
-  resize: none;
+  background: var(--bg-sunken);
+  /* Deliberately not a scroll container. .editor-wrap already scrolls, and a
+     second one nested inside it clipped the slash menu at the editor's bottom
+     edge — the menu is positioned within this box, so this box was its
+     horizon. Letting the editor grow moves that horizon out to the pane. */
+}
+
+/* Every colour Crepe's frame theme exposes, so nothing in the editor stays
+   pinned to the imported theme's palette. */
+.body-editor .milkdown {
+  --crepe-color-background: var(--bg-sunken);
+  --crepe-color-on-background: var(--fg);
+  --crepe-color-surface: var(--bg-sunken);
+  --crepe-color-surface-low: var(--bg-raised);
+  --crepe-color-on-surface: var(--fg);
+  --crepe-color-on-surface-variant: var(--fg-muted);
+  --crepe-color-outline: var(--border);
+  --crepe-color-primary: var(--accent);
+  --crepe-color-secondary: var(--bg-raised);
+  --crepe-color-on-secondary: var(--fg);
+  --crepe-color-inverse: var(--fg);
+  --crepe-color-on-inverse: var(--bg);
+  --crepe-color-hover: var(--bg-raised);
+  --crepe-color-selected: var(--bg-raised);
+  --crepe-color-inline-code: var(--danger);
+  --crepe-color-inline-area: var(--bg-raised);
+  --crepe-color-error: var(--danger);
+  --crepe-font-title: 'Avenir Next', Avenir, sans-serif;
+  --crepe-font-default: 'Avenir Next', Avenir, sans-serif;
+  --crepe-font-code: ui-monospace, 'SF Mono', Menlo, monospace;
+  background: transparent;
+  /* `height: 100%` pinned this to the parent's flex-resolved box while the
+     document inside kept growing — the other half of the overlap above. */
+  min-height: 100%;
+}
+
+.body-editor .ProseMirror {
+  /* Left padding leaves the gutter the block handle lives in; without it the
+     handle sits on top of the first character. */
+  padding: 20px 24px 40px 44px;
+  font-size: 14.5px;
+  line-height: 1.75;
+}
+
+/* Document rhythm, not form rhythm: blocks need room to read as blocks. */
+.body-editor .ProseMirror > * + * { margin-top: 0.6em; }
+
+.body-editor .ProseMirror h1,
+.body-editor .ProseMirror h2,
+.body-editor .ProseMirror h3 {
+  margin: 1.4em 0 0.3em;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.body-editor .ProseMirror h1 { font-size: 1.7em; }
+.body-editor .ProseMirror h2 { font-size: 1.35em; }
+.body-editor .ProseMirror h3 { font-size: 1.12em; }
+.body-editor .ProseMirror > :first-child { margin-top: 0; }
+
+.body-editor .ProseMirror ul,
+.body-editor .ProseMirror ol { padding-left: 1.4em; }
+.body-editor .ProseMirror li + li { margin-top: 0.2em; }
+
+.body-editor .ProseMirror blockquote {
+  padding-left: 0.9em;
+  border-left: 3px solid var(--border);
+  color: var(--fg-muted);
+}
+
+/* The prompt on every empty block — the thing that advertises the menu. */
+.body-editor .ProseMirror .crepe-placeholder::before,
+.body-editor .ProseMirror [data-placeholder]::before {
+  color: var(--fg-muted);
+  opacity: 0.65;
+}
+
+/* The handle belongs in the margin: present when the row is under the cursor,
+   never competing with the text. 32px was a button; this is a grip. */
+.body-editor .milkdown-block-handle .operation-item {
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+  opacity: 0.55;
+}
+
+.body-editor .milkdown-block-handle .operation-item:hover { opacity: 1; }
+.body-editor .milkdown-block-handle .operation-item svg { width: 18px; height: 18px; }
+
+/* The slash menu wears the same panel as the select and the calendar. Three
+   different popover styles in one window is worse than one that is a little
+   less like the app it was modelled on. */
+.body-editor .milkdown-slash-menu {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.35);
+}
+
+.body-editor .milkdown-slash-menu .menu-item {
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* The scrolling list inside the menu is capped at 420px by Crepe, which is
+   taller than a short window. Cap it against the viewport too, so the last
+   entries stay reachable instead of sitting below the screen. */
+.body-editor .milkdown-slash-menu .menu-groups {
+  max-height: min(420px, 50vh);
 }
 
 .editor-actions {
@@ -321,21 +1140,21 @@ body {
 
 .btn.primary:hover {
   background: var(--accent);
-  color: #0a0d12;
+  color: var(--fg-on-accent);
 }
 
 .btn.danger:hover {
-  border-color: #ff6b74;
-  color: #ff6b74;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .error-bar {
   margin-top: 12px;
   padding: 10px 12px;
-  border: 1px solid #ff6b74;
+  border: 1px solid var(--danger);
   border-radius: 8px;
   background: rgba(255, 107, 116, 0.1);
-  color: #ff6b74;
+  color: var(--danger);
   font: 400 12px/1.4 ui-monospace, Menlo, monospace;
 }
 
@@ -345,13 +1164,44 @@ body {
   padding: 7px 9px;
 }
 
+.setting-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The settings screen had no text field until the provider panel: everything
+   before it was a button, a toggle or a select. */
+.text-input {
+  flex: none;
+  width: 260px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* The provider select is the widest control on the screen; let it size to the
+   row rather than to its longest option, which would be an OpenAI-length name
+   deciding the layout. */
+.setting-row .select { flex: none; width: 260px; }
+
 .confirm-bar {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: 12px;
   padding: 10px 12px;
-  border: 1px solid #e0b341;
+  border: 1px solid var(--warning);
   border-radius: 8px;
   background: rgba(224, 179, 65, 0.1);
   color: var(--fg);

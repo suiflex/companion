@@ -1,5 +1,6 @@
 import type { AIClient } from '@meetcc/ai';
 import { analyzeMeeting } from '@meetcc/ai';
+import { t } from '@meetcc/shared/i18n';
 import type { AnalysisRecord, Meeting } from '@meetcc/shared';
 import { createInFlight } from './inflight';
 
@@ -94,7 +95,7 @@ async function runPipelineInner(
     // No notification for a provisional run: the user pressed a button and is
     // looking at the result already.
     if (!opts.provisional) {
-      deps.notify('Notulen siap ✓', `Meeting ${id} selesai dianalisis AI.`, id);
+      deps.notify(t('pkg.meeting.notifyReady'), t('pkg.meeting.notifyReadyBody', { id }), id);
     }
     return { ok: true };
   } catch (e) {
@@ -106,7 +107,7 @@ async function runPipelineInner(
       provider: client.provider,
     });
     await deps.audit('pipeline.error', `${id}: ${error}`);
-    deps.notify('Analisis gagal', `Meeting ${id}: ${error}`, id);
+    deps.notify(t('pkg.meeting.notifyFailed'), `Meeting ${id}: ${error}`, id);
     return { ok: false, reason: 'ai-failed', error };
   }
 }

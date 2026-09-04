@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { t } from '@meetcc/shared/i18n';
 import type { Diagram, Meeting } from '@meetcc/shared';
 import { lazyImport } from '../lib/lazy';
 import { useToast } from '../toast';
@@ -35,7 +36,7 @@ function DiagramCard({ diagram, index }: { diagram: Diagram; index: number }) {
 
   const copy = async () => {
     await navigator.clipboard.writeText(diagram.mermaid);
-    toast('success', 'Sumber Mermaid disalin.');
+    toast('success', t('ext.diagram.copied'));
   };
 
   return (
@@ -61,7 +62,7 @@ function DiagramCard({ diagram, index }: { diagram: Diagram; index: number }) {
         )}
         {state.status === 'error' && (
           <div className="diagram-fallback" role="alert">
-            <p className="diagram-err">Diagram tidak bisa dirender: {state.message}</p>
+            <p className="diagram-err">{t('ext.diagram.renderFailed', { message: state.message })}</p>
             <pre className="diagram-source">{diagram.mermaid}</pre>
           </div>
         )}
@@ -92,13 +93,13 @@ export function DiagramView({ meeting, diagrams, analysisReady }: Props) {
           res.count ? 'success' : 'info',
           res.count
             ? `${res.count} diagram dibuat.`
-            : 'Tidak ada alur/proses yang bisa didiagramkan.',
+            : t('ext.diagram.nothingToDraw'),
         );
       } else {
-        toast('error', `Gagal: ${res?.error ?? 'unknown'}`);
+        toast('error', t('ext.failed', { error: res?.error ?? t('ext.unknownError') }));
       }
     } catch (e) {
-      toast('error', `Gagal: ${(e as Error).message}`);
+      toast('error', t('ext.failed', { error: (e as Error).message }));
     } finally {
       setBusy(false);
     }
@@ -109,9 +110,13 @@ export function DiagramView({ meeting, diagrams, analysisReady }: Props) {
       className="primary"
       onClick={generate}
       disabled={busy || !analysisReady}
-      title={analysisReady ? '' : 'Buat Summary dulu'}
+      title={analysisReady ? '' : t('ext.diagram.needSummary')}
     >
-      {busy ? 'Membuat…' : diagrams.length ? '↻ Buat ulang diagram' : '✨ Buat diagram'}
+      {busy
+        ? t('ext.diagram.generating')
+        : diagrams.length
+          ? t('ext.diagram.regenerate')
+          : t('ext.diagram.generate')}
     </button>
   );
 
@@ -129,11 +134,11 @@ export function DiagramView({ meeting, diagrams, analysisReady }: Props) {
     return (
       <div className="empty-state">
         <div className="empty-glyph">◇</div>
-        <p>Belum ada diagram.</p>
+        <p>{t('ext.diagram.empty')}</p>
         <p className="empty-hint">
           {analysisReady
-            ? `Buat diagram alur dari rapat ${meeting.id} bila membahas proses atau urutan langkah. On-demand — pakai transcript rapi bila sudah dirapikan.`
-            : 'Buat ringkasan (Summary) dulu, lalu diagram bisa dibuat dari sini.'}
+            ? t('ext.diagram.hint', { id: meeting.id })
+            : t('ext.diagram.hintNoSummary')}
         </p>
         {genButton}
       </div>

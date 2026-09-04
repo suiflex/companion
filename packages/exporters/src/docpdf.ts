@@ -1,4 +1,5 @@
 import { startedAt, type Meeting } from '@meetcc/shared'
+import { locale } from '@meetcc/shared/i18n';
 import {
   ACCENT,
   DIM,
@@ -185,7 +186,7 @@ export function docToPdf(
   const d = new Doc()
   const date = startedAt(meeting)
   const dateStr = date
-    ? new Date(date).toLocaleString('id-ID', {
+    ? new Date(date).toLocaleString(locale(), {
         dateStyle: 'full',
         timeStyle: 'short',
       })

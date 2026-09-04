@@ -159,6 +159,15 @@ button:focus-visible, select:focus-visible, input:focus-visible, .meeting:focus-
   border-top: 1px solid var(--hairline);
 }
 
+/* The sponsor links live in the icon row now; as anchors they need the
+   button's own centring, which a <button> got for free. */
+a.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+
 .sidebar-credit {
   padding: 2px 6px 0;
   font-size: 10px;
@@ -957,15 +966,60 @@ body[data-theme='light'] .bubble-assistant {
 
 .settings { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
+/* The dashboard window is 980px wide (background.ts opens it that way) and the
+   toolbar above already spans all of it, so a single 460px column left most of
+   the surface empty. Columns are filled by available width rather than a fixed
+   count — same shape as .kb-cols below, which is the only other responsive
+   block in this sheet. */
 .settings-body {
   flex: 1;
   overflow-y: auto;
+  /* Whatever overflows belongs to this pane, not to the window: without it an
+     oversized card put a horizontal scrollbar under the whole dashboard. */
+  overflow-x: auto;
   padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  max-width: 460px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-content: start;
+  align-items: start;
+  gap: 14px 18px;
 }
+
+/* Action rows and the checkboxes that gate a whole section read as headings
+   for what follows them; splitting either into a column breaks that. */
+.settings-body > .subbar,
+.settings-body > .checkbox-field,
+.settings-body > .bridge-status { grid-column: 1 / -1; }
+
+/* the grid supplies the rhythm now; the stacked-layout margin doubled it */
+.settings-body > .field-group { margin-bottom: 0; }
+
+/* A grid item defaults to `min-width: auto`, which resolves to its min-content
+   width — and these cards hold a native `<input type=file>`, whose intrinsic
+   width is both large and unshrinkable. A <fieldset> compounds it by not
+   negotiating grid min-sizing properly, so the card refused to fit its track
+   and painted over the one beside it. */
+.settings-body > .field-group {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The full-width rule above is a direct-child selector, so it never reached
+   the action rows the Data panel nests inside its cards: those rows kept a
+   no-wrap flex line inside a 320px track and their labels broke over three
+   lines. Inside a card the row wraps and drops the page-level chrome. */
+.field-group .subbar {
+  flex-wrap: wrap;
+  padding: 0;
+  border-bottom: 0;
+}
+
+/* A file input reports a wide intrinsic size and ignores the track otherwise. */
+.field-group input[type='file'] { min-width: 0; max-width: 100%; }
+
+/* No breakpoint: auto-fill already drops to one column when the pane is too
+   narrow for two, and it measures the pane rather than the viewport — which is
+   what actually matters here, since the sidebar collapses independently. */
 
 .field { display: flex; flex-direction: column; gap: 5px; }
 
@@ -1005,6 +1059,13 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
 }
 
 .hint { font-size: 11px; color: var(--text-faint); }
+
+/* Bridge reachability readout — the one place an unregistered native host
+   stops looking like a working one. */
+.bridge-status .subbar { padding: 0; border-bottom: none; align-items: center; }
+.bridge-status .ok { font-size: 11px; color: var(--phosphor); }
+.bridge-status .warn { font-size: 11px; color: var(--amber); }
+.bridge-status .hint { margin-top: 4px; }
 
 /* ── states / toasts ── */
 

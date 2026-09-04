@@ -5,6 +5,7 @@ import {
   type Entry,
   type Meeting,
 } from '@meetcc/shared';
+import { t } from '@meetcc/shared/i18n';
 import { AIError, type AIClient } from './client';
 
 const MAX_TRANSCRIPT_CHARS = 60_000;
@@ -13,6 +14,8 @@ const MAX_TRANSCRIPT_CHARS = 60_000;
 export function formatEntries(entries: Entry[]): string {
   return entries
     .map((e) => {
+      // Fixed locale on purpose: this timestamp is model input, not something
+      // the reader sees, so it must not drift with the interface language.
       const t = new Date(e.time).toLocaleTimeString('id-ID', {
         hour: '2-digit',
         minute: '2-digit',
@@ -96,7 +99,7 @@ export function parseAnalysis(raw: string): Analysis {
   try {
     obj = JSON.parse(raw.slice(start, end + 1));
   } catch {
-    throw new AIError('JSON dari AI tidak valid', true);
+    throw new AIError(t('pkg.ai.badJson'), true);
   }
   const analysis: Analysis = {
     executiveSummary: str(obj.executiveSummary),
@@ -117,7 +120,7 @@ export function parseAnalysis(raw: string): Analysis {
     nextSteps: strArr(obj.nextSteps),
     diagrams: normalizeDiagrams(obj.diagrams),
   };
-  if (!analysis.executiveSummary) throw new AIError('executiveSummary kosong', true);
+  if (!analysis.executiveSummary) throw new AIError(t('pkg.ai.emptySummary'), true);
   return analysis;
 }
 
@@ -186,7 +189,7 @@ async function reduceSummary(client: AIClient, parts: Analysis[]): Promise<strin
     .filter((line) => line.length > 12)
     .join('\n');
   const text = (await client.complete({ system: REDUCE_SYSTEM_PROMPT, user })).trim();
-  if (!text) throw new AIError('Ringkasan gabungan kosong', true);
+  if (!text) throw new AIError(t('pkg.ai.emptyMerged'), true);
   return text;
 }
 

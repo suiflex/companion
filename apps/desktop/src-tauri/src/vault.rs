@@ -12,6 +12,10 @@ use tauri::State;
 const TRASH: &str = ".trash";
 const TRANSCRIPT: &str = ".transcript";
 
+/// Where this install keeps its own small state, handed in by `lib.rs` so the
+/// vault module never has to know about the Tauri app handle.
+pub struct ConfigDir(pub PathBuf);
+
 /// Managed Tauri state holding the vault root directory.
 pub struct VaultState {
     pub root: Mutex<PathBuf>,
@@ -25,10 +29,85 @@ impl VaultState {
     }
 }
 
-/// Default vault root: `~/Companion`. Overridable later via a picker.
+/// Default vault root: `~/Companion`.
 pub fn default_root() -> PathBuf {
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
     PathBuf::from(home).join("Companion")
+}
+
+/// Where the chosen root is remembered between launches.
+///
+/// One line of text rather than a store plugin: this is a single path, and a
+/// plugin would mean an npm dependency, a crate and a capability entry for it.
+pub fn config_file(config_dir: &Path) -> PathBuf {
+    config_dir.join("vault-root")
+}
+
+/// The root to start with: the remembered one if it still exists, else the
+/// default. A stored path whose folder has since been deleted or unmounted
+/// must not leave the app pointing at nothing.
+pub fn startup_root(config_dir: &Path) -> PathBuf {
+    match fs::read_to_string(config_file(config_dir)) {
+        Ok(text) => {
+            let saved = PathBuf::from(text.trim());
+            if !saved.as_os_str().is_empty() && saved.is_dir() {
+                saved
+            } else {
+                default_root()
+            }
+        }
+        Err(_) => default_root(),
+    }
+}
+
+/// Remember a root, or forget it when `root` is `None` (back to the default).
+pub fn remember_root(config_dir: &Path, root: Option<&Path>) -> std::io::Result<()> {
+    fs::create_dir_all(config_dir)?;
+    match root {
+        Some(path) => fs::write(config_file(config_dir), path.to_string_lossy().as_bytes()),
+        None => match fs::remove_file(config_file(config_dir)) {
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            other => other,
+        },
+    }
+}
+
+/// What a folder looks like, without touching it.
+///
+/// `set_vault_root` used to create `.transcript/` inside whatever was picked
+/// *before* the user could confirm, so a mis-click left a directory behind in
+/// someone's Documents. This answers the question first; nothing is written.
+#[derive(serde::Serialize)]
+pub struct RootProbe {
+    pub exists: bool,
+    pub markdown: usize,
+    pub is_vault: bool,
+}
+
+/// The default the reset action returns to, so the frontend does not have to
+/// reconstruct `~/Companion` and hope it matches.
+#[tauri::command]
+pub fn default_vault_root() -> String {
+    default_root().to_string_lossy().into_owned()
+}
+
+#[tauri::command]
+pub fn probe_vault_root(path: String) -> RootProbe {
+    let dir = PathBuf::from(path);
+    if !dir.is_dir() {
+        return RootProbe {
+            exists: false,
+            markdown: 0,
+            is_vault: false,
+        };
+    }
+    let mut found = Vec::new();
+    let _ = walk_md(&dir, &dir, &mut found);
+    RootProbe {
+        exists: true,
+        markdown: found.len(),
+        is_vault: dir.join(TRANSCRIPT).is_dir(),
+    }
 }
 
 /// Create the vault skeleton. Called at startup: on a machine that has never
@@ -46,12 +125,17 @@ fn root(state: &VaultState) -> PathBuf {
 /// vault: these paths originate in the WebView, which in turn takes them from
 /// note frontmatter, so they are data rather than something we control.
 fn abs(state: &VaultState, rel: &str) -> Result<PathBuf, String> {
+    resolve(&root(state), rel)
+}
+
+/// The guard itself, taking a root so it can be exercised directly.
+fn resolve(root: &Path, rel: &str) -> Result<PathBuf, String> {
     let rel = rel.trim_start_matches('/');
     let path = Path::new(rel);
     if path.is_absolute() || path.components().any(|c| c == Component::ParentDir) {
         return Err(format!("path escapes the vault: {rel}"));
     }
-    Ok(root(state).join(path))
+    Ok(root.join(path))
 }
 
 #[tauri::command]
@@ -59,12 +143,34 @@ pub fn vault_root(state: State<'_, VaultState>) -> Result<String, String> {
     Ok(root(&state).to_string_lossy().into_owned())
 }
 
+/// Switch to another root and remember it.
+///
+/// The folder is only prepared once the caller has committed to it — the
+/// frontend confirms against `probe_vault_root` first.
 #[tauri::command]
-pub fn set_vault_root(state: State<'_, VaultState>, path: String) -> Result<(), String> {
+pub fn set_vault_root(
+    state: State<'_, VaultState>,
+    config: State<'_, ConfigDir>,
+    path: String,
+) -> Result<(), String> {
     let new_root = PathBuf::from(path);
     ensure_root(&new_root).map_err(|e| e.to_string())?;
+    remember_root(&config.0, Some(&new_root)).map_err(|e| e.to_string())?;
     *state.root.lock() = new_root;
     Ok(())
+}
+
+/// Forget the chosen root and go back to `~/Companion`.
+#[tauri::command]
+pub fn reset_vault_root(
+    state: State<'_, VaultState>,
+    config: State<'_, ConfigDir>,
+) -> Result<String, String> {
+    let root = default_root();
+    ensure_root(&root).map_err(|e| e.to_string())?;
+    remember_root(&config.0, None).map_err(|e| e.to_string())?;
+    *state.root.lock() = root.clone();
+    Ok(root.to_string_lossy().into_owned())
 }
 
 /// All `.md` relative paths under the vault, excluding `.trash`/`.transcript`.
@@ -152,6 +258,80 @@ pub fn vault_mtime(state: State<'_, VaultState>, rel: String) -> Result<f64, Str
         .map_err(|e| e.to_string())
 }
 
+/// Move a note to another folder inside the vault.
+///
+/// Both ends go through `abs()`, which is the whole safety story: these paths
+/// come from the WebView, and a destination is just as capable of climbing out
+/// of the vault as a source is.
+#[tauri::command]
+pub fn move_vault_file(
+    state: State<'_, VaultState>,
+    from: String,
+    to: String,
+) -> Result<(), String> {
+    move_within(&root(&state), &from, &to)
+}
+
+/// The move itself, split from the command so it can be tested without a
+/// Tauri `State`.
+fn move_within(root: &Path, from: &str, to: &str) -> Result<(), String> {
+    let src = resolve(root, from)?;
+    let dest = resolve(root, to)?;
+    // Replacing the destination would destroy a note, which is the one outcome
+    // a move must never have.
+    if dest.exists() {
+        return Err(format!("a note already exists at {to}"));
+    }
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    fs::rename(&src, &dest).map_err(|e| e.to_string())
+}
+
+/// Create an empty folder in the vault.
+///
+/// Empty on purpose: a folder exists before the note that will live in it, and
+/// the sidebar derives its tree from note paths, so the folder has to be real
+/// on disk to survive a refresh.
+#[tauri::command]
+pub fn create_vault_folder(state: State<'_, VaultState>, rel: String) -> Result<(), String> {
+    let dir = abs(&state, &rel)?;
+    fs::create_dir_all(dir).map_err(|e| e.to_string())
+}
+
+/// The folders that exist in the vault, including ones holding no notes.
+#[tauri::command]
+pub fn list_vault_folders(state: State<'_, VaultState>) -> Result<Vec<String>, String> {
+    let root = root(&state);
+    let mut out = Vec::new();
+    walk_dirs(&root, &root, &mut out)?;
+    out.sort();
+    Ok(out)
+}
+
+fn walk_dirs(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), String> {
+    for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        // The sidecar and the bin are storage, not places a note belongs.
+        if name == TRASH || name == TRANSCRIPT {
+            continue;
+        }
+        let rel = path
+            .strip_prefix(root)
+            .map_err(|e| e.to_string())?
+            .to_string_lossy()
+            .into_owned();
+        out.push(rel);
+        walk_dirs(root, &path, out)?;
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn trash_vault_file(state: State<'_, VaultState>, rel: String) -> Result<(), String> {
     let from = abs(&state, &rel)?;
@@ -174,4 +354,196 @@ pub fn trash_vault_file(state: State<'_, VaultState>, rel: String) -> Result<(),
     }
     fs::rename(&from, dest).map_err(|e| e.to_string())?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    fn tmp(name: &str) -> PathBuf {
+        let dir = env::temp_dir().join(format!("companion-vault-test-{name}"));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn remembers_a_root_and_reads_it_back() {
+        let config = tmp("remember");
+        let picked = tmp("remember-target");
+        remember_root(&config, Some(&picked)).unwrap();
+        assert_eq!(startup_root(&config), picked);
+    }
+
+    #[test]
+    fn forgetting_returns_to_the_default() {
+        let config = tmp("forget");
+        let picked = tmp("forget-target");
+        remember_root(&config, Some(&picked)).unwrap();
+        remember_root(&config, None).unwrap();
+        assert_eq!(startup_root(&config), default_root());
+        // Forgetting twice is not an error; the file is simply already gone.
+        remember_root(&config, None).unwrap();
+    }
+
+    #[test]
+    fn falls_back_when_the_remembered_folder_is_gone() {
+        // A vault on a drive that is no longer mounted must not strand the app
+        // on a root it cannot read.
+        let config = tmp("missing");
+        let picked = tmp("missing-target");
+        remember_root(&config, Some(&picked)).unwrap();
+        fs::remove_dir_all(&picked).unwrap();
+        assert_eq!(startup_root(&config), default_root());
+    }
+
+    #[test]
+    fn falls_back_on_a_corrupt_or_empty_file() {
+        let config = tmp("corrupt");
+        fs::create_dir_all(&config).unwrap();
+        for junk in ["", "   \n", "\u{0}"] {
+            fs::write(config_file(&config), junk).unwrap();
+            assert_eq!(startup_root(&config), default_root(), "junk: {junk:?}");
+        }
+    }
+
+    #[test]
+    fn resolve_refuses_a_path_that_climbs_out_of_the_vault() {
+        // The move command takes *two* paths from the WebView, and a
+        // destination can escape just as easily as a source.
+        let root = tmp("escape");
+        for bad in ["../outside.md", "a/../../outside.md", "a/b/../../../x.md"] {
+            assert!(resolve(&root, bad).is_err(), "allowed: {bad}");
+        }
+        assert!(resolve(&root, "Rapat/2026-09-04/ok.md").is_ok());
+
+        // A leading slash is trimmed rather than rejected, so an absolute-
+        // looking path lands *inside* the vault instead of at the real one.
+        // That is the invariant worth asserting: whatever comes in, the
+        // resolved path never leaves the root.
+        let absolute = resolve(&root, "/etc/passwd").unwrap();
+        assert!(absolute.starts_with(&root), "escaped: {absolute:?}");
+        assert_eq!(absolute, root.join("etc/passwd"));
+    }
+
+    #[test]
+    fn move_refuses_to_overwrite_an_existing_note() {
+        let root = tmp("move-clash");
+        fs::create_dir_all(root.join("a")).unwrap();
+        fs::create_dir_all(root.join("b")).unwrap();
+        fs::write(root.join("a/n.md"), "one").unwrap();
+        fs::write(root.join("b/n.md"), "two").unwrap();
+
+        assert!(move_within(&root, "a/n.md", "b/n.md").is_err());
+        assert_eq!(fs::read_to_string(root.join("b/n.md")).unwrap(), "two");
+        assert!(root.join("a/n.md").exists());
+    }
+
+    #[test]
+    fn move_creates_the_destination_folder() {
+        let root = tmp("move-ok");
+        fs::create_dir_all(root.join("a")).unwrap();
+        fs::write(root.join("a/n.md"), "one").unwrap();
+
+        move_within(&root, "a/n.md", "Projects/Alpha/n.md").unwrap();
+        assert!(!root.join("a/n.md").exists());
+        assert_eq!(
+            fs::read_to_string(root.join("Projects/Alpha/n.md")).unwrap(),
+            "one"
+        );
+    }
+
+    #[test]
+    fn move_refuses_a_destination_outside_the_vault() {
+        let root = tmp("move-escape");
+        fs::write(root.join("n.md"), "one").unwrap();
+        assert!(move_within(&root, "n.md", "../stolen.md").is_err());
+        assert!(root.join("n.md").exists());
+    }
+
+    #[test]
+    fn walk_dirs_skips_storage_directories() {
+        let root = tmp("walk");
+        fs::create_dir_all(root.join("Rapat/2026-09-04")).unwrap();
+        fs::create_dir_all(root.join(TRASH)).unwrap();
+        fs::create_dir_all(root.join(TRANSCRIPT)).unwrap();
+        let mut out = Vec::new();
+        walk_dirs(&root, &root, &mut out).unwrap();
+        out.sort();
+        // `.trash` and `.transcript` are storage, not places a note belongs.
+        assert_eq!(
+            out,
+            vec!["Rapat".to_string(), "Rapat/2026-09-04".to_string()]
+        );
+    }
+
+    #[test]
+    fn open_external_refuses_anything_that_is_not_a_web_url() {
+        // The argument comes from the WebView, which renders note content. On
+        // macOS `open` will happily launch a file or an application, so the
+        // scheme is the only thing standing between a note and the shell.
+        for bad in [
+            "file:///etc/passwd",
+            "/Applications/Calculator.app",
+            "javascript:alert(1)",
+            "ftp://example.com",
+            "",
+        ] {
+            assert!(open_external(bad.into()).is_err(), "allowed: {bad}");
+        }
+    }
+
+    #[test]
+    fn probe_reports_a_folder_without_touching_it() {
+        let dir = tmp("probe");
+        fs::write(dir.join("a.md"), "# one").unwrap();
+        fs::write(dir.join("b.md"), "# two").unwrap();
+        let probe = probe_vault_root(dir.to_string_lossy().into_owned());
+        assert!(probe.exists);
+        assert_eq!(probe.markdown, 2);
+        assert!(!probe.is_vault);
+        // The whole point: nothing was created by looking.
+        assert!(!dir.join(TRANSCRIPT).exists());
+    }
+
+    #[test]
+    fn probe_recognises_an_existing_vault_and_a_missing_folder() {
+        let dir = tmp("probe-vault");
+        fs::create_dir_all(dir.join(TRANSCRIPT)).unwrap();
+        assert!(probe_vault_root(dir.to_string_lossy().into_owned()).is_vault);
+
+        let gone = probe_vault_root(dir.join("nope").to_string_lossy().into_owned());
+        assert!(!gone.exists);
+        assert_eq!(gone.markdown, 0);
+    }
+}
+
+/// Hand a URL to the operating system's browser.
+///
+/// Deliberately not a Tauri plugin: this is one `Command` and a scheme check,
+/// and a plugin would mean a crate, a capability entry and a wider surface for
+/// the sake of it.
+///
+/// The scheme check is the point. The argument arrives from the WebView, and
+/// the WebView renders note content — without it, a crafted string could reach
+/// the shell through `open`/`xdg-open`, which happily launch files and
+/// applications, not just web pages.
+#[tauri::command]
+pub fn open_external(url: String) -> Result<(), String> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err(format!("refusing to open a non-web URL: {url}"));
+    }
+    let launcher = if cfg!(target_os = "macos") {
+        "open"
+    } else if cfg!(target_os = "windows") {
+        "explorer"
+    } else {
+        "xdg-open"
+    };
+    std::process::Command::new(launcher)
+        .arg(&url)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }

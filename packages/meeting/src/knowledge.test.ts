@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { t } from '@meetcc/shared/i18n';
 import type { Analysis, Entry } from '@meetcc/shared';
 import { CompanionStore, openDatabase } from '@meetcc/store';
 import type { AIClient } from '@meetcc/ai';
@@ -293,7 +294,7 @@ Widi: halo juga
   it('refuses to transcribe audio without a configured endpoint', async () => {
     await expect(
       transcribeAudio(new Blob(['x']), 'a.mp3', { endpoint: '', apiKey: '', model: '' }),
-    ).rejects.toThrow(/Endpoint/);
+    ).rejects.toThrow(/endpoint/);
   });
 
   it('turns provider segments into a parseable transcript', async () => {
@@ -407,7 +408,7 @@ describe('issue trackers', () => {
     const fetchImpl = vi.fn();
     await expect(
       createIssue({ provider: 'notion', baseUrl: '', token: '', target: '' }, draftIssue(action, null), fetchImpl as unknown as typeof fetch),
-    ).rejects.toThrow(/Token/);
+    ).rejects.toThrow(/token/);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
@@ -639,7 +640,7 @@ describe('weeklyDigest', () => {
   });
 
   it('says so plainly when the week was empty', () => {
-    expect(weeklyDigest(story([]), { now })).toContain('Tidak ada aktivitas rapat');
+    expect(weeklyDigest(story([]), { now })).toContain(t('pkg.digest.noActivity'));
   });
 });
 

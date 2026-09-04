@@ -3,6 +3,7 @@ import type { BackupFile, IntegrationSettings, Settings } from '@meetcc/shared';
 import { db } from '../lib/db';
 import { sendMessage } from '../lib/sendMessage';
 import { useToast } from '../toast';
+import { t } from '@meetcc/shared/i18n';
 
 // The panels behind the Settings tabs: optional integrations (P2.5-P2.10),
 // custom templates (P2.1) and the data tools (snapshot export for the MCP
@@ -31,6 +32,51 @@ function downloadText(name: string, text: string | Blob, type = 'application/jso
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Whether the browser can reach the desktop host at all.
+ *
+ * Delivery is best-effort and never blocks capture, which used to mean an
+ * unregistered host looked exactly like a working one: the checkbox stayed
+ * ticked and nothing ever arrived. This is the only place that says so.
+ */
+function BridgeStatus() {
+  const [state, setState] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [detail, setDetail] = useState('');
+
+  const test = async () => {
+    setState('testing');
+    try {
+      await sendMessage({ type: 'bridge-ping' });
+      setDetail('');
+      setState('ok');
+    } catch (e) {
+      setDetail((e as Error).message);
+      setState('fail');
+    }
+  };
+
+  return (
+    <div className="field bridge-status">
+      <div className="subbar">
+        <button type="button" onClick={() => void test()} disabled={state === 'testing'}>
+          {state === 'testing' ? t('ext.bridge.testing') : t('ext.bridge.test')}
+        </button>
+        {state === 'ok' && <span className="ok">{t('ext.bridge.connected')}</span>}
+        {state === 'fail' && <span className="warn">{t('ext.bridge.notConnected')}</span>}
+      </div>
+      {state === 'fail' && (
+        <span className="hint">
+          {t('ext.bridge.fixHint', { detail, command: '\u0000' })
+            .split('\u0000')
+            .flatMap((part, i) =>
+              i === 0 ? [part] : [<code key={i}>companion install</code>, part],
+            )}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function IntegrationsPanel({
   settings,
   onChange,
@@ -49,8 +95,10 @@ export function IntegrationsPanel({
       const r = await db<{ pushed: string[]; pulled: string[]; failed: { error: string }[] }>('sync-now');
       toast(
         r.failed.length ? 'error' : 'success',
-        `Sync: ${r.pushed.length} terkirim, ${r.pulled.length} diterima` +
-          (r.failed.length ? `, ${r.failed.length} gagal (${r.failed[0].error})` : ''),
+        t('ext.sync.result', { pushed: r.pushed.length, pulled: r.pulled.length }) +
+          (r.failed.length
+          ? t('ext.sync.failedSuffix', { count: r.failed.length, error: r.failed[0].error })
+          : ''),
       );
     } catch (e) {
       toast('error', (e as Error).message);
@@ -67,11 +115,8 @@ export function IntegrationsPanel({
           checked={settings.liveHighlights}
           onChange={(e) => onChange({ liveHighlights: e.target.checked })}
         />
-        <span>Sorotan langsung saat rapat berjalan</span>
-        <span className="hint">
-          Deteksi keputusan / action / deadline dari kata kuncinya saja — tanpa panggilan AI, jadi
-          tidak menambah biaya dan tidak mengirim apa pun keluar.
-        </span>
+        <span>{t('ext.integrations.liveHighlights')}</span>
+        <span className="hint">{t('ext.integrations.liveHighlightsHint')}</span>
       </label>
 
       <label className="field checkbox-field">
@@ -80,18 +125,16 @@ export function IntegrationsPanel({
           checked={settings.desktopBridge}
           onChange={(e) => onChange({ desktopBridge: e.target.checked })}
         />
-        <span>Kirim rapat selesai ke Companion Desktop</span>
-        <span className="hint">
-          Menulis nota rapat ke vault lokal Companion Desktop lewat native messaging host-nya —
-          tetap di komputer ini, tidak lewat jaringan. Butuh Companion Desktop terpasang; kalau
-          belum, extension tetap jalan normal dan pengiriman dicoba lagi nanti.
-        </span>
+        <span>{t('ext.integrations.bridge')}</span>
+        <span className="hint">{t('ext.integrations.bridgeHint')}</span>
       </label>
 
+      <BridgeStatus />
+
       <fieldset className="field-group">
-        <legend>Issue tracker (action item)</legend>
+        <legend>{t('ext.tracker.legend')}</legend>
         <label className="field">
-          <span>Provider</span>
+          <span>{t('ext.tracker.provider')}</span>
           <select
             value={i.tracker.provider}
             onChange={(e) =>
@@ -105,7 +148,7 @@ export function IntegrationsPanel({
         </label>
         {i.tracker.provider === 'jira' && (
           <label className="field">
-            <span>Base URL</span>
+            <span>{t('ext.tracker.baseUrl')}</span>
             <input
               type="url"
               value={i.tracker.baseUrl}
@@ -115,7 +158,7 @@ export function IntegrationsPanel({
           </label>
         )}
         <label className="field">
-          <span>Token</span>
+          <span>{t('ext.tracker.token')}</span>
           <input
             type="password"
             autoComplete="off"
@@ -123,10 +166,16 @@ export function IntegrationsPanel({
             placeholder={i.tracker.provider === 'jira' ? 'email@org.com:api-token' : 'API key'}
             onChange={(e) => patch({ tracker: { ...i.tracker, token: e.target.value } })}
           />
-          <span className="hint">Disimpan terenkripsi (AES-GCM), sama seperti API key provider.</span>
+          <span className="hint">{t('ext.tracker.tokenHint')}</span>
         </label>
         <label className="field">
-          <span>{i.tracker.provider === 'jira' ? 'Project key' : i.tracker.provider === 'linear' ? 'Team id' : 'Database id'}</span>
+          <span>
+            {i.tracker.provider === 'jira'
+              ? t('ext.tracker.projectKey')
+              : i.tracker.provider === 'linear'
+                ? t('ext.tracker.teamId')
+                : t('ext.tracker.databaseId')}
+          </span>
           <input
             type="text"
             value={i.tracker.target}
@@ -136,22 +185,24 @@ export function IntegrationsPanel({
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Sync & workspace tim</legend>
+        <legend>{t('ext.sync.legend')}</legend>
         <label className="field checkbox-field">
           <input
             type="checkbox"
             checked={i.sync.enabled}
             onChange={(e) => patch({ sync: { ...i.sync, enabled: e.target.checked } })}
           />
-          <span>Aktifkan sync</span>
+          <span>{t('ext.sync.enable')}</span>
           <span className="hint">
-            Opsional. Isi transcript dienkripsi dengan passphrase kamu sebelum dikirim — server
-            tidak pernah menerima kuncinya. Tidak ada layanan Companion: jalankan{' '}
-            <code>@meetcc/sync-server</code> di komputer sendiri, atau pakai endpoint https milikmu.
+            {t('ext.sync.enableHint', { server: '\u0000' })
+              .split('\u0000')
+              .flatMap((part, idx) =>
+                idx === 0 ? [part] : [<code key={idx}>@meetcc/sync-server</code>, part],
+              )}
           </span>
         </label>
         <label className="field">
-          <span>Endpoint</span>
+          <span>{t('ext.sync.endpoint')}</span>
           <input
             type="url"
             value={i.sync.endpoint}
@@ -160,7 +211,7 @@ export function IntegrationsPanel({
           />
         </label>
         <label className="field">
-          <span>Token</span>
+          <span>{t('ext.sync.token')}</span>
           <input
             type="password"
             autoComplete="off"
@@ -169,52 +220,47 @@ export function IntegrationsPanel({
           />
         </label>
         <label className="field">
-          <span>Workspace id (opsional)</span>
+          <span>{t('ext.sync.workspace')}</span>
           <input
             type="text"
             value={i.sync.workspaceId}
             placeholder="tim-platform"
             onChange={(e) => patch({ sync: { ...i.sync, workspaceId: e.target.value } })}
           />
-          <span className="hint">Namespace bersama untuk satu tim; kosong = pribadi.</span>
+          <span className="hint">{t('ext.sync.workspaceHint')}</span>
         </label>
         <label className="field">
-          <span>Passphrase enkripsi</span>
+          <span>{t('ext.sync.passphrase')}</span>
           <input
             type="password"
             autoComplete="off"
             value={i.sync.passphrase}
             onChange={(e) => patch({ sync: { ...i.sync, passphrase: e.target.value } })}
           />
-          <span className="hint">
-            Minimal 8 karakter. Kalau hilang, data yang sudah terkirim tidak bisa dibuka lagi —
-            tidak ada pemulihan.
-          </span>
+          <span className="hint">{t('ext.sync.passphraseHint')}</span>
         </label>
         <div className="subbar">
           <button onClick={() => void syncNow()} disabled={syncing || !i.sync.enabled}>
-            {syncing ? 'Sync…' : 'Sync sekarang'}
+            {syncing ? t('ext.sync.syncing') : t('ext.sync.now')}
           </button>
-          <span className="hint">Simpan dulu bila baru mengubah pengaturan di atas.</span>
+          <span className="hint">{t('ext.sync.saveFirst')}</span>
         </div>
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Transkripsi rekaman & kalender</legend>
+        <legend>{t('ext.transcription.legend')}</legend>
         <label className="field">
-          <span>Endpoint speech-to-text</span>
+          <span>{t('ext.transcription.endpoint')}</span>
           <input
             type="url"
             value={i.transcription.endpoint}
             placeholder="https://api.openai.com/v1/audio/transcriptions"
             onChange={(e) => patch({ transcription: { ...i.transcription, endpoint: e.target.value } })}
           />
-          <span className="hint">
-            Kompatibel OpenAI (termasuk Whisper lokal). Kosong = impor file audio dimatikan.
-          </span>
+          <span className="hint">{t('ext.transcription.endpointHint')}</span>
         </label>
         <label className="field">
-          <span>API key transkripsi</span>
+          <span>{t('ext.transcription.apiKey')}</span>
           <input
             type="password"
             autoComplete="off"
@@ -231,17 +277,14 @@ export function IntegrationsPanel({
           />
         </label>
         <label className="field">
-          <span>Google OAuth client id (kalender)</span>
+          <span>{t('ext.integrations.calendarClientId')}</span>
           <input
             type="text"
             value={i.calendarClientId}
             placeholder="xxxx.apps.googleusercontent.com"
             onChange={(e) => patch({ calendarClientId: e.target.value })}
           />
-          <span className="hint">
-            Client id milikmu sendiri; extension ini tidak membawa kredensial apa pun. Tanpa ini,
-            pencocokan kalender tetap bisa lewat impor file .ics di tab Data.
-          </span>
+          <span className="hint">{t('ext.calendar.clientIdHint')}</span>
         </label>
         <div className="subbar">
           <button
@@ -250,16 +293,16 @@ export function IntegrationsPanel({
               void (async () => {
                 try {
                   const r = await db<{ matched: unknown[] }>('connect-calendar');
-                  toast('success', `${r.matched.length} rapat dicocokkan dengan agenda kalender.`);
+                  toast('success', t('ext.data.matched', { count: r.matched.length }));
                 } catch (e) {
                   toast('error', (e as Error).message);
                 }
               })()
             }
           >
-            Hubungkan Google Calendar
+            {t('ext.calendar.connect')}
           </button>
-          <span className="hint">Simpan settings dulu agar client id terbaca.</span>
+          <span className="hint">{t('ext.calendar.saveFirst')}</span>
         </div>
       </fieldset>
     </>
@@ -289,7 +332,7 @@ export function TemplatesPanel() {
     try {
       setTemplates(await db<Template[]>('save-template', { ...draft }));
       setDraft({ id: '', name: '', kind: 'doc', instructions: '', sections: [] });
-      toast('success', 'Template tersimpan.');
+      toast('success', t('ext.templates.saved'));
     } catch (e) {
       toast('error', (e as Error).message);
     }
@@ -298,12 +341,11 @@ export function TemplatesPanel() {
   return (
     <>
       <p className="hint">
-        Template mengatur struktur dan penekanan dokumen (mis. notulen retro, MoM klien). Aturan
-        grounding tetap berlaku: template mengubah bentuk, bukan mengizinkan fakta baru.
+        {t('ext.templates.intro')}
       </p>
 
       <label className="field">
-        <span>Nama</span>
+        <span>{t('ext.templates.name')}</span>
         <input
           type="text"
           value={draft.name}
@@ -312,23 +354,23 @@ export function TemplatesPanel() {
         />
       </label>
       <label className="field">
-        <span>Dipakai untuk</span>
+        <span>{t('ext.templates.usedFor')}</span>
         <select value={draft.kind} onChange={(e) => setDraft({ ...draft, kind: e.target.value })}>
-          <option value="doc">Dokumen (BRD / PRD / Notulen)</option>
-          <option value="analysis">Analisis rapat</option>
+          <option value="doc">{t('ext.templates.kindDoc')}</option>
+          <option value="analysis">{t('ext.templates.kindAnalysis')}</option>
         </select>
       </label>
       <label className="field">
-        <span>Instruksi</span>
+        <span>{t('ext.templates.instructions')}</span>
         <textarea
           rows={4}
           value={draft.instructions}
-          placeholder="Fokus pada apa yang berjalan baik, apa yang tidak, dan eksperimen sprint berikutnya."
+          placeholder={t('ext.templates.instructionsPlaceholder')}
           onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
         />
       </label>
       <label className="field">
-        <span>Section (satu per baris, opsional)</span>
+        <span>{t('ext.templates.sections')}</span>
         <textarea
           rows={3}
           value={draft.sections.join('\n')}
@@ -343,23 +385,23 @@ export function TemplatesPanel() {
       </div>
 
       <ul className="tpl-list">
-        {templates.map((t) => (
-          <li key={t.id}>
-            <span className="tpl-name">{t.name}</span>
-            <span className="dim">{t.kind}</span>
+        {templates.map((tpl) => (
+          <li key={tpl.id}>
+            <span className="tpl-name">{tpl.name}</span>
+            <span className="dim">{tpl.kind}</span>
             <span className="spacer" />
-            <button onClick={() => setDraft(t)}>Edit</button>
+            <button onClick={() => setDraft(tpl)}>Edit</button>
             <button
               className="danger"
               onClick={async () => {
-                setTemplates(await db<Template[]>('delete-template', { id: t.id }));
+                setTemplates(await db<Template[]>('delete-template', { id: tpl.id }));
               }}
             >
-              Hapus
+              {t('ext.templates.delete')}
             </button>
           </li>
         ))}
-        {!templates.length && <li className="section-empty">Belum ada template.</li>}
+        {!templates.length && <li className="section-empty">{t('ext.templates.empty')}</li>}
       </ul>
     </>
   );
@@ -388,24 +430,20 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
   return (
     <>
       <fieldset className="field-group">
-        <legend>Impor rapat</legend>
-        <p className="hint">
-          Berkas .vtt, .srt, transcript Zoom, atau teks biasa. Rekaman audio/video ikut didukung
-          bila endpoint speech-to-text sudah diisi di tab Integrasi (maks 25 MB). Hasilnya jadi
-          rapat biasa: bisa dianalisis, dicari, dan ditanyai seperti rapat yang direkam langsung.
-        </p>
+        <legend>{t('ext.data.importMeeting')}</legend>
+        <p className="hint">{t('ext.data.importHint')}</p>
         <input
           ref={transcriptFile}
           type="file"
           accept=".vtt,.srt,.txt,text/plain,audio/*,video/mp4"
-          aria-label="Berkas transcript atau audio"
+          aria-label={t('ext.data.transcriptOrAudio')}
         />
         <button
           disabled={!!busy}
           onClick={() =>
             void run('import', async () => {
               const file = transcriptFile.current?.files?.[0];
-              if (!file) return toast('error', 'Pilih berkas dulu.');
+              if (!file) return toast('error', t('ext.data.pickFile'));
               const common = {
                 title: file.name.replace(/\.[^.]+$/, ''),
                 startedAt: new Date(file.lastModified).toISOString(),
@@ -422,51 +460,48 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
                     ...common,
                     text: await file.text(),
                   });
-              toast('success', `${res.entries} baris diimpor sebagai ${res.sessionId}.`);
+              toast('success', t('ext.data.imported', { count: res.entries, id: res.sessionId }));
             })
           }
         >
-          {busy === 'import' ? 'Mengimpor…' : 'Impor transcript / audio'}
+          {busy === 'import' ? t('ext.data.importing') : t('ext.data.importAction')}
         </button>
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Kalender (.ics)</legend>
-        <input ref={icsFile} type="file" accept=".ics,text/calendar" aria-label="Berkas kalender" />
+        <legend>{t('ext.data.calendar')}</legend>
+        <input ref={icsFile} type="file" accept=".ics,text/calendar" aria-label={t('ext.data.calendarFile')} />
         <button
           disabled={!!busy}
           onClick={() =>
             void run('ics', async () => {
               const file = icsFile.current?.files?.[0];
-              if (!file) return toast('error', 'Pilih berkas .ics dulu.');
+              if (!file) return toast('error', t('ext.data.pickIcs'));
               const res = await db<{ matched: unknown[] }>('match-calendar', { ics: await file.text() });
-              toast('success', `${res.matched.length} rapat dicocokkan dengan agenda kalender.`);
+              toast('success', t('ext.data.matched', { count: res.matched.length }));
             })
           }
         >
-          {busy === 'ics' ? 'Mencocokkan…' : 'Cocokkan agenda'}
+          {busy === 'ics' ? t('ext.data.matching') : t('ext.data.match')}
         </button>
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Bagikan rapat (terenkripsi)</legend>
+        <legend>{t('ext.data.share')}</legend>
         <label className="field">
-          <span>Passphrase</span>
+          <span>{t('ext.data.passphrase')}</span>
           <input
             type="password"
             autoComplete="off"
             value={passphrase}
             onChange={(e) => setPassphrase(e.target.value)}
           />
-          <span className="hint">
-            Penerima butuh passphrase ini untuk membuka berkas. Siapa pun yang punya passphrase-nya
-            bisa membaca isi rapat.
-          </span>
+          <span className="hint">{t('ext.data.sharePassphraseHint')}</span>
         </label>
         <div className="subbar">
           <button
             disabled={!!busy || !selectedMeeting}
-            title={selectedMeeting ? '' : 'Pilih rapat dulu di sidebar'}
+            title={selectedMeeting ? '' : t('ext.data.pickMeetingFirst')}
             onClick={() =>
               void run('share', async () => {
                 const res = await db<{ payload: string }>('export-share', {
@@ -474,43 +509,45 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
                   passphrase,
                 });
                 downloadText(`${selectedMeeting}.companion-share`, res.payload, 'text/plain');
-                toast('success', 'Berkas share diunduh.');
+                toast('success', t('ext.data.shareDownloaded'));
               })
             }
           >
-            Ekspor rapat terpilih
+            {t('ext.data.exportSelected')}
           </button>
-          <input ref={shareFile} type="file" accept=".companion-share" aria-label="Berkas share" />
+          <input ref={shareFile} type="file" accept=".companion-share" aria-label={t('ext.data.shareFile')} />
           <button
             disabled={!!busy}
             onClick={() =>
               void run('unshare', async () => {
                 const file = shareFile.current?.files?.[0];
-                if (!file) return toast('error', 'Pilih berkas share dulu.');
+                if (!file) return toast('error', t('ext.data.pickShareFirst'));
                 const res = await db<{ sessionId: string }>('import-share', {
                   payload: await file.text(),
                   passphrase,
                 });
-                toast('success', `Rapat ${res.sessionId} diimpor.`);
+                toast('success', t('ext.data.shareImported', { id: res.sessionId }));
               })
             }
           >
-            Impor berkas share
+            {t('ext.data.importShare')}
           </button>
         </div>
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Cadangan</legend>
+        <legend>{t('ext.data.backup')}</legend>
+        {/* The emphasis is spliced in as an element rather than shipped as
+            markup in the catalogue: no innerHTML, and the sentence around it
+            stays one translatable string. */}
         <p className="hint">
-          Semua rapat dalam satu berkas: transkrip, notulen, chat dan dokumen. API key,
-          token dan audit log <b>tidak</b> ikut — jadi berkas ini aman disimpan, dan
-          setelah memulihkan kamu perlu memasang ulang provider AI-mu.
+          {t('ext.data.backupHint', { not: '\u0000' })
+            .split('\u0000')
+            .flatMap((part, idx) =>
+              idx === 0 ? [part] : [<b key={idx}>{t('ext.data.backupNot')}</b>, part],
+            )}
         </p>
-        <p className="hint">
-          Memulihkan bersifat menambah: rapat yang sudah ada di profil ini tidak
-          ditimpa, jadi memulihkan berkas yang sama dua kali tidak mengubah apa pun.
-        </p>
+        <p className="hint">{t('ext.data.restoreHint')}</p>
         <div className="subbar">
           <button
             disabled={!!busy}
@@ -519,19 +556,19 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
                 const res = await db<{ backup: BackupFile }>('export-backup');
                 const stamp = new Date().toISOString().slice(0, 10);
                 downloadText(`companion-backup-${stamp}.json`, JSON.stringify(res.backup));
-                toast('success', `Cadangan ${res.backup.meetings} rapat diunduh.`);
+                toast('success', t('ext.data.backupDownloaded', { count: res.backup.meetings }));
               })
             }
           >
-            Unduh cadangan
+            {t('ext.data.downloadBackup')}
           </button>
-          <input ref={backupFile} type="file" accept=".json" aria-label="Berkas cadangan" />
+          <input ref={backupFile} type="file" accept=".json" aria-label={t('ext.data.backupFile')} />
           <button
             disabled={!!busy}
             onClick={() =>
               void run('restore', async () => {
                 const file = backupFile.current?.files?.[0];
-                if (!file) return toast('error', 'Pilih berkas cadangan dulu.');
+                if (!file) return toast('error', t('ext.data.pickBackupFirst'));
                 const res = await db<{ added: number; skipped: number; meetings: number }>(
                   'import-backup',
                   { text: await file.text() },
@@ -539,23 +576,26 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
                 toast(
                   'success',
                   res.added
-                    ? `Dipulihkan: ${res.added} entri baru dari ${res.meetings} rapat` +
-                        (res.skipped ? `, ${res.skipped} sudah ada` : '')
-                    : 'Semua isi cadangan sudah ada di profil ini.',
+                    ? t('ext.data.restored', { added: res.added, meetings: res.meetings }) +
+                      (res.skipped ? t('ext.data.restoredSkipped', { count: res.skipped }) : '')
+                    : t('ext.data.restoredNothing'),
                 );
               })
             }
           >
-            Pulihkan dari cadangan
+            {t('ext.data.restore')}
           </button>
         </div>
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>MCP & indeks</legend>
+        <legend>{t('ext.mcp.legend')}</legend>
         <p className="hint">
-          Snapshot untuk MCP server (<code>companion-mcp snapshot.json</code>) agar coding agent
-          bisa mencari dan membaca rapatmu. API key dan audit log tidak ikut disertakan.
+          {t('ext.mcp.hint', { command: '\u0000' })
+            .split('\u0000')
+            .flatMap((part, idx) =>
+              idx === 0 ? [part] : [<code key={idx}>companion-mcp snapshot.json</code>, part],
+            )}
         </p>
         <div className="subbar">
           <button
@@ -564,11 +604,11 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
               void run('snapshot', async () => {
                 const res = await db<{ snapshot: Record<string, unknown> }>('export-snapshot');
                 downloadText('companion-snapshot.json', JSON.stringify(res.snapshot));
-                toast('success', 'Snapshot diunduh.');
+                toast('success', t('ext.mcp.snapshotDownloaded'));
               })
             }
           >
-            Ekspor snapshot
+            {t('ext.mcp.exportSnapshot')}
           </button>
           <button
             disabled={!!busy}
@@ -577,23 +617,23 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
                 const r = await db<{ sessions: number; entries: number; mismatched: string[] }>('sync-index');
                 toast(
                   r.mismatched.length ? 'error' : 'success',
-                  `Indeks dibangun ulang: ${r.sessions} rapat, ${r.entries} baris` +
-                    (r.mismatched.length ? `, ${r.mismatched.length} tidak cocok` : ''),
+                  t('ext.mcp.reindexed', { sessions: r.sessions, entries: r.entries }) +
+                    (r.mismatched.length
+                      ? t('ext.mcp.mismatched', { count: r.mismatched.length })
+                      : ''),
                 );
               })
             }
           >
-            Bangun ulang indeks
+            {t('ext.mcp.rebuildIndex')}
           </button>
         </div>
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Ekspor Obsidian & log audit</legend>
+        <legend>{t('ext.export.legend')}</legend>
         <p className="hint">
-          Vault .zip berisi satu catatan Markdown per rapat yang sudah dianalisis — siap dibuka di
-          Obsidian. Log audit (metrik gate §32.1) diekspor sebagai JSON dan tidak pernah meninggalkan
-          perangkat ini.
+          {t('ext.export.hint')}
         </p>
         <div className="subbar">
           <button
@@ -605,11 +645,11 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
                 });
                 const bytes = Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0));
                 downloadText(res.name, new Blob([bytes], { type: 'application/zip' }));
-                toast('success', `${res.count} catatan rapat diekspor ke ${res.name}.`);
+                toast('success', t('ext.export.obsidianDone', { count: res.count, name: res.name }));
               })
             }
           >
-            {busy === 'obsidian' ? 'Mengekspor…' : 'Ekspor ke Obsidian (.zip)'}
+            {busy === 'obsidian' ? t('ext.export.exporting') : t('ext.export.obsidian')}
           </button>
           <button
             disabled={!!busy}
@@ -617,11 +657,11 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
               void run('audit', async () => {
                 const res = await sendMessage<{ count: number; json: string }>({ type: 'export-audit' });
                 downloadText(`companion-audit-${new Date().toISOString().slice(0, 10)}.json`, res.json);
-                toast('success', `${res.count} event audit diunduh (JSON).`);
+                toast('success', t('ext.export.auditDone', { count: res.count }));
               })
             }
           >
-            Ekspor log audit (JSON)
+            {t('ext.data.exportAudit')}
           </button>
         </div>
       </fieldset>

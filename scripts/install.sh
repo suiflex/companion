@@ -131,7 +131,7 @@ fi
 
 # 1. the CLI and the modules it imports
 HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd)" || HERE=""
-for f in companion.mjs unzip.mjs picker.mjs; do
+for f in companion.mjs unzip.mjs picker.mjs nativeHost.mjs; do
   if [ -n "$HERE" ] && [ -f "$HERE/$f" ]; then
     install -m 755 "$HERE/$f" "$COMPANION_HOME/$f"
     echo "Using local scripts/$f"

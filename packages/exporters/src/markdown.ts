@@ -5,6 +5,7 @@ import {
   type Decision,
   type Meeting,
 } from '@meetcc/shared'
+import { locale, t } from '@meetcc/shared/i18n';
 
 const section = (title: string, body: string): string =>
   body.trim() ? `## ${title}\n\n${body.trim()}\n` : ''
@@ -25,7 +26,7 @@ function decisionsMd(decisions: Decision[]): string {
 
 function fmtDate(iso: string | null): string {
   return iso
-    ? new Date(iso).toLocaleString('id-ID', {
+    ? new Date(iso).toLocaleString(locale(), {
         dateStyle: 'full',
         timeStyle: 'short',
       })
@@ -42,7 +43,7 @@ export function toMarkdown(meeting: Meeting, analysis: Analysis): string {
       [
         `- **Meeting ID**: ${meeting.id}`,
         `- **Tanggal**: ${fmtDate(startedAt(meeting))}`,
-        `- **Jumlah baris transcript**: ${meeting.entries.length}`,
+        t('pkg.export.transcriptLines', { count: meeting.entries.length }),
       ].join('\n'),
     ),
     section('Participants', bullets(people)),

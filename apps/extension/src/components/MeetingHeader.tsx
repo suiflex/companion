@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { SessionRow } from '@meetcc/store';
 import type { CarryOver } from '@meetcc/meeting';
 import { carryOver, db, getSession, listProjects } from '../lib/db';
+import { locale, t } from '@meetcc/shared/i18n';
 
 // P1.5 — a meeting is more than a room code: date, duration, participants and
 // platform (§21). P1.9/P2.3 ride along here because this is where they matter
@@ -56,7 +57,7 @@ export function MeetingHeader({
 
   const meta = [
     session.startedAt
-      ? new Date(session.startedAt).toLocaleString('id-ID', {
+      ? new Date(session.startedAt).toLocaleString(locale(), {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
@@ -90,8 +91,8 @@ export function MeetingHeader({
         <input
           className="mh-agenda"
           value={agenda}
-          placeholder="Agenda rapat (opsional)"
-          aria-label="Agenda rapat"
+          placeholder={t('ext.header.agendaPlaceholder')}
+          aria-label={t('ext.header.agenda')}
           onChange={(e) => setAgenda(e.target.value)}
           onBlur={() => {
             if (agenda === (session.agenda ?? '')) return;
@@ -113,16 +114,20 @@ export function MeetingHeader({
 
       {openCount > 0 && (
         <div className="mh-carry">
-          <strong>{openCount}</strong> hal dari rapat sebelumnya masih terbuka
+          {t('ext.header.carryOpen', { count: '\u0000' })
+            .split('\u0000')
+            .flatMap((part, idx) =>
+              idx === 0 ? [part] : [<strong key={idx}>{openCount}</strong>, part],
+            )}
           {carry!.openActions.length > 0 && (
-            <span className="dim"> · {carry!.openActions.length} action item</span>
+            <span className="dim">{t('ext.header.openActions', { count: carry!.openActions.length })}</span>
           )}
           {carry!.openQuestions.length > 0 && (
-            <span className="dim"> · {carry!.openQuestions.length} pertanyaan</span>
+            <span className="dim">{t('ext.header.openQuestions', { count: carry!.openQuestions.length })}</span>
           )}
           {carry!.fromSessions.slice(0, 3).map((id) => (
             <button key={id} className="ask-chip" onClick={() => onOpenMeeting(id)}>
-              buka rapat sebelumnya
+              {t('ext.header.openPrevious')}
             </button>
           ))}
         </div>

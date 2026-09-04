@@ -59,6 +59,18 @@ export async function applyBatch(
   if (state.seen[batch.operationId]) {
     return { status: 'duplicate', applied: false }
   }
+  // A batch that identifies no meeting cannot be written anywhere sensible.
+  // Without this the derived session key came out `undefined#NaN-NaN-NaNTNaN`
+  // and the note landed in `Rapat/NaN-NaN-Na/undefined-TNaN.md` — a real file
+  // in a real vault, produced by a message that was never a delivery at all.
+  if (!batch.sessionKey) {
+    if (!batch.roomId) {
+      return { status: 'error', applied: false, error: 'batch has no roomId' }
+    }
+    if (!batch.startedAt || Number.isNaN(Date.parse(batch.startedAt))) {
+      return { status: 'error', applied: false, error: 'batch has no usable startedAt' }
+    }
+  }
   const sessionKey = batch.sessionKey ?? sessionKeyFor(batch.roomId, batch.startedAt)
   const all = await deps.vault.readAll()
   const existing = all.find((n) => n.sessionKey === sessionKey)
@@ -69,6 +81,9 @@ export async function applyBatch(
     platform: batch.platform,
     startedAt: batch.startedAt,
     participants: batch.participants,
+    // Data, not UI: this tag is written into note frontmatter and is what
+    // existing vaults are already filtered by. Renaming it with the interface
+    // language would split one vault across two vocabularies.
     tags: ['rapat'],
     // must match where appendTranscript writes it, below
     transcript: `.transcript/${id}.jsonl`,

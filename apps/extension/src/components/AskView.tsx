@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { locale, t } from '@meetcc/shared/i18n';
 import {
   CHAT_PREFIX,
   clearChat,
@@ -12,28 +13,30 @@ import {
 } from '@meetcc/shared';
 import { useToast } from '../toast';
 
+/** Keys, not text: the chips are both the label and the question sent, so both
+    have to be in the reader's language. */
 const SUGGESTIONS = [
-  'Apa keputusan utama rapat ini?',
-  'Siapa yang bertanggung jawab atas action item?',
-  'Adakah deadline yang disebut?',
-  'Apa yang belum terjawab di rapat ini?',
-];
+  'ext.ask.suggest1',
+  'ext.ask.suggest2',
+  'ext.ask.suggest3',
+  'ext.ask.suggest4',
+] as const;
 
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 /** The four grades are the point of Ask v2: "partial" and "inferred" are real
  *  answers, so they must not look like a failure in the UI. */
-const ANSWERABILITY_LABEL: Record<Answerability, string> = {
-  explicit: 'Disebut langsung',
-  partial: 'Belum tuntas dibahas',
-  inferred: 'Simpulan dari pembahasan',
-  not_found: 'Tidak dibahas',
+const ANSWERABILITY_LABEL: Record<Answerability, Parameters<typeof t>[0]> = {
+  explicit: 'ext.ask.grade.explicit',
+  partial: 'ext.ask.grade.partial',
+  inferred: 'ext.ask.grade.inferred',
+  not_found: 'ext.ask.grade.notFound',
 };
 
 function confidenceLabel(c: number): string {
-  return c >= 0.75 ? 'tinggi' : c >= 0.45 ? 'sedang' : 'rendah';
+  return c >= 0.75 ? t('ext.confidence.high') : c >= 0.45 ? t('ext.confidence.medium') : t('ext.confidence.low');
 }
 
 function ResultMeta({ result, onAsk }: { result: AskResult; onAsk: (q: string) => void }) {
@@ -41,17 +44,17 @@ function ResultMeta({ result, onAsk }: { result: AskResult; onAsk: (q: string) =
     <div className="ask-meta">
       <div className="ask-grades">
         <span className={`ask-grade ask-grade-${result.answerability}`}>
-          {ANSWERABILITY_LABEL[result.answerability]}
+          {t(ANSWERABILITY_LABEL[result.answerability])}
         </span>
         {result.intent === 'advise' && (
-          <span className="ask-grade ask-grade-advise">Analisis Companion, di luar isi rapat</span>
+          <span className="ask-grade ask-grade-advise">{t('ext.ask.advise')}</span>
         )}
         <span className="ask-conf dim">Keyakinan {confidenceLabel(result.confidence)}</span>
       </div>
 
       {result.missing.length > 0 && (
         <div className="ask-missing">
-          <span className="ask-meta-label">Belum diputuskan</span>
+          <span className="ask-meta-label">{t('ext.ask.undecided')}</span>
           <ul>
             {result.missing.map((m, i) => (
               <li key={i}>{m}</li>
@@ -62,7 +65,7 @@ function ResultMeta({ result, onAsk }: { result: AskResult; onAsk: (q: string) =
 
       {result.evidence.length > 0 && (
         <div className="ask-evidence">
-          <span className="ask-meta-label">Bukti dari transcript</span>
+          <span className="ask-meta-label">{t('ext.ask.evidence')}</span>
           <ul>
             {result.evidence.map((e, i) => (
               <li key={i}>
@@ -126,9 +129,9 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
       const res = await chrome.runtime.sendMessage({ type: 'ask', meetingId: meeting.id, question });
       // The answer arrives through storage, like every other turn — appending
       // it here as well would show it twice.
-      if (!res?.ok) toast('error', `Gagal: ${res?.error ?? 'unknown'}`);
+      if (!res?.ok) toast('error', t('ext.failed', { error: res?.error ?? t('ext.unknownError') }));
     } catch (e) {
-      toast('error', `Gagal: ${(e as Error).message}`);
+      toast('error', t('ext.failed', { error: (e as Error).message }));
     } finally {
       setBusy(false);
     }
@@ -137,7 +140,7 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
   const clear = async () => {
     await clearChat(meeting.id);
     setMessages([]);
-    toast('info', 'Riwayat tanya-jawab dihapus.');
+    toast('info', t('ext.ask.cleared'));
   };
 
   const empty = messages.length === 0;
@@ -145,7 +148,7 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
   return (
     <div className="ask">
       <div className="subbar">
-        <span className="ask-hint dim">Tanya apa saja tentang rapat ini — dijawab dari transcript.</span>
+        <span className="ask-hint dim">{t('ext.ask.hint')}</span>
         <span className="spacer" />
         <button className="danger" onClick={clear} disabled={empty || busy}>
           Clear
@@ -156,14 +159,19 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
         {empty && !busy ? (
           <div className="ask-empty">
             <div className="empty-glyph">?</div>
-            <p>Tanya ke transcript.</p>
+            <p>{t('ext.ask.empty')}</p>
             <p className="empty-hint">
-              Jawaban diambil dari isi rapat {displayMeetingId(meeting.id)} dan disertai bukti (timestamp / pembicara).
+              {t('ext.ask.emptyHint', { id: displayMeetingId(meeting.id) })}
             </p>
             <div className="ask-suggest">
-              {SUGGESTIONS.map((s) => (
-                <button key={s} className="ask-chip" onClick={() => void send(s)} disabled={busy}>
-                  {s}
+              {SUGGESTIONS.map((key) => (
+                <button
+                  key={key}
+                  className="ask-chip"
+                  onClick={() => void send(t(key))}
+                  disabled={busy}
+                >
+                  {t(key)}
                 </button>
               ))}
             </div>
@@ -201,7 +209,7 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
           className="ask-input"
           value={input}
           rows={1}
-          placeholder={live ? 'Rapat masih berlangsung — tetap bisa ditanya' : 'Tulis pertanyaan…'}
+          placeholder={live ? t('ext.ask.placeholderLive') : t('ext.ask.placeholder')}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -209,10 +217,10 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
               void send(input);
             }
           }}
-          aria-label="Pertanyaan"
+          aria-label={t('ext.ask.question')}
         />
         <button className="primary" type="submit" disabled={busy || !input.trim()}>
-          {busy ? '…' : 'Kirim'}
+          {busy ? '…' : t('ext.ask.send')}
         </button>
       </form>
     </div>

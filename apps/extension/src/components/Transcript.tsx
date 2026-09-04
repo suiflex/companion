@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { locale, t, formatDateTime } from '@meetcc/shared/i18n'
 import {
   CLEAN_PREFIX,
   cleanChanges,
@@ -26,7 +27,7 @@ function Avatar({ src, name }: { src?: string; name: string }) {
 }
 
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('id-ID', {
+  return new Date(iso).toLocaleTimeString(locale(), {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -43,11 +44,12 @@ interface Props {
   onClear: () => void
 }
 
-const HIGHLIGHT_LABEL: Record<string, string> = {
-  decision: 'Keputusan',
-  action: 'Action',
-  deadline: 'Deadline',
-  risk: 'Risiko',
+/** Keys, not text: resolved at render time so the labels follow the language. */
+const HIGHLIGHT_LABEL: Record<string, Parameters<typeof t>[0]> = {
+  decision: 'ext.kind.decision',
+  action: 'ext.kind.action',
+  deadline: 'ext.kind.deadline',
+  risk: 'ext.kind.risk',
 }
 
 export function Transcript({ meeting, live, onClear }: Props) {
@@ -138,7 +140,7 @@ export function Transcript({ meeting, live, onClear }: Props) {
         from,
         to: draft.trim(),
       })
-      toast('success', `${res.moved} baris kini atas nama ${draft.trim()}.`)
+      toast('success', t('ext.transcript.renamed', { count: res.moved, name: draft.trim() }))
     } catch (e) {
       toast('error', (e as Error).message)
     }
@@ -178,10 +180,10 @@ export function Transcript({ meeting, live, onClear }: Props) {
         meetingId: meeting.id,
         fromScratch,
       })
-      if (res?.ok) toast('success', `Transcript dirapikan — ${res.changed} baris dikoreksi.`)
-      else toast('error', `Gagal: ${res?.error ?? 'unknown'}`)
+      if (res?.ok) toast('success', t('ext.transcript.cleaned', { count: res.changed }))
+      else toast('error', t('ext.failed', { error: res?.error ?? t('ext.unknownError') }))
     } catch (e) {
-      toast('error', `Gagal: ${(e as Error).message}`)
+      toast('error', t('ext.failed', { error: (e as Error).message }))
     }
     reload()
   }
@@ -190,7 +192,7 @@ export function Transcript({ meeting, live, onClear }: Props) {
     <>
       <div className='subbar'>
         {cleaned && (
-          <div className='seg' role='tablist' aria-label='Versi transcript'>
+          <div className='seg' role='tablist' aria-label={t('ext.transcript.versions')}>
             <button
               role='tab'
               aria-selected={view === 'raw'}
@@ -210,7 +212,7 @@ export function Transcript({ meeting, live, onClear }: Props) {
         <button
           onClick={async () => {
             await navigator.clipboard.writeText(toTxt(entries))
-            toast('success', 'Transcript disalin.')
+            toast('success', t('ext.transcript.copied'))
           }}>
           Copy
         </button>
@@ -233,7 +235,7 @@ export function Transcript({ meeting, live, onClear }: Props) {
             className='ghost'
             onClick={() => void cleanUp(true)}
             disabled={running || live}
-            title='Abaikan hasil lama, rapikan ulang dari awal'>
+            title={t('ext.transcript.redoHint')}>
             ↻ Dari awal
           </button>
         )}
@@ -243,15 +245,15 @@ export function Transcript({ meeting, live, onClear }: Props) {
           disabled={running || live || !meeting.entries.length}
           title={
             live
-              ? 'Tunggu rapat selesai'
-              : 'Perbaiki salah-dengar (angka, nama, istilah) dengan AI'
+              ? t('ext.transcript.waitForEnd')
+              : t('ext.transcript.cleanHint')
           }>
           {running
             ? `⏳ Merapikan… ${pct}%`
             : stalled
               ? `▶ Lanjutkan ${pct}%`
               : cleaned
-                ? '✨ Rapikan ulang'
+                ? t('ext.transcript.recleanBtn')
                 : '✨ Rapikan'}
         </button>
         <button className='danger' onClick={onClear}>
@@ -261,7 +263,7 @@ export function Transcript({ meeting, live, onClear }: Props) {
 
       {highlights.length > 0 && view === 'raw' && (
         <div className='hl-strip'>
-          <span className='section-label'>Sorotan</span>
+          <span className='section-label'>{t('ext.transcript.highlights')}</span>
           {highlights.slice(-8).map((h) => (
             <button
               key={h.id}
@@ -271,7 +273,7 @@ export function Transcript({ meeting, live, onClear }: Props) {
                 const el = ref.current?.querySelectorAll('.entry')[h.seq]
                 el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
               }}>
-              {HIGHLIGHT_LABEL[h.kind] ?? h.kind}: {h.text.slice(0, 48)}
+              {HIGHLIGHT_LABEL[h.kind] ? t(HIGHLIGHT_LABEL[h.kind]) : h.kind}: {h.text.slice(0, 48)}
             </button>
           ))}
         </div>
@@ -279,7 +281,7 @@ export function Transcript({ meeting, live, onClear }: Props) {
 
       {talk.length > 1 && (
         <div className='talk-strip'>
-          <span className='section-label'>Porsi bicara</span>
+          <span className='section-label'>{t('ext.transcript.speakingShare')}</span>
           {talk.slice(0, 6).map((t) => (
             <span
               key={t.speaker}
@@ -297,27 +299,27 @@ export function Transcript({ meeting, live, onClear }: Props) {
 
       {todo.length > 0 && view === 'raw' && (
         <div className='todo-strip'>
-          <span className='section-label'>Action terdeteksi</span>
+          <span className='section-label'>{t('ext.transcript.detectedActions')}</span>
           <ul className='todo-list'>
-            {todo.slice(-5).map((t) => (
-              <li key={t.seq}>
-                <span className='todo-task'>{t.task}</span>
+            {todo.slice(-5).map((row) => (
+              <li key={row.seq}>
+                <span className='todo-task'>{row.task}</span>
                 <span className='dim'>
-                  {t.owner || 'PIC belum disebut'}
-                  {t.due ? ` · ${t.due}` : ''}
+                  {row.owner || t('ext.transcript.noOwner')}
+                  {row.due ? ` · ${row.due}` : ''}
                 </span>
               </li>
             ))}
           </ul>
           <span className='dim todo-note'>
-            Dugaan dari kata kunci — daftar final dibuat AI setelah rapat selesai.
+            {t('ext.transcript.keywordGuess')}
           </span>
         </div>
       )}
 
       {entries.length === 0 ? (
         <div className='empty-state'>
-          <p className='empty-hint'>Menunggu ada yang bicara…</p>
+          <p className='empty-hint'>{t('ext.transcript.waitingForSpeech')}</p>
         </div>
       ) : (
         <div className='transcript' ref={ref} onScroll={onScroll}>
@@ -333,14 +335,18 @@ export function Transcript({ meeting, live, onClear }: Props) {
           )}
           {view === 'clean' && cleaned && record?.status === 'done' && (
             <p className='transcript-note dim'>
-              Versi rapi — {record.changed} baris dikoreksi ·{' '}
-              {new Date(record.generatedAt).toLocaleString('id-ID')}. Verifikasi bila ragu.
+              {t('ext.transcript.cleanNote', {
+                count: record.changed,
+                date: formatDateTime(record.generatedAt),
+              })}
             </p>
           )}
           {cleaned && meeting.entries.length > cleaned.length && (
             <p className='transcript-note dim'>
-              +{meeting.entries.length - cleaned.length} baris baru sejak dirapikan (belum
-              dikoreksi). Klik “✨ Rapikan ulang” untuk merapikan semuanya.
+              {t('ext.transcript.newSinceFull', {
+                count: meeting.entries.length - cleaned.length,
+                button: t('ext.transcript.recleanBtn'),
+              })}
             </p>
           )}
           {entries.map((e, i) => {
@@ -371,13 +377,13 @@ export function Transcript({ meeting, live, onClear }: Props) {
                     ) : (
                       <button
                         className='speaker speaker-editable'
-                        title='Ganti nama pembicara ini di seluruh rapat'
+                        title={t('ext.transcript.renameSpeaker')}
                         onClick={() => setRenaming({ from: e.speaker, draft: e.speaker })}>
                         {e.speaker}
                       </button>
                     )}
                     <time className='stamp'>{fmtTime(e.time)}</time>
-                    {flag && <span className={`hl-tag hl-${flag}`}>{HIGHLIGHT_LABEL[flag] ?? flag}</span>}
+                    {flag && <span className={`hl-tag hl-${flag}`}>{HIGHLIGHT_LABEL[flag] ? t(HIGHLIGHT_LABEL[flag]) : flag}</span>}
                   </div>
                   <p className='text'>
                     {e.text}
@@ -385,13 +391,13 @@ export function Transcript({ meeting, live, onClear }: Props) {
                   </p>
                   {view === 'clean' && changedAt.has(i) && (
                     <div className='clean-diff'>
-                      <span className='clean-raw' title='Yang tertangkap caption'>
+                      <span className='clean-raw' title={t('ext.transcript.captured')}>
                         {changedAt.get(i)!.raw}
                       </span>
                       <button
                         className='clean-toggle'
                         onClick={() => void keepOriginal(i, !changedAt.get(i)!.kept)}>
-                        {changedAt.get(i)!.kept ? '↺ Pakai versi AI' : 'Pakai versi asli'}
+                        {changedAt.get(i)!.kept ? t('ext.transcript.useAi') : t('ext.transcript.useOriginal')}
                       </button>
                     </div>
                   )}

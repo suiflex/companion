@@ -1,3 +1,4 @@
+import { t } from '@meetcc/shared/i18n';
 /**
  * Sign in with ChatGPT / Sign in with Google — OAuth protocol helpers.
  *
@@ -33,11 +34,24 @@ export class OAuthError extends Error {
   }
 }
 
+/**
+ * Token endpoints are subject to the same CSP as provider calls, so they go
+ * through the same seam. Pure protocol still: this module owns no storage and
+ * chooses no transport, it just uses the one it was given.
+ */
+type Fetch = (url: string, init: RequestInit) => Promise<Response>;
+let doFetch: Fetch = (url, init) => fetch(url, init);
+
+/** Route OAuth requests through `impl`. Called once, at startup. */
+export function setOAuthFetch(impl: Fetch): void {
+  doFetch = impl;
+}
+
 async function request(url: string, init: RequestInit): Promise<Response> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    return await fetch(url, { ...init, signal: ctrl.signal });
+    return await doFetch(url, { ...init, signal: ctrl.signal });
   } catch (e) {
     throw new OAuthError('NETWORK', `Tidak bisa menghubungi ${new URL(url).host}: ${(e as Error).message}`);
   } finally {
@@ -54,7 +68,7 @@ async function body(res: Response, code: string): Promise<Record<string, unknown
     const parsed = JSON.parse(text);
     return parsed && typeof parsed === 'object' ? parsed : {};
   } catch {
-    throw new OAuthError(code, 'Auth service tidak mengembalikan JSON');
+    throw new OAuthError(code, t('pkg.oauth.noJson'));
   }
 }
 
@@ -108,7 +122,7 @@ export function jwtClaims(token: string): Record<string, unknown> {
 function tokensOf(raw: Record<string, unknown>, code: string, previous?: OAuthTokens): OAuthTokens {
   const accessToken = raw.access_token;
   if (typeof accessToken !== 'string' || !accessToken) {
-    throw new OAuthError(code, 'Respons tidak memuat access token');
+    throw new OAuthError(code, t('pkg.oauth.noAccessToken'));
   }
   const expiresIn = typeof raw.expires_in === 'number' ? raw.expires_in : 0;
   return {
@@ -158,7 +172,7 @@ export async function chatgptDeviceStart(): Promise<DeviceCode> {
   // The service has spelled this key both ways.
   const userCode = raw.user_code ?? raw.usercode;
   if (typeof deviceAuthId !== 'string' || typeof userCode !== 'string') {
-    throw new OAuthError('DEVICE_START_FAILED', 'Respons tidak memuat device code');
+    throw new OAuthError('DEVICE_START_FAILED', t('pkg.oauth.noDeviceCode'));
   }
   const interval = Number(raw.interval);
   return {
@@ -191,7 +205,7 @@ export async function chatgptDevicePoll(
   const code = raw.authorization_code;
   const verifier = raw.code_verifier;
   if (typeof code !== 'string' || typeof verifier !== 'string') {
-    throw new OAuthError('DEVICE_POLL_FAILED', 'Persetujuan tidak memuat authorization code');
+    throw new OAuthError('DEVICE_POLL_FAILED', t('pkg.oauth.noAuthCode'));
   }
   return { code, verifier };
 }
@@ -314,15 +328,15 @@ export function parseCallbackUrl(url: string, expectedState: string): string {
   try {
     query = new URL(url.trim()).searchParams;
   } catch {
-    throw new OAuthError('BAD_URL', 'Itu bukan URL. Salin seluruh isi address bar.');
+    throw new OAuthError('BAD_URL', t('pkg.oauth.notAUrl'));
   }
   const error = query.get('error');
   if (error) throw new OAuthError('CONSENT_DENIED', `Google menolak: ${error}`);
   if (query.get('state') !== expectedState) {
-    throw new OAuthError('STATE_MISMATCH', 'URL itu milik proses sign-in yang lain. Ulangi.');
+    throw new OAuthError('STATE_MISMATCH', t('pkg.oauth.stateMismatch'));
   }
   const code = query.get('code');
-  if (!code) throw new OAuthError('NO_CODE', 'URL itu tidak memuat authorization code.');
+  if (!code) throw new OAuthError('NO_CODE', t('pkg.oauth.noCodeInUrl'));
   return code;
 }
 
@@ -461,7 +475,7 @@ export async function resolveCodeAssistAccount(
     throw new OAuthError(
       'PROJECT_REQUIRED',
       `Akun ini pada tier "${tier.id}" yang mewajibkan project Google Cloud milikmu sendiri — ` +
-        'Code Assist tidak membuatkannya. Isi Project ID di bawah lalu masuk lagi.',
+        t('pkg.oauth.noProject'),
     );
   }
   return { projectId: await onboardUser(accessToken, tier.id, given), tierId: tier.id };
@@ -505,7 +519,7 @@ async function onboardUser(accessToken: string, tierId: string, projectId: strin
         throw new OAuthError(
           'ONBOARD_NO_PROJECT',
           `Onboarding tier "${tierId}" selesai tanpa menyebut project. ` +
-            'Isi Project ID Google Cloud di bawah lalu masuk lagi.',
+            t('pkg.oauth.needProject'),
         );
       }
       return project;
@@ -514,7 +528,7 @@ async function onboardUser(accessToken: string, tierId: string, projectId: strin
       await new Promise((r) => setTimeout(r, ONBOARD_INTERVAL_MS));
     }
   }
-  throw new OAuthError('ONBOARD_TIMEOUT', 'Onboarding tidak selesai. Coba masuk lagi.');
+  throw new OAuthError('ONBOARD_TIMEOUT', t('pkg.oauth.onboardTimeout'));
 }
 
 // -- keeping a stored sign-in usable ----------------------------------------
