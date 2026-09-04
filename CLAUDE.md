@@ -132,6 +132,42 @@ refreshes when the file list changes, skipping the tick while edits are
 unsaved. Deliberately not `listNotes`, which stats every note — one round trip
 per note, forever. The cost of that choice: only *new* files are noticed.
 
+## Language
+
+English is the default; Indonesian is a setting in both apps. The engine is
+`packages/shared/src/i18n.ts` with catalogues in `messages/{en,id}.ts` —
+hand-rolled, no dependency, the same shape as `theme.ts`.
+
+`chrome.i18n` is not an option here and never will be: the desktop app is
+Tauri, so `_locales` reaches neither it nor `packages/*`. One catalogue spans
+all three.
+
+Four things to know before touching it:
+
+- **A key added to `en.ts` must be added to `id.ts`.** `MessageKey` derives
+  from the English catalogue, so the typecheck catches it — and `i18n.test.ts`
+  compares the two key sets and their `{placeholders}` outright, because a
+  translation missing on one side renders the other language rather than
+  failing.
+- **Import the deep path `@meetcc/shared/i18n`, never the barrel.**
+  `index.ts` re-exports modules that reach for `chrome.*`, which does not
+  exist in a Tauri window. Both apps alias the deep path in their vite config.
+- **Three runtimes, three mechanisms.** The React UIs import `t()`. The
+  service worker is its own context and reads the `lang` storage key itself at
+  startup. `public/content.js` ships unbundled and cannot import at all, so it
+  carries a small inline copy of its own three strings — keep them in step.
+- **`t()` reads a module-level language, which React cannot see changing.**
+  Each app's root subscribes with `onLangChange` and re-renders. A label map
+  frozen at module load keeps whatever language was current when the file was
+  first imported; store keys in those maps and resolve at render time.
+
+Not translated, deliberately: AI prompt text (meeting output already mirrors
+the transcript's language, and the prompts say so), MCP tool descriptions and
+sync-server responses (their reader is a program), the bilingual stopword and
+highlight-keyword tables (translating them would break detection), and
+anything already written to disk — the `Rapat/` directory, the `nota/` session
+key prefix and the `rapat` tag are data, not copy.
+
 ## Conventions
 
 - Tests are colocated: `foo.ts` next to `foo.test.ts`. No separate test tree.

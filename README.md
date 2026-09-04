@@ -169,6 +169,16 @@ model, no vector database, and no external retrieval service.
 The database lives in the service worker only (OPFS is single-writer); the
 dashboard reaches it through runtime messages.
 
+## Interface language and theme
+
+The interface is **English by default**, with **Indonesian** available in both
+apps, and a "follow system" option that takes the language and the light/dark
+theme from the browser or the operating system. Both live in Settings.
+
+This changes the interface only. Meeting notes keep the language they were
+spoken in — the AI is instructed to answer in the transcript's language, so an
+Indonesian meeting still produces Indonesian notes under an English interface.
+
 ## Permissions
 
 The extension does **not** ship with blanket host access. `host_permissions`
