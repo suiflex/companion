@@ -959,7 +959,13 @@ body {
 /* Crepe ships a themed shell of its own; only the frame and the type are
    re-pointed at ours, so an upgrade cannot silently restyle the whole note. */
 .body-editor {
-  flex: 1;
+  /* Grows with the document rather than being sized by the flex line. It was
+     `flex: 1`, which resolved against the pane's own height, while the text
+     inside it did not — so a long note painted straight past the bottom edge
+     of this box and over the actions that follow it in flow: the "updated"
+     line, the folder picker and Save. `1 0 auto` lets the box be as tall as
+     what it holds, which is what puts the action bar back underneath it. */
+  flex: 1 0 auto;
   min-height: 300px;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -994,7 +1000,9 @@ body {
   --crepe-font-default: 'Avenir Next', Avenir, sans-serif;
   --crepe-font-code: ui-monospace, 'SF Mono', Menlo, monospace;
   background: transparent;
-  height: 100%;
+  /* `height: 100%` pinned this to the parent's flex-resolved box while the
+     document inside kept growing — the other half of the overlap above. */
+  min-height: 100%;
 }
 
 .body-editor .ProseMirror {
