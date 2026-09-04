@@ -568,6 +568,15 @@ export const en = {
   'pkg.docgen.stage.done': 'Done',
   'pkg.oauth.notAUrl': 'That is not a URL. Copy the whole address bar.',
 
+  'desktop.meeting.participants': 'Participants',
+  'desktop.meeting.showTranscript': 'Show transcript',
+  'desktop.meeting.hideTranscript': 'Hide transcript',
+  'desktop.meeting.loadingTranscript': 'Reading the transcript…',
+  'desktop.meeting.emptyTranscript': 'The transcript sidecar is empty.',
+  'desktop.meeting.openInExtension': 'Open in the extension',
+  'desktop.meeting.copyLink': 'Copy link',
+  'desktop.meeting.copied': 'Copied',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
 } as const;

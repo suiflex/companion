@@ -565,6 +565,15 @@ export const id: Record<keyof typeof en, string> = {
   'pkg.docgen.stage.done': 'Selesai',
   'pkg.oauth.notAUrl': 'Itu bukan URL. Salin seluruh isi address bar.',
 
+  'desktop.meeting.participants': 'Peserta',
+  'desktop.meeting.showTranscript': 'Lihat transkrip',
+  'desktop.meeting.hideTranscript': 'Sembunyikan transkrip',
+  'desktop.meeting.loadingTranscript': 'Membaca transkrip…',
+  'desktop.meeting.emptyTranscript': 'Berkas transkripnya kosong.',
+  'desktop.meeting.openInExtension': 'Buka di extension',
+  'desktop.meeting.copyLink': 'Salin tautan',
+  'desktop.meeting.copied': 'Tersalin',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
 };
