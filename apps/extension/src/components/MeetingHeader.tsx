@@ -114,7 +114,7 @@ export function MeetingHeader({
 
       {openCount > 0 && (
         <div className="mh-carry">
-          <strong>{openCount}</strong> hal dari rapat sebelumnya masih terbuka
+          <span dangerouslySetInnerHTML={{ __html: t('ext.header.carryOpen', { count: openCount }) }} />
           {carry!.openActions.length > 0 && (
             <span className="dim">{t('ext.header.openActions', { count: carry!.openActions.length })}</span>
           )}
@@ -123,7 +123,7 @@ export function MeetingHeader({
           )}
           {carry!.fromSessions.slice(0, 3).map((id) => (
             <button key={id} className="ask-chip" onClick={() => onOpenMeeting(id)}>
-              buka rapat sebelumnya
+              {t('ext.header.openPrevious')}
             </button>
           ))}
         </div>

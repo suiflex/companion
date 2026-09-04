@@ -343,6 +343,170 @@ export const en = {
   'ext.ask.emptyHint':
     'Answers come from meeting {id} and carry their evidence — timestamp and speaker.',
 
+  // -- extension: integrations ---------------------------------------------
+  'ext.integrations.liveHighlights': 'Live highlights while the meeting runs',
+  'ext.integrations.liveHighlightsHint':
+    'Spots decisions, actions and deadlines from keywords alone — no AI call, so it adds no cost and sends nothing out.',
+  'ext.integrations.bridge': 'Send finished meetings to Companion Desktop',
+  'ext.integrations.bridgeHint':
+    'Writes the meeting note into Companion Desktop’s local vault through its native messaging host — it stays on this computer and never crosses the network. Needs Companion Desktop installed; without it the extension works exactly as before and delivery is retried later.',
+  'ext.bridge.test': 'Test connection',
+  'ext.bridge.testing': 'Testing…',
+  'ext.bridge.connected': 'Connected to Companion Desktop.',
+  'ext.bridge.notConnected': 'Not connected.',
+  'ext.bridge.fixHint':
+    '{detail} — run {command} once more to register the host for this browser profile, then reload the extension.',
+  'ext.tracker.legend': 'Issue tracker (action items)',
+  'ext.tracker.provider': 'Provider',
+  'ext.tracker.baseUrl': 'Base URL',
+  'ext.tracker.token': 'Token',
+  'ext.tracker.projectKey': 'Project key',
+  'ext.tracker.teamId': 'Team id',
+  'ext.tracker.databaseId': 'Database id',
+  'ext.sync.legend': 'Team sync & workspace',
+  'ext.sync.enable': 'Enable sync',
+  'ext.sync.enableHint':
+    'Optional. Transcript contents are encrypted with your passphrase before they are sent — the server never receives the key. There is no Companion service: run {server} on your own machine, or point this at your own https endpoint.',
+  'ext.sync.endpoint': 'Endpoint',
+  'ext.sync.token': 'Token',
+  'ext.sync.workspace': 'Workspace id (optional)',
+  'ext.sync.workspaceHint': 'A shared namespace for one team; empty means private.',
+  'ext.sync.passphrase': 'Encryption passphrase',
+  'ext.sync.passphraseHint':
+    'At least 8 characters. If it is lost, anything already sent cannot be opened again — there is no recovery.',
+  'ext.sync.now': 'Sync now',
+  'ext.sync.syncing': 'Syncing…',
+  'ext.sync.saveFirst': 'Save first if you have just changed the settings above.',
+  'ext.sync.result': 'Sync: {pushed} sent, {pulled} received',
+  'ext.sync.failedSuffix': ', {count} failed ({error})',
+  'ext.transcription.legend': 'Recording transcription & calendar',
+  'ext.transcription.endpoint': 'Speech-to-text endpoint',
+  'ext.transcription.endpointHint':
+    'OpenAI-compatible, including a local Whisper. Empty disables audio file import.',
+  'ext.templates.saved': 'Template saved.',
+  'ext.templates.intro':
+    'A template sets the structure and emphasis of a document — retro notes, client minutes, and so on. The rules go to the AI along with the transcript.',
+  'ext.templates.delete': 'Delete',
+  'ext.data.importMeeting': 'Import a meeting',
+  'ext.data.transcriptOrAudio': 'Transcript or audio file',
+  'ext.data.pickFile': 'Pick a file first.',
+  'ext.data.imported': '{count} lines imported as {id}.',
+  'ext.data.calendar': 'Calendar (.ics)',
+  'ext.data.calendarFile': 'Calendar file',
+  'ext.data.pickIcs': 'Pick an .ics file first.',
+  'ext.data.matched': '{count} meetings matched against the calendar agenda.',
+  'ext.data.matching': 'Matching…',
+  'ext.data.match': 'Match agendas',
+  'ext.data.share': 'Share a meeting (encrypted)',
+  'ext.data.passphrase': 'Passphrase',
+  'ext.data.pickMeetingFirst': 'Pick a meeting in the sidebar first',
+  'ext.data.shareDownloaded': 'Share file downloaded.',
+  'ext.data.shareFile': 'Share file',
+  'ext.data.pickShareFirst': 'Pick a share file first.',
+  'ext.data.shareImported': 'Meeting {id} imported.',
+  'ext.data.backup': 'Backup',
+
+  'ext.calendar.clientIdHint':
+    'Your own client id; this extension carries no credentials of its own. Without it, calendar matching still works by importing an .ics file on the Data tab.',
+  'ext.calendar.connect': 'Connect Google Calendar',
+  'ext.calendar.saveFirst': 'Save the settings first so the client id is picked up.',
+  'ext.templates.usedFor': 'Used for',
+  'ext.templates.kindDoc': 'Documents (BRD / PRD / minutes)',
+  'ext.templates.kindAnalysis': 'Meeting analysis',
+  'ext.templates.instructions': 'Instructions',
+  'ext.templates.instructionsPlaceholder':
+    'Focus on what went well, what did not, and the experiments for the next sprint.',
+  'ext.templates.sections': 'Sections (one per line, optional)',
+  'ext.data.importHint':
+    'A .vtt, .srt, Zoom transcript or plain text file. Audio and video recordings work too once a speech-to-text endpoint is set on the Integrations tab (max 25 MB). The result becomes an ordinary meeting: analysable, searchable and askable like one captured live.',
+  'ext.data.sharePassphraseHint':
+    'The recipient needs this passphrase to open the file. Anyone who has it can read the meeting.',
+  'ext.data.exportSelected': 'Export the selected meeting',
+  'ext.data.backupHint':
+    'Every meeting in one file: transcripts, notes, chat and documents. API keys, tokens and the audit log are <b>not</b> included — which is what makes the file safe to keep, and why you have to set your AI provider up again after restoring.',
+  'ext.data.restoreHint':
+    'Restoring adds rather than replaces: a meeting already in this profile is not overwritten, so restoring the same file twice changes nothing.',
+  'ext.data.backupDownloaded': 'Backup of {count} meetings downloaded.',
+  'ext.data.downloadBackup': 'Download a backup',
+  'ext.data.backupFile': 'Backup file',
+  'ext.data.pickBackupFirst': 'Pick a backup file first.',
+  'ext.data.restored': 'Restored: {added} new entries from {meetings} meetings',
+  'ext.data.restoredSkipped': ', {count} already present',
+  'ext.data.restoredNothing': 'Everything in the backup was already in this profile.',
+  'ext.data.restore': 'Restore from a backup',
+  'ext.mcp.legend': 'MCP & index',
+  'ext.mcp.hint': 'A snapshot for the MCP server ({command}) so a coding agent can read your meetings.',
+  'ext.mcp.snapshotDownloaded': 'Snapshot downloaded.',
+  'ext.mcp.exportSnapshot': 'Export a snapshot',
+  'ext.mcp.reindexed': 'Index rebuilt: {sessions} meetings, {entries} lines',
+  'ext.mcp.rebuildIndex': 'Rebuild the index',
+  'ext.export.legend': 'Obsidian export & audit log',
+  'ext.export.hint':
+    'A .zip vault with one Markdown note per analysed meeting, ready to open in Obsidian. The audit log is exported as JSON and never leaves this machine.',
+  'ext.export.exporting': 'Exporting…',
+  'ext.export.obsidian': 'Export to Obsidian (.zip)',
+  'ext.export.obsidianDone': '{count} meeting notes exported to {name}.',
+  'ext.export.auditDone': '{count} audit events downloaded (JSON).',
+
+  'ext.templates.empty': 'No templates yet.',
+
+  'ext.mcp.mismatched': ', {count} mismatched',
+
+  // -- extension: worker errors ---------------------------------------------
+  'ext.err.rateLimited': 'Too many AI requests — wait a moment and try again.',
+  'ext.err.analysisRateLimited': 'Rate limit: too many analyses, try again later.',
+  'ext.err.invalidRoomId': 'invalid roomId',
+  'ext.err.nothingToExport': 'No meeting has a summary that could be exported yet.',
+  'ext.err.actionNotFound': 'Action item not found.',
+  'ext.err.syncDisabled': 'Sync is not enabled in Settings.',
+  'ext.err.audioTooLarge': 'The audio file is over 25 MB — trim it, or use a text transcript.',
+  'ext.err.emptyTranscription': 'Transcription came back empty.',
+  'ext.err.noTranscriptLines': 'No transcript lines could be read from that file.',
+  'ext.err.emptyName': 'The new name cannot be empty.',
+  'ext.err.noCalendarClientId': 'Fill in the Google OAuth client id in Settings first.',
+  'ext.err.noAccessToken': 'Google returned no access token.',
+  'ext.err.noCanvas': 'No 2D canvas context available',
+
+  // -- extension: notifications and content script --------------------------
+  'ext.notify.notesReady': 'Notes ready ✓',
+  'ext.notify.analysisFailed': 'Analysis failed',
+
+  // -- extension: remaining ------------------------------------------------
+  'ext.err.meetingNotFound': 'Meeting not found.',
+  'ext.err.summaryFirst': 'Create the Summary before the diagrams.',
+  'ext.err.unknownDbOp': 'Unknown database operation: {op}',
+  'ext.err.dbNoResponse': 'The database did not respond.',
+  'ext.err.svgRenderFailed': 'Could not render the SVG to an image',
+  'ext.header.carryOpen': '<strong>{count}</strong> items from earlier meetings are still open',
+  'ext.header.openPrevious': 'open the earlier meeting',
+  'ext.palette.askAi': 'Ask the AI about these results',
+  'ext.provider.modelsFailed': 'The model list could not be fetched ({error}) — type it in instead.',
+  'ext.settings.permissionFailed': 'Permission request failed: {error}',
+  'ext.settings.retentionWarning':
+    'Meetings inactive for more than {days} days will be deleted permanently, including their transcript and notes. Continue?',
+  'ext.transcript.noOwner': 'no owner named yet',
+  'ext.transcript.keywordGuess':
+    'A keyword guess — the final list is written by the AI once the meeting ends.',
+  'ext.transcript.newSince': '+{count} new lines since it was cleaned (not yet corrected)',
+  'ext.kb.showDone': 'Show finished',
+  'ext.diagram.nothingToDraw': 'Nothing in this meeting maps to a flow or a process.',
+  'ext.signin.account': 'Account',
+  'ext.signin.accountHint':
+    'Use a subscription you already pay for, with no API key. This path goes through the backend the vendor’s own clients use (Codex CLI / Gemini CLI) rather than a documented public API, so it can change without warning. If you need something stable, pick an API-key provider above.',
+  'ext.signin.withGoogle': 'Sign in with Google',
+  'ext.signin.googleHint':
+    'After you approve, the browser lands on a {address} URL that loads nothing — that is expected. Copy the whole address bar in here.',
+  'ext.signin.deviceCode': 'Enter the code {code} in the tab that opened ({url}), then approve it.',
+  'desktop.update.failed':
+    'The update could not be installed. Try again, or download it from the releases page.',
+  'desktop.update.installing': 'Installing…',
+  'desktop.update.retry': 'Try again',
+  'desktop.update.restart': 'Restart & install',
+
+  'ext.ask.advise': 'A Companion analysis, beyond what the meeting covered',
+  'ext.transcript.newSinceFull':
+    '+{count} new lines since it was cleaned (not yet corrected). Click “{button}” to clean all of them.',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
 } as const;

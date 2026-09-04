@@ -172,7 +172,7 @@ export function CommandPalette({
               onClose();
             }}
           >
-            Tanya AI tentang hasil ini
+            {t('ext.palette.askAi')}
           </button>
         </div>
       </div>

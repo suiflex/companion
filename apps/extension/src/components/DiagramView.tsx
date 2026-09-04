@@ -93,7 +93,7 @@ export function DiagramView({ meeting, diagrams, analysisReady }: Props) {
           res.count ? 'success' : 'info',
           res.count
             ? `${res.count} diagram dibuat.`
-            : 'Tidak ada alur/proses yang bisa didiagramkan.',
+            : t('ext.diagram.nothingToDraw'),
         );
       } else {
         toast('error', t('ext.failed', { error: res?.error ?? t('ext.unknownError') }));

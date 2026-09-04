@@ -51,7 +51,7 @@ export default function UpdateBanner() {
     <div className="update-banner" role="status">
       <span>
         {failed
-          ? "Gagal memasang pembaruan. Coba lagi, atau unduh manual dari halaman rilis."
+          ? t('desktop.update.failed')
           : t('desktop.update.available', { version: update.version })}
       </span>
       <button
@@ -60,7 +60,11 @@ export default function UpdateBanner() {
         onClick={() => void install()}
         disabled={busy}
       >
-        {busy ? "Memasang…" : failed ? "Coba lagi" : "Restart & pasang"}
+        {busy
+          ? t('desktop.update.installing')
+          : failed
+            ? t('desktop.update.retry')
+            : t('desktop.update.restart')}
       </button>
       <button
         type="button"

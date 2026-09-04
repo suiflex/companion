@@ -1,3 +1,4 @@
+import { t } from '@meetcc/shared/i18n';
 // Shared browser-side SVG -> PNG rasterizer, used by the Mermaid pipeline and
 // the organization logo. High scale keeps text/edges crisp inside PDFs.
 
@@ -43,7 +44,7 @@ export async function svgToPng(
   img.height = h;
   await new Promise<void>((resolve, reject) => {
     img.onload = () => resolve();
-    img.onerror = () => reject(new Error('Gagal merender SVG ke gambar'));
+    img.onerror = () => reject(new Error(t('ext.err.svgRenderFailed')));
     img.src = url;
   });
 
@@ -51,7 +52,7 @@ export async function svgToPng(
   canvas.width = Math.round(w * s);
   canvas.height = Math.round(h * s);
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas 2D context tidak tersedia');
+  if (!ctx) throw new Error(t('ext.err.noCanvas'));
   if (background) {
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, canvas.width, canvas.height);

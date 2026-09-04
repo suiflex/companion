@@ -301,18 +301,18 @@ export function Transcript({ meeting, live, onClear }: Props) {
         <div className='todo-strip'>
           <span className='section-label'>{t('ext.transcript.detectedActions')}</span>
           <ul className='todo-list'>
-            {todo.slice(-5).map((t) => (
-              <li key={t.seq}>
-                <span className='todo-task'>{t.task}</span>
+            {todo.slice(-5).map((row) => (
+              <li key={row.seq}>
+                <span className='todo-task'>{row.task}</span>
                 <span className='dim'>
-                  {t.owner || 'PIC belum disebut'}
-                  {t.due ? ` · ${t.due}` : ''}
+                  {row.owner || t('ext.transcript.noOwner')}
+                  {row.due ? ` · ${row.due}` : ''}
                 </span>
               </li>
             ))}
           </ul>
           <span className='dim todo-note'>
-            Dugaan dari kata kunci — daftar final dibuat AI setelah rapat selesai.
+            {t('ext.transcript.keywordGuess')}
           </span>
         </div>
       )}
@@ -343,8 +343,10 @@ export function Transcript({ meeting, live, onClear }: Props) {
           )}
           {cleaned && meeting.entries.length > cleaned.length && (
             <p className='transcript-note dim'>
-              +{meeting.entries.length - cleaned.length} baris baru sejak dirapikan (belum
-              dikoreksi). Klik “✨ Rapikan ulang” untuk merapikan semuanya.
+              {t('ext.transcript.newSinceFull', {
+                count: meeting.entries.length - cleaned.length,
+                button: t('ext.transcript.recleanBtn'),
+              })}
             </p>
           )}
           {entries.map((e, i) => {

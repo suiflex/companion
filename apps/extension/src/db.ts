@@ -6,6 +6,7 @@ import {
   type SessionRow,
 } from '@meetcc/store';
 import { retrieve } from '@meetcc/ai';
+import { t } from '@meetcc/shared/i18n';
 import {
   buildChronology,
   carryOverFor,
@@ -190,7 +191,7 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
     case 'push-issue': {
       const settings = await loadSettings();
       const action = db.actions().find((x) => x.id === num(a.id));
-      if (!action) throw new Error('Action item tidak ditemukan.');
+      if (!action) throw new Error(t('ext.err.actionNotFound'));
       if (action.externalRef) return { ref: action.externalRef, alreadyPushed: true };
       const ref = await createIssue(
         settings.integrations.tracker,
@@ -223,7 +224,7 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
 
     case 'sync-now': {
       const settings = await loadSettings();
-      if (!settings.integrations.sync.enabled) throw new Error('Sync belum diaktifkan di Settings.');
+      if (!settings.integrations.sync.enabled) throw new Error(t('ext.err.syncDisabled'));
       return runSync(db, settings.integrations.sync);
     }
     case 'queue-sync':
@@ -242,14 +243,14 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
       const settings = await loadSettings();
       const bytes = Uint8Array.from(atob(str(a.base64)), (c) => c.charCodeAt(0));
       if (bytes.byteLength > 25 * 1024 * 1024) {
-        throw new Error('Berkas audio lebih dari 25 MB — potong dulu atau pakai transcript teks.');
+        throw new Error(t('ext.err.audioTooLarge'));
       }
       const text = await transcribeAudio(
         new Blob([bytes], { type: str(a.mime) || 'audio/mpeg' }),
         str(a.name) || 'audio.mp3',
         settings.integrations.transcription,
       );
-      if (!text.trim()) throw new Error('Transkripsi mengembalikan teks kosong.');
+      if (!text.trim()) throw new Error(t('ext.err.emptyTranscription'));
       return handleDb({ op: 'import-transcript', args: { text, title: a.title, startedAt: a.startedAt } });
     }
 
@@ -257,7 +258,7 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
       const entries = normalizeImported(
         parseTranscript(str(a.text), { startedAt: a.startedAt ? str(a.startedAt) : undefined }),
       );
-      if (!entries.length) throw new Error('Tidak ada baris transcript yang bisa dibaca dari file itu.');
+      if (!entries.length) throw new Error(t('ext.err.noTranscriptLines'));
       const id = makeSessionId(str(a.room) || 'import', Date.parse(entries[0].time) || Date.now());
       // written to chrome.storage too, so an import behaves exactly like a
       // captured meeting for every existing feature (and survives a re-index)
@@ -279,7 +280,7 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
       const sessionId = str(a.sessionId);
       const from = str(a.from);
       const to = str(a.to).trim();
-      if (!to) throw new Error('Nama baru tidak boleh kosong.');
+      if (!to) throw new Error(t('ext.err.emptyName'));
       const moved = db.renameSpeaker(sessionId, from, to);
       const key = `transcript:${sessionId}`;
       const stored = (await chrome.storage.local.get(key))[key] as Entry[] | undefined;
@@ -333,7 +334,7 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
     case 'connect-calendar': {
       const settings = await loadSettings();
       const clientId = settings.integrations.calendarClientId.trim();
-      if (!clientId) throw new Error('Isi Google OAuth client id di Settings dulu.');
+      if (!clientId) throw new Error(t('ext.err.noCalendarClientId'));
       const redirect = chrome.identity.getRedirectURL('oauth2');
       const auth =
         'https://accounts.google.com/o/oauth2/v2/auth' +
@@ -344,7 +345,7 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
         '&prompt=consent';
       const responseUrl = await chrome.identity.launchWebAuthFlow({ url: auth, interactive: true });
       const token = new URLSearchParams(new URL(responseUrl ?? '').hash.slice(1)).get('access_token');
-      if (!token) throw new Error('Google tidak mengembalikan access token.');
+      if (!token) throw new Error(t('ext.err.noAccessToken'));
 
       const sessions = db.listSessions();
       const times = sessions.map((x) => Date.parse(x.startedAt ?? '')).filter(Number.isFinite);
@@ -368,6 +369,6 @@ export async function handleDb(req: DbRequest): Promise<unknown> {
     }
 
     default:
-      throw new Error(`Operasi database tidak dikenal: ${req.op}`);
+      throw new Error(t('ext.err.unknownDbOp', { op: req.op }));
   }
 }

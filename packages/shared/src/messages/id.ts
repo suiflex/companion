@@ -340,6 +340,170 @@ export const id: Record<keyof typeof en, string> = {
   'ext.ask.emptyHint':
     'Jawaban diambil dari isi rapat {id} dan disertai bukti (timestamp / pembicara).',
 
+  // -- extension: integrations ---------------------------------------------
+  'ext.integrations.liveHighlights': 'Sorotan langsung saat rapat berjalan',
+  'ext.integrations.liveHighlightsHint':
+    'Deteksi keputusan / action / deadline dari kata kuncinya saja — tanpa panggilan AI, jadi tidak menambah biaya dan tidak mengirim apa pun keluar.',
+  'ext.integrations.bridge': 'Kirim rapat selesai ke Companion Desktop',
+  'ext.integrations.bridgeHint':
+    'Menulis nota rapat ke vault lokal Companion Desktop lewat native messaging host-nya — tetap di komputer ini, tidak lewat jaringan. Butuh Companion Desktop terpasang; kalau belum, extension tetap jalan normal dan pengiriman dicoba lagi nanti.',
+  'ext.bridge.test': 'Tes koneksi',
+  'ext.bridge.testing': 'Menguji…',
+  'ext.bridge.connected': 'Terhubung ke Companion Desktop.',
+  'ext.bridge.notConnected': 'Belum terhubung.',
+  'ext.bridge.fixHint':
+    '{detail} — jalankan {command} sekali lagi untuk mendaftarkan host-nya ke profil browser ini, lalu muat ulang extension.',
+  'ext.tracker.legend': 'Issue tracker (action item)',
+  'ext.tracker.provider': 'Provider',
+  'ext.tracker.baseUrl': 'Base URL',
+  'ext.tracker.token': 'Token',
+  'ext.tracker.projectKey': 'Project key',
+  'ext.tracker.teamId': 'Team id',
+  'ext.tracker.databaseId': 'Database id',
+  'ext.sync.legend': 'Sync & workspace tim',
+  'ext.sync.enable': 'Aktifkan sync',
+  'ext.sync.enableHint':
+    'Opsional. Isi transcript dienkripsi dengan passphrase kamu sebelum dikirim — server tidak pernah menerima kuncinya. Tidak ada layanan Companion: jalankan {server} di komputer sendiri, atau pakai endpoint https milikmu.',
+  'ext.sync.endpoint': 'Endpoint',
+  'ext.sync.token': 'Token',
+  'ext.sync.workspace': 'Workspace id (opsional)',
+  'ext.sync.workspaceHint': 'Namespace bersama untuk satu tim; kosong = pribadi.',
+  'ext.sync.passphrase': 'Passphrase enkripsi',
+  'ext.sync.passphraseHint':
+    'Minimal 8 karakter. Kalau hilang, data yang sudah terkirim tidak bisa dibuka lagi — tidak ada pemulihan.',
+  'ext.sync.now': 'Sync sekarang',
+  'ext.sync.syncing': 'Sync…',
+  'ext.sync.saveFirst': 'Simpan dulu bila baru mengubah pengaturan di atas.',
+  'ext.sync.result': 'Sync: {pushed} terkirim, {pulled} diterima',
+  'ext.sync.failedSuffix': ', {count} gagal ({error})',
+  'ext.transcription.legend': 'Transkripsi rekaman & kalender',
+  'ext.transcription.endpoint': 'Endpoint speech-to-text',
+  'ext.transcription.endpointHint':
+    'Kompatibel OpenAI (termasuk Whisper lokal). Kosong = impor file audio dimatikan.',
+  'ext.templates.saved': 'Template tersimpan.',
+  'ext.templates.intro':
+    'Template mengatur struktur dan penekanan dokumen (mis. notulen retro, MoM klien). Aturannya dikirim ke AI bersama transcript.',
+  'ext.templates.delete': 'Hapus',
+  'ext.data.importMeeting': 'Impor rapat',
+  'ext.data.transcriptOrAudio': 'Berkas transcript atau audio',
+  'ext.data.pickFile': 'Pilih berkas dulu.',
+  'ext.data.imported': '{count} baris diimpor sebagai {id}.',
+  'ext.data.calendar': 'Kalender (.ics)',
+  'ext.data.calendarFile': 'Berkas kalender',
+  'ext.data.pickIcs': 'Pilih berkas .ics dulu.',
+  'ext.data.matched': '{count} rapat dicocokkan dengan agenda kalender.',
+  'ext.data.matching': 'Mencocokkan…',
+  'ext.data.match': 'Cocokkan agenda',
+  'ext.data.share': 'Bagikan rapat (terenkripsi)',
+  'ext.data.passphrase': 'Passphrase',
+  'ext.data.pickMeetingFirst': 'Pilih rapat dulu di sidebar',
+  'ext.data.shareDownloaded': 'Berkas share diunduh.',
+  'ext.data.shareFile': 'Berkas share',
+  'ext.data.pickShareFirst': 'Pilih berkas share dulu.',
+  'ext.data.shareImported': 'Rapat {id} diimpor.',
+  'ext.data.backup': 'Cadangan',
+
+  'ext.calendar.clientIdHint':
+    'Client id milikmu sendiri; extension ini tidak membawa kredensial apa pun. Tanpa ini, pencocokan kalender tetap bisa lewat impor file .ics di tab Data.',
+  'ext.calendar.connect': 'Hubungkan Google Calendar',
+  'ext.calendar.saveFirst': 'Simpan setelan dulu agar client id terbaca.',
+  'ext.templates.usedFor': 'Dipakai untuk',
+  'ext.templates.kindDoc': 'Dokumen (BRD / PRD / Notulen)',
+  'ext.templates.kindAnalysis': 'Analisis rapat',
+  'ext.templates.instructions': 'Instruksi',
+  'ext.templates.instructionsPlaceholder':
+    'Fokus pada apa yang berjalan baik, apa yang tidak, dan eksperimen sprint berikutnya.',
+  'ext.templates.sections': 'Section (satu per baris, opsional)',
+  'ext.data.importHint':
+    'Berkas .vtt, .srt, transcript Zoom, atau teks biasa. Rekaman audio/video ikut didukung bila endpoint speech-to-text sudah diisi di tab Integrasi (maks 25 MB). Hasilnya jadi rapat biasa: bisa dianalisis, dicari, dan ditanyai seperti rapat yang direkam langsung.',
+  'ext.data.sharePassphraseHint':
+    'Penerima butuh passphrase ini untuk membuka berkas. Siapa pun yang punya passphrase-nya bisa membaca isi rapat.',
+  'ext.data.exportSelected': 'Ekspor rapat terpilih',
+  'ext.data.backupHint':
+    'Semua rapat dalam satu berkas: transkrip, notulen, chat dan dokumen. API key, token dan log audit <b>tidak</b> ikut — itulah yang membuat berkas ini aman disimpan, dan sebabnya kamu perlu memasang ulang provider AI setelah memulihkan.',
+  'ext.data.restoreHint':
+    'Memulihkan bersifat menambah: rapat yang sudah ada di profil ini tidak ditimpa, jadi memulihkan berkas yang sama dua kali tidak mengubah apa pun.',
+  'ext.data.backupDownloaded': 'Cadangan {count} rapat diunduh.',
+  'ext.data.downloadBackup': 'Unduh cadangan',
+  'ext.data.backupFile': 'Berkas cadangan',
+  'ext.data.pickBackupFirst': 'Pilih berkas cadangan dulu.',
+  'ext.data.restored': 'Dipulihkan: {added} entri baru dari {meetings} rapat',
+  'ext.data.restoredSkipped': ', {count} sudah ada',
+  'ext.data.restoredNothing': 'Semua isi cadangan sudah ada di profil ini.',
+  'ext.data.restore': 'Pulihkan dari cadangan',
+  'ext.mcp.legend': 'MCP & indeks',
+  'ext.mcp.hint': 'Snapshot untuk MCP server ({command}) agar coding agent bisa membaca rapatmu.',
+  'ext.mcp.snapshotDownloaded': 'Snapshot diunduh.',
+  'ext.mcp.exportSnapshot': 'Ekspor snapshot',
+  'ext.mcp.reindexed': 'Indeks dibangun ulang: {sessions} rapat, {entries} baris',
+  'ext.mcp.rebuildIndex': 'Bangun ulang indeks',
+  'ext.export.legend': 'Ekspor Obsidian & log audit',
+  'ext.export.hint':
+    'Vault .zip berisi satu catatan Markdown per rapat yang sudah dianalisis — siap dibuka di Obsidian. Log audit diekspor sebagai JSON dan tidak pernah meninggalkan komputer ini.',
+  'ext.export.exporting': 'Mengekspor…',
+  'ext.export.obsidian': 'Ekspor ke Obsidian (.zip)',
+  'ext.export.obsidianDone': '{count} catatan rapat diekspor ke {name}.',
+  'ext.export.auditDone': '{count} event audit diunduh (JSON).',
+
+  'ext.templates.empty': 'Belum ada template.',
+
+  'ext.mcp.mismatched': ', {count} tidak cocok',
+
+  // -- extension: worker errors ---------------------------------------------
+  'ext.err.rateLimited': 'Terlalu banyak permintaan AI — tunggu sebentar lalu coba lagi.',
+  'ext.err.analysisRateLimited': 'Rate limit: terlalu banyak analisis, coba lagi nanti.',
+  'ext.err.invalidRoomId': 'roomId tidak valid',
+  'ext.err.nothingToExport': 'Belum ada meeting dengan ringkasan yang bisa diekspor.',
+  'ext.err.actionNotFound': 'Action item tidak ditemukan.',
+  'ext.err.syncDisabled': 'Sync belum diaktifkan di Setelan.',
+  'ext.err.audioTooLarge': 'Berkas audio lebih dari 25 MB — potong dulu atau pakai transcript teks.',
+  'ext.err.emptyTranscription': 'Transkripsi mengembalikan teks kosong.',
+  'ext.err.noTranscriptLines': 'Tidak ada baris transcript yang bisa dibaca dari berkas itu.',
+  'ext.err.emptyName': 'Nama baru tidak boleh kosong.',
+  'ext.err.noCalendarClientId': 'Isi Google OAuth client id di Setelan dulu.',
+  'ext.err.noAccessToken': 'Google tidak mengembalikan access token.',
+  'ext.err.noCanvas': 'Canvas 2D context tidak tersedia',
+
+  // -- extension: notifications and content script --------------------------
+  'ext.notify.notesReady': 'Notulen siap ✓',
+  'ext.notify.analysisFailed': 'Analisis gagal',
+
+  // -- extension: remaining ------------------------------------------------
+  'ext.err.meetingNotFound': 'Meeting tidak ditemukan.',
+  'ext.err.summaryFirst': 'Buat Ringkasan dulu sebelum diagram.',
+  'ext.err.unknownDbOp': 'Operasi database tidak dikenal: {op}',
+  'ext.err.dbNoResponse': 'Database tidak merespons.',
+  'ext.err.svgRenderFailed': 'Gagal merender SVG ke gambar',
+  'ext.header.carryOpen': '<strong>{count}</strong> hal dari rapat sebelumnya masih terbuka',
+  'ext.header.openPrevious': 'buka rapat sebelumnya',
+  'ext.palette.askAi': 'Tanya AI tentang hasil ini',
+  'ext.provider.modelsFailed': 'Daftar model tidak bisa diambil ({error}) — ketik manual.',
+  'ext.settings.permissionFailed': 'Gagal meminta izin: {error}',
+  'ext.settings.retentionWarning':
+    'Meeting yang tidak aktif lebih dari {days} hari akan dihapus permanen, termasuk transcript dan notulennya. Lanjutkan?',
+  'ext.transcript.noOwner': 'PIC belum disebut',
+  'ext.transcript.keywordGuess':
+    'Dugaan dari kata kunci — daftar final dibuat AI setelah rapat selesai.',
+  'ext.transcript.newSince': '+{count} baris baru sejak dirapikan (belum dikoreksi)',
+  'ext.kb.showDone': 'Tampilkan yang selesai',
+  'ext.diagram.nothingToDraw': 'Tidak ada alur/proses yang bisa didiagramkan.',
+  'ext.signin.account': 'Akun',
+  'ext.signin.accountHint':
+    'Pakai langganan yang sudah kamu bayar, tanpa API key. Jalur ini memakai backend yang dipakai klien resmi vendor (Codex CLI / Gemini CLI) dan bukan API publik yang didokumentasikan — bisa berubah sewaktu-waktu. Butuh yang stabil? Pilih provider API key di atas.',
+  'ext.signin.withGoogle': 'Masuk dengan Google',
+  'ext.signin.googleHint':
+    'Setelah menyetujui, browser mendarat di alamat {address} yang tidak memuat apa pun — itu normal. Salin seluruh isi address bar ke sini.',
+  'ext.signin.deviceCode': 'Masukkan kode {code} di tab yang terbuka ({url}), lalu setujui.',
+  'desktop.update.failed':
+    'Gagal memasang pembaruan. Coba lagi, atau unduh manual dari halaman rilis.',
+  'desktop.update.installing': 'Memasang…',
+  'desktop.update.retry': 'Coba lagi',
+  'desktop.update.restart': 'Restart & pasang',
+
+  'ext.ask.advise': 'Analisis Companion, di luar isi rapat',
+  'ext.transcript.newSinceFull':
+    '+{count} baris baru sejak dirapikan (belum dikoreksi). Klik “{button}” untuk merapikan semuanya.',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
 };

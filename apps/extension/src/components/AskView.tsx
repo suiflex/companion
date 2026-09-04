@@ -47,7 +47,7 @@ function ResultMeta({ result, onAsk }: { result: AskResult; onAsk: (q: string) =
           {t(ANSWERABILITY_LABEL[result.answerability])}
         </span>
         {result.intent === 'advise' && (
-          <span className="ask-grade ask-grade-advise">Analisis Companion, di luar isi rapat</span>
+          <span className="ask-grade ask-grade-advise">{t('ext.ask.advise')}</span>
         )}
         <span className="ask-conf dim">Keyakinan {confidenceLabel(result.confidence)}</span>
       </div>

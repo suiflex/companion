@@ -228,7 +228,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
           <div className="kb-toggle-row">
             <label className="kb-toggle">
               <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} />
-              Tampilkan yang selesai
+              {t('ext.kb.showDone')}
             </label>
             {actions.some((a) => a.externalRef) && (
               <button className="kb-refresh" disabled={syncingIssues} onClick={() => void refreshIssues()}>

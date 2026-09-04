@@ -87,7 +87,7 @@ export function SettingsView({
     } catch (e) {
       if (!stillOn(next)) return;
       setModels(PROVIDER_PRESETS[next.provider]?.models ?? []);
-      setModelsNote(`Daftar model tidak bisa diambil (${(e as Error).message}) — ketik manual.`);
+      setModelsNote(t('ext.provider.modelsFailed', { error: (e as Error).message }));
     } finally {
       // a stale request must not clear the spinner the newer one owns
       if (stillOn(next)) setLoadingModels(false);
@@ -141,7 +141,7 @@ export function SettingsView({
         toast('error', 'Izin akses endpoint ditolak — panggilan ke layanan itu akan gagal.');
       }
     } catch (e) {
-      toast('error', `Gagal meminta izin: ${(e as Error).message}`);
+      toast('error', t('ext.settings.permissionFailed', { error: (e as Error).message }));
     }
   };
 
@@ -165,8 +165,7 @@ export function SettingsView({
     // turning retention on starts deleting meetings on the next sweep
     if (settings.retentionDays > 0) {
       const ok = window.confirm(
-        `Meeting yang tidak aktif lebih dari ${settings.retentionDays} hari akan dihapus permanen, ` +
-          'termasuk transcript, notulen, chat dan dokumennya. Lanjutkan?',
+        t('ext.settings.retentionWarning', { days: settings.retentionDays }),
       );
       if (!ok) return;
     }

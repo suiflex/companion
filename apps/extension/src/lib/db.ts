@@ -1,3 +1,4 @@
+import { t } from '@meetcc/shared/i18n';
 import type {
   ActionRow,
   DecisionRow,
@@ -14,7 +15,7 @@ import type { Entry } from '@meetcc/shared';
 
 export async function db<T>(op: string, args: Record<string, unknown> = {}): Promise<T> {
   const res = await chrome.runtime.sendMessage({ type: 'db', op, args });
-  if (!res?.ok) throw new Error(res?.error ?? 'Database tidak merespons.');
+  if (!res?.ok) throw new Error(res?.error ?? t('ext.err.dbNoResponse'));
   return res.data as T;
 }
 

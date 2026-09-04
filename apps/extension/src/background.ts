@@ -8,6 +8,7 @@ import {
   generateDiagrams,
   validateSettings,
 } from '@meetcc/ai';
+import { asLangPref, resolveLang, setLang, t } from '@meetcc/shared/i18n';
 import {
   askMeetings,
   findExpiredMeetings,
@@ -71,7 +72,7 @@ async function makeInteractiveClient() {
   const problem = validateSettings(settings);
   if (problem) throw new Error(problem);
   if (!interactiveLimiter.take()) {
-    throw new Error('Terlalu banyak permintaan AI, tunggu sebentar lalu coba lagi.');
+    throw new Error(t('ext.err.rateLimited'));
   }
   return createClient(settings);
 }
@@ -115,7 +116,7 @@ const deps: PipelineDeps = {
     const settings = await loadSettingsForAI();
     const problem = validateSettings(settings);
     if (problem) throw new Error(problem);
-    if (!limiter.take()) throw new Error('Rate limit: terlalu banyak analisis, coba lagi nanti.');
+    if (!limiter.take()) throw new Error(t('ext.err.analysisRateLimited'));
     return createClient(settings);
   },
   audit: appendAudit,
@@ -252,7 +253,7 @@ async function handleAsk(
   question: string,
 ): Promise<{ ok: true; answer: string; result: AskResult } | { ok: false; error: string }> {
   const meeting = await loadMeetingForAI(id);
-  if (!meeting) return { ok: false, error: 'Meeting tidak ditemukan.' };
+  if (!meeting) return { ok: false, error: t('ext.err.meetingNotFound') };
   if (!meeting.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
   const history = await loadChat(id);
   // Persist the question before asking, not after answering. A failed call
@@ -326,7 +327,7 @@ async function handleGenerateDiagram(
 ): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
   const rec = await getAnalysis(id);
   if (rec?.status !== 'done') {
-    return { ok: false, error: 'Buat ringkasan (Summary) dulu sebelum diagram.' };
+    return { ok: false, error: t('ext.err.summaryFirst') };
   }
   const meeting = await loadMeetingForAI(id);
   if (!meeting?.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
@@ -345,7 +346,7 @@ async function handleCleanTranscript(
   fromScratch = false,
 ): Promise<{ ok: true; changed: number } | { ok: false; error: string }> {
   const meeting = (await loadMeetings()).find((m) => m.id === id);
-  if (!meeting) return { ok: false, error: 'Meeting tidak ditemukan.' };
+  if (!meeting) return { ok: false, error: t('ext.err.meetingNotFound') };
   if (!meeting.entries.length) return { ok: false, error: 'Transcript masih kosong.' };
 
   // resume an interrupted run: reuse partial entries + continue from `done`,
@@ -403,7 +404,7 @@ async function handleCleanTranscript(
 // of the rule inside content.js.
 async function handleResolveSession(raw: string): Promise<{ sessionId: string }> {
   const roomId = sanitizeRoomId(raw);
-  if (!roomId) throw new Error('roomId tidak valid');
+  if (!roomId) throw new Error(t('ext.err.invalidRoomId'));
   const { sessionId, resumed } = resolveSession(roomId, await loadMeetings(), Date.now());
   if (!resumed) await appendAudit('session.start', `${roomId} -> ${sessionId}`);
   return { sessionId };
@@ -444,7 +445,7 @@ async function handleExportObsidian(): Promise<{
 }> {
   const [meetings, records] = await Promise.all([loadMeetings(), loadAnalyses()]);
   const files = obsidianVault(meetings, records);
-  if (!files.length) throw new Error('Belum ada meeting dengan ringkasan yang bisa diekspor.');
+  if (!files.length) throw new Error(t('ext.err.nothingToExport'));
   const blob = makeZip(files);
   const bytes = new Uint8Array(await blob.arrayBuffer());
   let binary = '';
@@ -516,6 +517,21 @@ async function deliverToDesktop(meeting: Meeting): Promise<void> {
   await chrome.storage.local.set({ [key]: meeting.entries.length });
   await appendAudit('bridge.send', `${meeting.id}: ${batch.entries.length} baris`);
 }
+
+// The worker is its own context: the dashboard applying a language says
+// nothing about the errors this file throws. Read it at startup and follow the
+// same storage key the UI writes.
+const applyStoredLang = (raw: unknown): void =>
+  setLang(resolveLang(asLangPref(raw), self.navigator?.languages ?? []));
+
+void chrome.storage.local
+  .get('lang')
+  .then(({ lang }) => applyStoredLang(lang))
+  .catch(() => undefined);
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.lang) applyStoredLang(changes.lang.newValue);
+});
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'db' && typeof msg.op === 'string') {

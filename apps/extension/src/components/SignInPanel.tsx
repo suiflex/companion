@@ -160,7 +160,7 @@ export function SignInPanel({
   if (connected) {
     return (
       <div className="field">
-        <span>Akun</span>
+        <span>{t('ext.signin.account')}</span>
         <p className="hint">
           Tersambung{connected.email ? ` sebagai ${connected.email}` : ''}
           {connected.projectId ? ` · project ${connected.projectId}` : ''}. Analisis memakai
@@ -182,10 +182,7 @@ export function SignInPanel({
     <div className="field">
       <span>Akun</span>
       <p className="hint">
-        Pakai langganan yang sudah kamu bayar, tanpa API key. Jalur ini memakai backend yang
-        dipakai klien resmi vendor (Codex CLI / Gemini CLI) dan bukan API publik yang
-        didokumentasikan — bisa berubah sewaktu-waktu. Butuh yang stabil? Pilih provider API key
-        di atas.
+        {t('ext.signin.accountHint')}
       </p>
 
       {provider === 'chatgpt' ? (
@@ -195,19 +192,20 @@ export function SignInPanel({
           </button>
           {device && (
             <p className="hint">
-              Masukkan kode <code>{device.userCode}</code> di tab yang terbuka
-              (<code>{device.verificationUrl}</code>), lalu setujui.
+              {t('ext.signin.deviceCode', {
+                code: device.userCode,
+                url: device.verificationUrl,
+              })}
             </p>
           )}
         </>
       ) : (
         <>
           <button onClick={() => void startGoogle()} disabled={!!busy}>
-            Masuk dengan Google
+            {t('ext.signin.withGoogle')}
           </button>
           <p className="hint">
-            Setelah menyetujui, browser mendarat di alamat <code>127.0.0.1</code> yang tidak
-            memuat apa pun — itu normal. Salin seluruh isi address bar ke sini.
+            {t('ext.signin.googleHint', { address: '127.0.0.1' })}
           </p>
           <input
             type="url"
