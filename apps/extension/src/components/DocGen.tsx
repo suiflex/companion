@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { t, formatDateTime } from '@meetcc/shared/i18n'
 import { DOC_META } from '@meetcc/ai'
 import {
   DOCPROG_PREFIX,
@@ -82,10 +83,10 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
         docType,
         templateId: templateId || undefined,
       })
-      if (res?.ok) toast('success', `${DOC_META[docType].label} selesai dibuat.`)
-      else toast('error', `Gagal: ${res?.error ?? 'unknown'}`)
+      if (res?.ok) toast('success', t('ext.docs.done', { label: DOC_META[docType].label }))
+      else toast('error', t('ext.failed', { error: res?.error ?? t('ext.unknownError') }))
     } catch (e) {
-      toast('error', `Gagal: ${(e as Error).message}`)
+      toast('error', t('ext.failed', { error: (e as Error).message }))
     }
     reload()
   }
@@ -103,9 +104,9 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
         `${meeting.id}-${meta.filename}.pdf`,
         docToPdf(meeting, meta.label, current.content, logo),
       )
-      toast('success', 'PDF diunduh.')
+      toast('success', t('ext.docs.pdfDownloaded'))
     } catch (e) {
-      toast('error', `Gagal membuat PDF: ${(e as Error).message}`)
+      toast('error', t('ext.docs.pdfFailed', { error: (e as Error).message }))
     } finally {
       setPdfBusy(false)
     }
@@ -114,22 +115,22 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
   return (
     <div className="docgen">
       <div className="subbar">
-        <div className="seg" role="tablist" aria-label="Jenis dokumen">
-          {TYPES.map((t) => {
-            const busy = prog?.type === t && now - Date.parse(prog.updatedAt) <= 90_000
+        <div className="seg" role="tablist" aria-label={t('ext.docs.kinds')}>
+          {TYPES.map((kind) => {
+            const busy = prog?.type === kind && now - Date.parse(prog.updatedAt) <= 90_000
             return (
               <button
-                key={t}
+                key={kind}
                 role="tab"
-                aria-selected={type === t}
-                className={`seg-btn ${type === t ? 'active' : ''}`}
-                onClick={() => setType(t)}
+                aria-selected={type === kind}
+                className={`seg-btn ${type === kind ? 'active' : ''}`}
+                onClick={() => setType(kind)}
               >
-                {DOC_META[t].label}
+                {DOC_META[kind].label}
                 {busy ? (
-                  <span className="seg-busy" aria-label="sedang dibuat" />
+                  <span className="seg-busy" aria-label={t('ext.docs.generating')} />
                 ) : (
-                  docs[t] && <span className="seg-dot" aria-label="sudah dibuat" />
+                  docs[kind] && <span className="seg-dot" aria-label={t('ext.docs.generated')} />
                 )}
               </button>
             )
@@ -142,7 +143,7 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
               value={templateId}
               onChange={(e) => setTemplateId(e.target.value)}
               disabled={anyRunning}
-              aria-label="Template dokumen"
+              aria-label={t('ext.docs.template')}
             >
               <option value="">Standar</option>
               {templates.map((t) => (
@@ -160,7 +161,7 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
               className="ghost"
               onClick={async () => {
                 await navigator.clipboard.writeText(current.content)
-                toast('success', 'Markdown disalin.')
+                toast('success', t('ext.docs.markdownCopied'))
               }}
             >
               ⧉ Copy
@@ -199,8 +200,7 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
       {running ? (
         <div className="summary-body">
           <p className="transcript-note dim">
-            AI menyusun {meta.label} ({active!.label})… {pct}% · draft → periksa → revisi.
-            Hasil muncul otomatis.
+            {t('ext.docs.progress', { label: meta.label, stage: active!.label, pct })}
           </p>
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="skeleton skeleton-block" />
@@ -209,18 +209,18 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
       ) : current ? (
         <div className="doc-view">
           <div className="doc-meta dim">
-            {meta.label} · dibuat {new Date(current.generatedAt).toLocaleString('id-ID')}
+            {t('ext.docs.meta', { label: meta.label, date: formatDateTime(current.generatedAt) })}
           </div>
           <pre className="doc-sheet">{current.content}</pre>
         </div>
       ) : (
         <div className="empty-state">
           <div className="empty-glyph">¶</div>
-          <p>Belum ada {meta.label}.</p>
+          <p>{t('ext.docs.empty', { label: meta.label })}</p>
           <p className="empty-hint">
             {stalled
-              ? `Proses ${meta.label} sebelumnya terhenti. Klik untuk mengulang.`
-              : `Buat draft ${meta.label} dari transcript rapat ${meeting.id} (draft → periksa → revisi). Draft ini titik mulai — tinjau sebelum dipakai.`}
+              ? t('ext.docs.stalled', { label: meta.label })
+              : t('ext.docs.hint', { label: meta.label, id: meeting.id })}
           </p>
         </div>
       )}

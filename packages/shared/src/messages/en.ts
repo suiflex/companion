@@ -160,6 +160,189 @@ export const en = {
   'ext.empty.hint':
     'Join a Google Meet — captions turn on by themselves, and the transcript and AI notes appear here.',
 
+  // -- extension: sidebar ---------------------------------------------------
+  'ext.sidebar.theme': 'Theme: {mode}',
+  'ext.sidebar.liveCount': '{count} meetings in progress',
+  'ext.sidebar.searchAll': 'Search all meetings',
+  'ext.sidebar.searchAllShortcut': 'Search all meetings (⌘K)',
+  'ext.sidebar.knowledge': 'Knowledge base across meetings',
+  'ext.sidebar.decisions': 'Decisions & carry-over',
+  'ext.sidebar.settings': 'Settings',
+  'ext.sidebar.project': 'Project',
+  'ext.sidebar.projectFilter': 'Filter by project',
+  'ext.sidebar.allMeetings': 'All meetings',
+  'ext.sidebar.live': 'In progress',
+  'ext.sidebar.history': 'History',
+  'ext.sidebar.lines': '{count} lines',
+  'ext.sidebar.deleteMeeting': 'Delete meeting {label}',
+  'ext.sidebar.deleteMeetingHint': 'Delete meeting (transcript, notes, chat)',
+  'ext.sidebar.collapse': 'Collapse sidebar',
+  'ext.sidebar.expand': 'Expand sidebar',
+
+  // -- extension: meeting header -------------------------------------------
+  'ext.header.agendaPlaceholder': 'Meeting agenda (optional)',
+  'ext.header.agenda': 'Meeting agenda',
+  'ext.header.openActions': ' · {count} action items',
+  'ext.header.openQuestions': ' · {count} open questions',
+
+  // -- extension: command palette ------------------------------------------
+  'ext.palette.search': 'Search all meetings',
+  'ext.palette.placeholder': 'Search across meetings — decisions, action items, words in the transcript…',
+  'ext.palette.keywords': 'Search keywords',
+  'ext.palette.empty': 'No results.',
+  'ext.palette.keys': '↑↓ move · Enter open · Esc close',
+  'ext.kind.decision': 'Decision',
+  'ext.kind.action': 'Action item',
+  'ext.kind.question': 'Open question',
+  'ext.kind.transcript': 'Transcript',
+  'ext.kind.document': 'Document',
+
+  // -- extension: decision log ----------------------------------------------
+  'ext.decisions.copied': 'Carry-over agenda copied.',
+  'ext.decisions.close': 'Close',
+  'ext.decisions.heading': 'Decisions — {count}',
+  'ext.decisions.emptyTopic': 'No decisions on this topic.',
+  'ext.decisions.empty': 'No decisions recorded yet.',
+  'ext.decisions.carryHeading': 'Carry into the next meeting — {count}',
+  'ext.decisions.noOpenQuestions': 'No open questions.',
+
+  // -- extension: diagram ---------------------------------------------------
+  'ext.diagram.copied': 'Mermaid source copied.',
+  'ext.diagram.renderFailed': 'This diagram could not be rendered: {message}',
+
+  // -- extension: shared failures -------------------------------------------
+  'ext.failed': 'Failed: {error}',
+  'ext.unknownError': 'unknown',
+
+  // -- extension: diagram ---------------------------------------------------
+  'ext.diagram.needSummary': 'Create the Summary first',
+  'ext.diagram.generating': 'Generating…',
+  'ext.diagram.regenerate': '↻ Regenerate diagrams',
+  'ext.diagram.generate': '✨ Generate diagrams',
+  'ext.diagram.empty': 'No diagrams yet.',
+  'ext.diagram.hint':
+    'Draw a flow diagram from meeting {id} when it covers a process or a sequence of steps. On demand — uses the cleaned transcript once one exists.',
+  'ext.diagram.hintNoSummary': 'Create the Summary first, then diagrams can be generated here.',
+
+  // -- extension: documents -------------------------------------------------
+  'ext.docs.kinds': 'Document types',
+  'ext.docs.generating': 'being generated',
+  'ext.docs.generated': 'already generated',
+  'ext.docs.template': 'Document template',
+  'ext.docs.done': '{label} generated.',
+  'ext.docs.pdfDownloaded': 'PDF downloaded.',
+  'ext.docs.pdfFailed': 'Could not create the PDF: {error}',
+  'ext.docs.markdownCopied': 'Markdown copied.',
+  'ext.docs.progress':
+    'The AI is writing the {label} ({stage})… {pct}% · draft → review → revise. It appears here on its own.',
+  'ext.docs.meta': '{label} · created {date}',
+  'ext.docs.empty': 'No {label} yet.',
+  'ext.docs.stalled': 'The previous {label} run stopped. Click to start it again.',
+  'ext.docs.hint':
+    'Draft a {label} from the transcript of meeting {id} (draft → review → revise). It is a starting point — review it before use.',
+
+  // -- extension: transcript ------------------------------------------------
+  'ext.transcript.versions': 'Transcript version',
+  'ext.transcript.cleaned': 'Transcript cleaned — {count} lines corrected.',
+  'ext.transcript.copied': 'Transcript copied.',
+  'ext.transcript.redoHint': 'Ignore the previous result and clean again from scratch',
+  'ext.transcript.waitForEnd': 'Wait until the meeting ends',
+  'ext.transcript.cleanHint': 'Fix mishearings — numbers, names, terms — with AI',
+  'ext.transcript.recleanBtn': '✨ Clean again',
+  'ext.transcript.speakingShare': 'Speaking share',
+  'ext.transcript.detectedActions': 'Detected actions',
+  'ext.transcript.waitingForSpeech': 'Waiting for someone to speak…',
+  'ext.transcript.cleanNote':
+    'Cleaned version — {count} lines corrected · {date}. Check anything you are unsure about.',
+  'ext.transcript.renameSpeaker': 'Rename this speaker across the whole meeting',
+  'ext.transcript.captured': 'What the caption caught',
+  'ext.transcript.useAi': '↺ Use the AI version',
+  'ext.transcript.useOriginal': 'Use the original',
+  'ext.transcript.renamed': '{count} lines are now under {name}.',
+  'ext.kind.deadline': 'Deadline',
+  'ext.kind.risk': 'Risk',
+
+  // -- extension: summary ---------------------------------------------------
+  'ext.summary.checklistCopied': 'Checklist copied.',
+  'ext.summary.noDatedActions': 'No action items carry a structured date (yyyy-mm-dd)',
+  'ext.summary.icsDownloaded': '{count} calendar events downloaded.',
+  'ext.summary.section.timeline': 'Discussion timeline',
+  'ext.summary.momDone': 'Interim minutes created.',
+  'ext.summary.notesDone': 'Notes created.',
+  'ext.summary.markdownDownloaded': 'Markdown downloaded.',
+  'ext.summary.obsidianDownloaded': 'Obsidian note downloaded (Meetings/ folder).',
+  'ext.summary.processing': 'Working…',
+  'ext.summary.restart': '↻ Start again',
+  'ext.summary.retry': 'Try again',
+  'ext.summary.analysisFailed': 'Analysis failed',
+  'ext.summary.liveTitle': 'The meeting is still running.',
+  'ext.summary.emptyTitle': 'No notes yet.',
+  'ext.summary.liveHint':
+    'Notes are written automatically once the meeting ends — or make interim minutes now from the transcript so far.',
+  'ext.summary.emptyHint': 'Run the AI analysis for a summary, decisions and action items.',
+  'ext.summary.makeMom': 'Make interim minutes',
+  'ext.summary.generate': 'Generate now',
+
+  // -- extension: ask -------------------------------------------------------
+  'ext.ask.suggest1': 'What were the main decisions in this meeting?',
+  'ext.ask.suggest2': 'Who owns the action items?',
+  'ext.ask.suggest3': 'Were any deadlines mentioned?',
+  'ext.ask.suggest4': 'What was left unanswered?',
+  'ext.ask.grade.explicit': 'Stated directly',
+  'ext.ask.grade.partial': 'Not fully discussed',
+  'ext.ask.grade.inferred': 'Inferred from the discussion',
+  'ext.ask.grade.notFound': 'Not discussed',
+  'ext.ask.undecided': 'Not decided yet',
+  'ext.ask.evidence': 'Evidence from the transcript',
+  'ext.ask.cleared': 'Question history cleared.',
+  'ext.ask.hint': 'Ask anything about this meeting — answered from the transcript.',
+  'ext.ask.empty': 'Ask the transcript.',
+  'ext.ask.placeholderLive': 'The meeting is still running — you can still ask',
+  'ext.ask.placeholder': 'Write a question…',
+  'ext.ask.question': 'Question',
+  'ext.ask.send': 'Send',
+  'ext.confidence.high': 'high',
+  'ext.confidence.medium': 'medium',
+  'ext.confidence.low': 'low',
+
+  // -- extension: knowledge base --------------------------------------------
+  'ext.kb.pushToTracker': 'Send to the issue tracker',
+  'ext.kb.alreadyPushed': 'Already sent: {ref}',
+  'ext.kb.created': 'Created: {ref}',
+  'ext.kb.askPlaceholder':
+    'Ask across meetings — e.g. what was decided about the migration in the last three months?',
+  'ext.kb.askLabel': 'Question across meetings',
+  'ext.kb.ask': 'Ask',
+  'ext.kb.copyDigest': 'Copy the last 7 days as markdown',
+  'ext.kb.digestCopied': 'Weekly digest copied.',
+  'ext.kb.overdue': '· {count} overdue',
+  'ext.kb.checkingTracker': 'Checking the tracker…',
+  'ext.kb.pullTracker': 'Pull tracker status',
+  'ext.kb.noOpenActions': 'No open action items.',
+  'ext.kb.changedDecisions': 'Decisions that changed',
+  'ext.kb.noRepeatedTopics': 'No topic has been decided more than once yet.',
+  'ext.kb.noAnalysed': 'No meetings have been analysed yet.',
+  'ext.kb.noOwner': 'no owner',
+  'ext.kind.questionResolved': 'Answered',
+
+  // -- extension: sign-in ---------------------------------------------------
+  'ext.signin.permissionDenied': 'Permission denied — sign-in cannot run.',
+  'ext.signin.requestingCode': 'Requesting a code…',
+  'ext.signin.waitingApproval': 'Waiting for approval in the browser…',
+  'ext.signin.exchangingCode': 'Exchanging the code…',
+  'ext.signin.preparingProject': 'Preparing the Code Assist project…',
+  'ext.signin.codeExpired': 'The code expired before it was approved. Try again.',
+  'ext.signin.startWithGoogle': 'Start from the “Sign in with Google” button first.',
+  'ext.signin.chatgptConnected': 'ChatGPT connected.',
+  'ext.signin.googleConnected': 'Google connected.',
+  'ext.signin.disconnected': 'Account disconnected.',
+  'ext.signin.withChatgpt': 'Sign in with ChatGPT',
+  'ext.signin.finish': 'Finish sign-in',
+  'ext.signin.enterCode': 'Enter the code {code} in the tab that opened',
+
+  'ext.ask.emptyHint':
+    'Answers come from meeting {id} and carry their evidence — timestamp and speaker.',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
 } as const;

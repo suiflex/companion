@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { t } from '@meetcc/shared/i18n';
 import {
   ANALYSIS_PREFIX,
   RESOLVED_PREFIX,
@@ -54,7 +55,7 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
 
   const copyAgenda = async () => {
     await navigator.clipboard.writeText(buildAgenda(questions));
-    toast('success', 'Agenda carry-over disalin.');
+    toast('success', t('ext.decisions.copied'));
   };
 
   return (
@@ -63,7 +64,7 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
         <div className="toolbar-title">
           <h1>Keputusan &amp; Carry-over</h1>
         </div>
-        <button onClick={onClose} aria-label="Tutup">
+        <button onClick={onClose} aria-label={t('ext.decisions.close')}>
           ✕
         </button>
       </header>
@@ -71,7 +72,7 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
       <div className="decisionlog-body">
         <section>
           <div className="dl-head">
-            <h2 className="section-label">Keputusan — {decisions.length}</h2>
+            <h2 className="section-label">{t('ext.decisions.heading', { count: decisions.length })}</h2>
             {topics.length > 0 && (
               <div className="dl-filters" role="group" aria-label="Filter topik">
                 <button
@@ -113,14 +114,14 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
             </ul>
           ) : (
             <p className="section-empty">
-              {decisions.length ? 'Tidak ada keputusan pada topik ini.' : 'Belum ada keputusan terekam.'}
+              {decisions.length ? t('ext.decisions.emptyTopic') : t('ext.decisions.empty')}
             </p>
           )}
         </section>
 
         <section>
           <div className="dl-head">
-            <h2 className="section-label">Bawa ke meeting berikutnya — {openCount}</h2>
+            <h2 className="section-label">{t('ext.decisions.carryHeading', { count: openCount })}</h2>
             <button className="ghost" onClick={copyAgenda} disabled={!openCount}>
               ⧉ Copy agenda draft
             </button>
@@ -145,7 +146,7 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
               ))}
             </ul>
           ) : (
-            <p className="section-empty">Tidak ada pertanyaan terbuka.</p>
+            <p className="section-empty">{t('ext.decisions.noOpenQuestions')}</p>
           )}
         </section>
       </div>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { t } from '@meetcc/shared/i18n';
 import type { AskResult } from '@meetcc/shared';
 import type { ActionRow } from '@meetcc/store';
 import { weeklyDigest, type Chronology } from '@meetcc/meeting';
@@ -16,11 +17,12 @@ interface GlobalAnswer extends AskResult {
 const fmtDate = (iso: string | null): string =>
   iso ? new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-const EVENT_LABEL: Record<Chronology['events'][number]['kind'], string> = {
-  decision: 'Keputusan',
-  action: 'Action',
-  question: 'Pertanyaan',
-  'question-resolved': 'Terjawab',
+/** Keys, not text: resolved at render time so the labels follow the language. */
+const EVENT_LABEL: Record<Chronology['events'][number]['kind'], Parameters<typeof t>[0]> = {
+  decision: 'ext.kind.decision',
+  action: 'ext.kind.action',
+  question: 'ext.kind.question',
+  'question-resolved': 'ext.kind.questionResolved',
 };
 
 function ActionRowView({
@@ -46,12 +48,12 @@ function ActionRowView({
         <span className="kb-task">{action.task}</span>
       </label>
       <span className="kb-action-meta dim">
-        {[action.owner, action.dueAt].filter(Boolean).join(' · ') || 'tanpa owner'}
+        {[action.owner, action.dueAt].filter(Boolean).join(' · ') || t('ext.kb.noOwner')}
       </span>
       {action.externalRef ? (
         <span className="kb-ref">{action.externalRef}</span>
       ) : (
-        <button className="kb-push" disabled={busy} onClick={onPush} title="Kirim ke issue tracker">
+        <button className="kb-push" disabled={busy} onClick={onPush} title={t('ext.kb.pushToTracker')}>
           Kirim ke tracker
         </button>
       )}
@@ -86,9 +88,9 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
       try {
         const res = await chrome.runtime.sendMessage({ type: 'global-ask', question: q });
         if (res?.ok) setAnswer(res.result as GlobalAnswer);
-        else toast('error', `Gagal: ${res?.error ?? 'unknown'}`);
+        else toast('error', t('ext.failed', { error: res?.error ?? t('ext.unknownError') }));
       } catch (e) {
-        toast('error', `Gagal: ${(e as Error).message}`);
+        toast('error', t('ext.failed', { error: (e as Error).message }));
       } finally {
         setAsking(false);
       }
@@ -120,7 +122,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
     setPushing(action.id);
     try {
       const res = await db<{ ref: string; alreadyPushed: boolean }>('push-issue', { id: action.id });
-      toast('info', res.alreadyPushed ? `Sudah pernah dikirim: ${res.ref}` : `Dibuat: ${res.ref}`);
+      toast('info', res.alreadyPushed ? t('ext.kb.alreadyPushed', { ref: res.ref }) : t('ext.kb.created', { ref: res.ref }));
       refresh();
     } catch (e) {
       toast('error', (e as Error).message);
@@ -163,8 +165,8 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
             className="ask-input"
             rows={1}
             value={question}
-            placeholder="Tanya lintas rapat — mis. apa keputusan terkait Freeport 3 bulan terakhir?"
-            aria-label="Pertanyaan lintas rapat"
+            placeholder={t('ext.kb.askPlaceholder')}
+            aria-label={t('ext.kb.askLabel')}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -174,7 +176,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
             }}
           />
           <button className="primary" type="submit" disabled={asking || !question.trim()}>
-            {asking ? '…' : 'Tanya'}
+            {asking ? '…' : t('ext.kb.ask')}
           </button>
         </form>
 
@@ -207,11 +209,11 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
         <button
           className="kb-refresh"
           disabled={!story}
-          title="Salin ringkasan 7 hari terakhir sebagai markdown"
+          title={t('ext.kb.copyDigest')}
           onClick={async () => {
             if (!story) return;
             await navigator.clipboard.writeText(weeklyDigest(story));
-            toast('success', 'Digest mingguan disalin.');
+            toast('success', t('ext.kb.digestCopied'));
           }}
         >
           Salin digest mingguan
@@ -230,7 +232,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
             </label>
             {actions.some((a) => a.externalRef) && (
               <button className="kb-refresh" disabled={syncingIssues} onClick={() => void refreshIssues()}>
-                {syncingIssues ? 'Cek tracker…' : 'Tarik status tracker'}
+                {syncingIssues ? t('ext.kb.checkingTracker') : t('ext.kb.pullTracker')}
               </button>
             )}
           </div>
@@ -247,12 +249,12 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
               ))}
             </ul>
           ) : (
-            <p className="section-empty">Tidak ada action item terbuka.</p>
+            <p className="section-empty">{t('ext.kb.noOpenActions')}</p>
           )}
         </section>
 
         <section className="kb-col">
-          <h2 className="section-label">Keputusan yang berubah</h2>
+          <h2 className="section-label">{t('ext.kb.changedDecisions')}</h2>
           {story?.revisions.length ? (
             <ul className="kb-list">
               {story.revisions.map((r) => (
@@ -274,7 +276,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
               ))}
             </ul>
           ) : (
-            <p className="section-empty">Belum ada topik yang diputuskan lebih dari sekali.</p>
+            <p className="section-empty">{t('ext.kb.noRepeatedTopics')}</p>
           )}
 
           <h2 className="section-label">Kronologi</h2>
@@ -283,7 +285,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
               {story.events.slice(-40).map((e, i) => (
                 <li key={`${e.kind}-${e.entityId}-${i}`}>
                   <button className="kb-event" onClick={() => onOpenMeeting(e.sessionId)}>
-                    <span className={`kb-event-kind kind-${e.kind}`}>{EVENT_LABEL[e.kind]}</span>
+                    <span className={`kb-event-kind kind-${e.kind}`}>{t(EVENT_LABEL[e.kind])}</span>
                     <span className="kb-event-text">{e.text}</span>
                     <span className="dim">
                       {e.sessionTitle} · {fmtDate(e.at)}
@@ -293,7 +295,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
               ))}
             </ol>
           ) : (
-            <p className="section-empty">Belum ada rapat yang dianalisis.</p>
+            <p className="section-empty">{t('ext.kb.noAnalysed')}</p>
           )}
         </section>
       </div>

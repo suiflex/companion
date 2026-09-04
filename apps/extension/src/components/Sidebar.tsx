@@ -9,12 +9,12 @@ import {
 
 import { listProjects, listSessions } from '../lib/db'
 import { resolveTheme, watchSystemTheme, type ThemePref } from '../lib/theme'
+import { t } from '@meetcc/shared/i18n'
 
-const THEME_LABEL: Record<ThemePref, string> = {
-  system: 'Tema: ikut sistem',
-  light: 'Tema: terang',
-  dark: 'Tema: gelap',
-}
+const themeLabel = (p: ThemePref): string =>
+  t('ext.sidebar.theme', {
+    mode: p === 'system' ? t('pref.system') : p === 'light' ? t('pref.light') : t('pref.dark'),
+  })
 
 const THEME_ICON: Record<ThemePref, string> = {
   system: '◐',
@@ -62,8 +62,8 @@ function ThemeToggle() {
     <button
       className='icon-btn'
       onClick={() => setPref((p) => NEXT[p])}
-      aria-label={`${THEME_LABEL[pref]}. Klik untuk ganti.`}
-      title={THEME_LABEL[pref]}>
+      aria-label={themeLabel(pref)}
+      title={themeLabel(pref)}>
       {THEME_ICON[pref]}
     </button>
   )
@@ -162,15 +162,15 @@ export function Sidebar({
         <span className='meeting-body'>
           <span className='meeting-id'>{label}</span>
           <span className='meeting-sub'>
-            {fmtDate(startedAt(m))} · {m.entries.length} baris
+            {fmtDate(startedAt(m))} · {t('ext.sidebar.lines', { count: m.entries.length })}
           </span>
         </span>
         {badge(m)}
       </button>
       <button
         className='meeting-del'
-        aria-label={`Hapus meeting ${label}`}
-        title='Hapus meeting (transcript, notulen, chat)'
+        aria-label={t('ext.sidebar.deleteMeeting', { label })}
+        title={t('ext.sidebar.deleteMeetingHint')}
         onClick={() => onDelete(m.id)}>
         🗑
       </button>
@@ -194,7 +194,7 @@ export function Sidebar({
         {live.length > 0 && (
           <span
             className='rail-live'
-            title={`${live.length} meeting berlangsung`}
+            title={t('ext.sidebar.liveCount', { count: live.length })}
           />
         )}
         <span className='spacer' />
@@ -202,29 +202,29 @@ export function Sidebar({
         <button
           className='icon-btn'
           onClick={onSearch}
-          aria-label='Cari semua rapat'
-          title='Cari semua rapat (⌘K)'>
+          aria-label={t('ext.sidebar.searchAll')}
+          title={t('ext.sidebar.searchAllShortcut')}>
           ⌕
         </button>
         <button
           className='icon-btn'
           onClick={onKnowledge}
-          aria-label='Knowledge base lintas rapat'
-          title='Knowledge base lintas rapat'>
+          aria-label={t('ext.sidebar.knowledge')}
+          title={t('ext.sidebar.knowledge')}>
           ✦
         </button>
         <button
           className='icon-btn'
           onClick={onDecisions}
-          aria-label='Keputusan & carry-over'
-          title='Keputusan & carry-over'>
+          aria-label={t('ext.sidebar.decisions')}
+          title={t('ext.sidebar.decisions')}>
           ▤
         </button>
         <button
           className='icon-btn'
           onClick={onSettings}
-          aria-label='Settings'
-          title='Settings'>
+          aria-label={t('ext.sidebar.settings')}
+          title={t('ext.sidebar.settings')}>
           ⚙
         </button>
       </aside>
@@ -248,9 +248,9 @@ export function Sidebar({
 
       {projects.length > 0 && (
         <label className='sidebar-filter'>
-          <span className='section-label'>Proyek</span>
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label='Filter proyek'>
-            <option value=''>Semua rapat</option>
+          <span className='section-label'>{t('ext.sidebar.project')}</span>
+          <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label={t('ext.sidebar.projectFilter')}>
+            <option value=''>{t('ext.sidebar.allMeetings')}</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -270,12 +270,12 @@ export function Sidebar({
         <>
           {live.length > 0 && (
             <section>
-              <h2 className='section-label'>Berlangsung</h2>
+              <h2 className='section-label'>{t('ext.sidebar.live')}</h2>
               {live.map(item)}
             </section>
           )}
           <section>
-            <h2 className='section-label'>Riwayat</h2>
+            <h2 className='section-label'>{t('ext.sidebar.history')}</h2>
             {past.length ? (
               past.map(item)
             ) : (
@@ -289,29 +289,29 @@ export function Sidebar({
         <button
           className='icon-btn'
           onClick={onSearch}
-          aria-label='Cari semua rapat'
-          title='Cari semua rapat (⌘K)'>
+          aria-label={t('ext.sidebar.searchAll')}
+          title={t('ext.sidebar.searchAllShortcut')}>
           ⌕
         </button>
         <button
           className='icon-btn'
           onClick={onKnowledge}
-          aria-label='Knowledge base lintas rapat'
-          title='Knowledge base lintas rapat'>
+          aria-label={t('ext.sidebar.knowledge')}
+          title={t('ext.sidebar.knowledge')}>
           ✦
         </button>
         <button
           className='icon-btn'
           onClick={onDecisions}
-          aria-label='Keputusan & carry-over'
-          title='Keputusan & carry-over'>
+          aria-label={t('ext.sidebar.decisions')}
+          title={t('ext.sidebar.decisions')}>
           ▤
         </button>
         <button
           className='icon-btn'
           onClick={onSettings}
-          aria-label='Settings'
-          title='Settings'>
+          aria-label={t('ext.sidebar.settings')}
+          title={t('ext.sidebar.settings')}>
           ⚙
         </button>
       </div>

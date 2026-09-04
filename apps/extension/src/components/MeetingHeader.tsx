@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { SessionRow } from '@meetcc/store';
 import type { CarryOver } from '@meetcc/meeting';
 import { carryOver, db, getSession, listProjects } from '../lib/db';
+import { t } from '@meetcc/shared/i18n';
 
 // P1.5 — a meeting is more than a room code: date, duration, participants and
 // platform (§21). P1.9/P2.3 ride along here because this is where they matter
@@ -90,8 +91,8 @@ export function MeetingHeader({
         <input
           className="mh-agenda"
           value={agenda}
-          placeholder="Agenda rapat (opsional)"
-          aria-label="Agenda rapat"
+          placeholder={t('ext.header.agendaPlaceholder')}
+          aria-label={t('ext.header.agenda')}
           onChange={(e) => setAgenda(e.target.value)}
           onBlur={() => {
             if (agenda === (session.agenda ?? '')) return;
@@ -115,10 +116,10 @@ export function MeetingHeader({
         <div className="mh-carry">
           <strong>{openCount}</strong> hal dari rapat sebelumnya masih terbuka
           {carry!.openActions.length > 0 && (
-            <span className="dim"> · {carry!.openActions.length} action item</span>
+            <span className="dim">{t('ext.header.openActions', { count: carry!.openActions.length })}</span>
           )}
           {carry!.openQuestions.length > 0 && (
-            <span className="dim"> · {carry!.openQuestions.length} pertanyaan</span>
+            <span className="dim">{t('ext.header.openQuestions', { count: carry!.openQuestions.length })}</span>
           )}
           {carry!.fromSessions.slice(0, 3).map((id) => (
             <button key={id} className="ask-chip" onClick={() => onOpenMeeting(id)}>

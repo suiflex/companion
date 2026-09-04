@@ -157,6 +157,189 @@ export const id: Record<keyof typeof en, string> = {
   'ext.empty.hint':
     'Join Google Meet — caption nyala otomatis, transcript dan notulen AI muncul di sini.',
 
+  // -- extension: sidebar ---------------------------------------------------
+  'ext.sidebar.theme': 'Tema: {mode}',
+  'ext.sidebar.liveCount': '{count} meeting berlangsung',
+  'ext.sidebar.searchAll': 'Cari semua rapat',
+  'ext.sidebar.searchAllShortcut': 'Cari semua rapat (⌘K)',
+  'ext.sidebar.knowledge': 'Knowledge base lintas rapat',
+  'ext.sidebar.decisions': 'Keputusan & carry-over',
+  'ext.sidebar.settings': 'Setelan',
+  'ext.sidebar.project': 'Proyek',
+  'ext.sidebar.projectFilter': 'Filter proyek',
+  'ext.sidebar.allMeetings': 'Semua rapat',
+  'ext.sidebar.live': 'Berlangsung',
+  'ext.sidebar.history': 'Riwayat',
+  'ext.sidebar.lines': '{count} baris',
+  'ext.sidebar.deleteMeeting': 'Hapus meeting {label}',
+  'ext.sidebar.deleteMeetingHint': 'Hapus meeting (transcript, notulen, chat)',
+  'ext.sidebar.collapse': 'Lipat sidebar',
+  'ext.sidebar.expand': 'Buka sidebar',
+
+  // -- extension: meeting header -------------------------------------------
+  'ext.header.agendaPlaceholder': 'Agenda rapat (opsional)',
+  'ext.header.agenda': 'Agenda rapat',
+  'ext.header.openActions': ' · {count} action item',
+  'ext.header.openQuestions': ' · {count} pertanyaan',
+
+  // -- extension: command palette ------------------------------------------
+  'ext.palette.search': 'Cari semua rapat',
+  'ext.palette.placeholder': 'Cari di semua rapat — keputusan, action item, kata di transcript…',
+  'ext.palette.keywords': 'Kata kunci pencarian',
+  'ext.palette.empty': 'Tidak ada hasil.',
+  'ext.palette.keys': '↑↓ pilih · Enter buka · Esc tutup',
+  'ext.kind.decision': 'Keputusan',
+  'ext.kind.action': 'Action item',
+  'ext.kind.question': 'Pertanyaan terbuka',
+  'ext.kind.transcript': 'Transcript',
+  'ext.kind.document': 'Dokumen',
+
+  // -- extension: decision log ----------------------------------------------
+  'ext.decisions.copied': 'Agenda carry-over disalin.',
+  'ext.decisions.close': 'Tutup',
+  'ext.decisions.heading': 'Keputusan — {count}',
+  'ext.decisions.emptyTopic': 'Tidak ada keputusan pada topik ini.',
+  'ext.decisions.empty': 'Belum ada keputusan terekam.',
+  'ext.decisions.carryHeading': 'Bawa ke meeting berikutnya — {count}',
+  'ext.decisions.noOpenQuestions': 'Tidak ada pertanyaan terbuka.',
+
+  // -- extension: diagram ---------------------------------------------------
+  'ext.diagram.copied': 'Sumber Mermaid disalin.',
+  'ext.diagram.renderFailed': 'Diagram tidak bisa dirender: {message}',
+
+  // -- extension: shared failures -------------------------------------------
+  'ext.failed': 'Gagal: {error}',
+  'ext.unknownError': 'tidak diketahui',
+
+  // -- extension: diagram ---------------------------------------------------
+  'ext.diagram.needSummary': 'Buat Ringkasan dulu',
+  'ext.diagram.generating': 'Membuat…',
+  'ext.diagram.regenerate': '↻ Buat ulang diagram',
+  'ext.diagram.generate': '✨ Buat diagram',
+  'ext.diagram.empty': 'Belum ada diagram.',
+  'ext.diagram.hint':
+    'Buat diagram alur dari rapat {id} bila membahas proses atau urutan langkah. On-demand — pakai transcript rapi bila sudah dirapikan.',
+  'ext.diagram.hintNoSummary': 'Buat Ringkasan dulu, lalu diagram bisa dibuat dari sini.',
+
+  // -- extension: documents -------------------------------------------------
+  'ext.docs.kinds': 'Jenis dokumen',
+  'ext.docs.generating': 'sedang dibuat',
+  'ext.docs.generated': 'sudah dibuat',
+  'ext.docs.template': 'Template dokumen',
+  'ext.docs.done': '{label} selesai dibuat.',
+  'ext.docs.pdfDownloaded': 'PDF diunduh.',
+  'ext.docs.pdfFailed': 'Gagal membuat PDF: {error}',
+  'ext.docs.markdownCopied': 'Markdown disalin.',
+  'ext.docs.progress':
+    'AI menyusun {label} ({stage})… {pct}% · draft → periksa → revisi. Hasil muncul otomatis.',
+  'ext.docs.meta': '{label} · dibuat {date}',
+  'ext.docs.empty': 'Belum ada {label}.',
+  'ext.docs.stalled': 'Proses {label} sebelumnya terhenti. Klik untuk mengulang.',
+  'ext.docs.hint':
+    'Buat draft {label} dari transcript rapat {id} (draft → periksa → revisi). Draft ini titik mulai — tinjau sebelum dipakai.',
+
+  // -- extension: transcript ------------------------------------------------
+  'ext.transcript.versions': 'Versi transcript',
+  'ext.transcript.cleaned': 'Transcript dirapikan — {count} baris dikoreksi.',
+  'ext.transcript.copied': 'Transcript disalin.',
+  'ext.transcript.redoHint': 'Abaikan hasil lama, rapikan ulang dari awal',
+  'ext.transcript.waitForEnd': 'Tunggu rapat selesai',
+  'ext.transcript.cleanHint': 'Perbaiki salah-dengar (angka, nama, istilah) dengan AI',
+  'ext.transcript.recleanBtn': '✨ Rapikan ulang',
+  'ext.transcript.speakingShare': 'Porsi bicara',
+  'ext.transcript.detectedActions': 'Action terdeteksi',
+  'ext.transcript.waitingForSpeech': 'Menunggu ada yang bicara…',
+  'ext.transcript.cleanNote':
+    'Versi rapi — {count} baris dikoreksi · {date}. Verifikasi bila ragu.',
+  'ext.transcript.renameSpeaker': 'Ganti nama pembicara ini di seluruh rapat',
+  'ext.transcript.captured': 'Yang tertangkap caption',
+  'ext.transcript.useAi': '↺ Pakai versi AI',
+  'ext.transcript.useOriginal': 'Pakai versi asli',
+  'ext.transcript.renamed': '{count} baris kini atas nama {name}.',
+  'ext.kind.deadline': 'Deadline',
+  'ext.kind.risk': 'Risiko',
+
+  // -- extension: summary ---------------------------------------------------
+  'ext.summary.checklistCopied': 'Checklist disalin.',
+  'ext.summary.noDatedActions': 'Tidak ada action item dengan tanggal terstruktur (yyyy-mm-dd)',
+  'ext.summary.icsDownloaded': '{count} event kalender diunduh.',
+  'ext.summary.section.timeline': 'Timeline pembahasan',
+  'ext.summary.momDone': 'MoM sementara dibuat.',
+  'ext.summary.notesDone': 'Notulen selesai dibuat.',
+  'ext.summary.markdownDownloaded': 'Markdown diunduh.',
+  'ext.summary.obsidianDownloaded': 'Catatan Obsidian diunduh (folder Meetings/).',
+  'ext.summary.processing': 'Memproses…',
+  'ext.summary.restart': '↻ Mulai ulang',
+  'ext.summary.retry': 'Coba lagi',
+  'ext.summary.analysisFailed': 'Analisis gagal',
+  'ext.summary.liveTitle': 'Meeting masih berlangsung.',
+  'ext.summary.emptyTitle': 'Belum ada notulen.',
+  'ext.summary.liveHint':
+    'Notulen dibuat otomatis begitu meeting selesai — atau buat MoM sementara sekarang dari transcript sejauh ini.',
+  'ext.summary.emptyHint': 'Jalankan analisis AI untuk ringkasan, keputusan, dan action item.',
+  'ext.summary.makeMom': 'Buat MoM sekarang',
+  'ext.summary.generate': 'Generate sekarang',
+
+  // -- extension: ask -------------------------------------------------------
+  'ext.ask.suggest1': 'Apa keputusan utama rapat ini?',
+  'ext.ask.suggest2': 'Siapa yang bertanggung jawab atas action item?',
+  'ext.ask.suggest3': 'Adakah deadline yang disebut?',
+  'ext.ask.suggest4': 'Apa yang belum terjawab di rapat ini?',
+  'ext.ask.grade.explicit': 'Disebut langsung',
+  'ext.ask.grade.partial': 'Belum tuntas dibahas',
+  'ext.ask.grade.inferred': 'Simpulan dari pembahasan',
+  'ext.ask.grade.notFound': 'Tidak dibahas',
+  'ext.ask.undecided': 'Belum diputuskan',
+  'ext.ask.evidence': 'Bukti dari transcript',
+  'ext.ask.cleared': 'Riwayat tanya-jawab dihapus.',
+  'ext.ask.hint': 'Tanya apa saja tentang rapat ini — dijawab dari transcript.',
+  'ext.ask.empty': 'Tanya ke transcript.',
+  'ext.ask.placeholderLive': 'Rapat masih berlangsung — tetap bisa ditanya',
+  'ext.ask.placeholder': 'Tulis pertanyaan…',
+  'ext.ask.question': 'Pertanyaan',
+  'ext.ask.send': 'Kirim',
+  'ext.confidence.high': 'tinggi',
+  'ext.confidence.medium': 'sedang',
+  'ext.confidence.low': 'rendah',
+
+  // -- extension: knowledge base --------------------------------------------
+  'ext.kb.pushToTracker': 'Kirim ke issue tracker',
+  'ext.kb.alreadyPushed': 'Sudah pernah dikirim: {ref}',
+  'ext.kb.created': 'Dibuat: {ref}',
+  'ext.kb.askPlaceholder':
+    'Tanya lintas rapat — mis. apa keputusan terkait migrasi 3 bulan terakhir?',
+  'ext.kb.askLabel': 'Pertanyaan lintas rapat',
+  'ext.kb.ask': 'Tanya',
+  'ext.kb.copyDigest': 'Salin ringkasan 7 hari terakhir sebagai markdown',
+  'ext.kb.digestCopied': 'Digest mingguan disalin.',
+  'ext.kb.overdue': '· {count} lewat due',
+  'ext.kb.checkingTracker': 'Cek tracker…',
+  'ext.kb.pullTracker': 'Tarik status tracker',
+  'ext.kb.noOpenActions': 'Tidak ada action item terbuka.',
+  'ext.kb.changedDecisions': 'Keputusan yang berubah',
+  'ext.kb.noRepeatedTopics': 'Belum ada topik yang diputuskan lebih dari sekali.',
+  'ext.kb.noAnalysed': 'Belum ada rapat yang dianalisis.',
+  'ext.kb.noOwner': 'tanpa owner',
+  'ext.kind.questionResolved': 'Terjawab',
+
+  // -- extension: sign-in ---------------------------------------------------
+  'ext.signin.permissionDenied': 'Izin akses ditolak — sign-in tidak bisa jalan.',
+  'ext.signin.requestingCode': 'Meminta kode…',
+  'ext.signin.waitingApproval': 'Menunggu persetujuan di browser…',
+  'ext.signin.exchangingCode': 'Menukar kode…',
+  'ext.signin.preparingProject': 'Menyiapkan project Code Assist…',
+  'ext.signin.codeExpired': 'Kode kedaluwarsa sebelum disetujui. Coba lagi.',
+  'ext.signin.startWithGoogle': 'Mulai dari tombol “Masuk dengan Google” dulu.',
+  'ext.signin.chatgptConnected': 'ChatGPT tersambung.',
+  'ext.signin.googleConnected': 'Google tersambung.',
+  'ext.signin.disconnected': 'Akun diputus.',
+  'ext.signin.withChatgpt': 'Masuk dengan ChatGPT',
+  'ext.signin.finish': 'Selesaikan sign-in',
+  'ext.signin.enterCode': 'Masukkan kode {code} di tab yang terbuka',
+
+  'ext.ask.emptyHint':
+    'Jawaban diambil dari isi rapat {id} dan disertai bukti (timestamp / pembicara).',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
 };

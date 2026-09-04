@@ -3,6 +3,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SearchHit } from '@meetcc/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { t } from '@meetcc/shared/i18n';
 
 // the palette's only outside dependency is the service worker round-trip
 const search = vi.fn<(query: string, sessionId?: string) => Promise<SearchHit[]>>();
@@ -44,7 +45,7 @@ afterEach(cleanup);
 describe('CommandPalette', () => {
   it('does not query until the input passes the minimum length', async () => {
     setup();
-    await userEvent.type(screen.getByLabelText('Kata kunci pencarian'), 'a');
+    await userEvent.type(screen.getByLabelText(t('ext.palette.keywords')), 'a');
 
     expect(screen.getByText('Ketik minimal 2 huruf.')).toBeTruthy();
     await new Promise((r) => setTimeout(r, 300));
@@ -58,12 +59,12 @@ describe('CommandPalette', () => {
       hit({ sessionId: 'room#2000', sessionTitle: 'Sprint review', entityId: 2 }),
     ]);
     setup();
-    await userEvent.type(screen.getByLabelText('Kata kunci pencarian'), 'shared');
+    await userEvent.type(screen.getByLabelText(t('ext.palette.keywords')), 'shared');
 
     await waitFor(() => expect(search).toHaveBeenCalledWith('shared', undefined));
     expect(await screen.findByText('Incident Freeport')).toBeTruthy();
     expect(screen.getByText('Sprint review')).toBeTruthy();
-    expect(screen.getByText('Keputusan')).toBeTruthy();
+    expect(screen.getByText(t('ext.kind.decision'))).toBeTruthy();
   });
 
   it('opens the meeting behind the keyboard cursor on Enter', async () => {
@@ -72,7 +73,7 @@ describe('CommandPalette', () => {
       hit({ sessionId: 'room#2000', sessionTitle: 'Sprint review', entityId: 2 }),
     ]);
     const props = setup();
-    const input = screen.getByLabelText('Kata kunci pencarian');
+    const input = screen.getByLabelText(t('ext.palette.keywords'));
     await userEvent.type(input, 'shared');
     await screen.findByText('Incident Freeport');
 
@@ -83,11 +84,11 @@ describe('CommandPalette', () => {
   });
 
   it('surfaces a failed search instead of showing an empty result set', async () => {
-    search.mockRejectedValue(new Error('Database tidak merespons.'));
+    search.mockRejectedValue(new Error('database did not respond'));
     setup();
-    await userEvent.type(screen.getByLabelText('Kata kunci pencarian'), 'shared');
+    await userEvent.type(screen.getByLabelText(t('ext.palette.keywords')), 'shared');
 
-    expect(await screen.findByText('Database tidak merespons.')).toBeTruthy();
-    expect(screen.queryByText('Tidak ada hasil.')).toBeNull();
+    expect(await screen.findByText('database did not respond')).toBeTruthy();
+    expect(screen.queryByText(t('ext.palette.empty'))).toBeNull();
   });
 });

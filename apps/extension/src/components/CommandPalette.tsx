@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SearchHit } from '@meetcc/store';
 import { displayMeetingId } from '@meetcc/shared';
+import { t } from '@meetcc/shared/i18n';
 import { search } from '../lib/db';
 
 // P1.6 — ⌘K search over every meeting: transcript lines and the structured
@@ -8,13 +9,14 @@ import { search } from '../lib/db';
 // in SQLite. From a result you can open the meeting or hand the whole result
 // set to Global Ask (§22).
 
-const KIND_LABEL: Record<SearchHit['kind'], string> = {
-  transcript: 'Transcript',
-  decision: 'Keputusan',
-  action: 'Action item',
-  question: 'Open question',
-  document: 'Dokumen',
-  risk: 'Risiko',
+/** Keys, not text: resolved at render time so the labels follow the language. */
+const KIND_LABEL: Record<SearchHit['kind'], Parameters<typeof t>[0]> = {
+  transcript: 'ext.kind.transcript',
+  decision: 'ext.kind.decision',
+  action: 'ext.kind.action',
+  question: 'ext.kind.question',
+  document: 'ext.kind.document',
+  risk: 'ext.kind.risk',
 };
 
 /** Long enough that FTS is meaningful, short enough to feel instant. */
@@ -101,15 +103,15 @@ export function CommandPalette({
         className="palette"
         role="dialog"
         aria-modal="true"
-        aria-label="Cari semua rapat"
+        aria-label={t('ext.palette.search')}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <input
           ref={input}
           className="palette-input"
           value={query}
-          placeholder="Cari di semua rapat — keputusan, action item, kata di transcript…"
-          aria-label="Kata kunci pencarian"
+          placeholder={t('ext.palette.placeholder')}
+          aria-label={t('ext.palette.keywords')}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') onClose();
@@ -128,7 +130,7 @@ export function CommandPalette({
         <div className="palette-results">
           {error && <p className="palette-empty danger-text">{error}</p>}
           {!error && query.trim().length >= MIN_QUERY && !hits.length && (
-            <p className="palette-empty">Tidak ada hasil.</p>
+            <p className="palette-empty">{t('ext.palette.empty')}</p>
           )}
           {!error && query.trim().length < MIN_QUERY && (
             <p className="palette-empty">Ketik minimal {MIN_QUERY} huruf.</p>
@@ -147,7 +149,7 @@ export function CommandPalette({
                     onMouseEnter={() => setActive(index)}
                     onClick={() => choose(hit)}
                   >
-                    <span className={`palette-kind kind-${hit.kind}`}>{KIND_LABEL[hit.kind]}</span>
+                    <span className={`palette-kind kind-${hit.kind}`}>{t(KIND_LABEL[hit.kind])}</span>
                     <span className="palette-text">{hit.text}</span>
                     <span className="palette-meta dim">
                       {[hit.speaker, fmt(hit.time)].filter(Boolean).join(' · ')}
@@ -160,7 +162,7 @@ export function CommandPalette({
         </div>
 
         <div className="palette-foot">
-          <span className="dim">↑↓ pilih · Enter buka · Esc tutup</span>
+          <span className="dim">{t('ext.palette.keys')}</span>
           <span className="spacer" />
           <button
             className="primary"

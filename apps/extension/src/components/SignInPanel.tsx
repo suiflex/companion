@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { t } from '@meetcc/shared/i18n';
 import {
   chatgptAccountId,
   chatgptDevicePoll,
@@ -70,8 +71,8 @@ export function SignInPanel({
   // -- ChatGPT: device code, no redirect anywhere ----------------------------
 
   const startChatGpt = async () => {
-    if (!(await grant())) return toast('error', 'Izin akses ditolak — sign-in tidak bisa jalan.');
-    setBusy('Meminta kode…');
+    if (!(await grant())) return toast('error', t('ext.signin.permissionDenied'));
+    setBusy(t('ext.signin.requestingCode'));
     try {
       const started = await chatgptDeviceStart();
       setDevice(started);
@@ -87,11 +88,11 @@ export function SignInPanel({
 
   const pollChatGpt = async (started: DeviceCode) => {
     const deadline = Date.now() + DEVICE_TTL_MS;
-    setBusy('Menunggu persetujuan di browser…');
+    setBusy(t('ext.signin.waitingApproval'));
     while (Date.now() < deadline) {
       const approved = await chatgptDevicePoll(started);
       if (approved) {
-        setBusy('Menukar kode…');
+        setBusy(t('ext.signin.exchangingCode'));
         const tokens = await chatgptExchangeCode(approved.code, approved.verifier);
         await store({
           ...DEFAULT_OAUTH,
@@ -102,18 +103,18 @@ export function SignInPanel({
           accountId: chatgptAccountId(tokens.idToken),
           email: claimEmail(tokens.idToken),
         });
-        toast('success', 'ChatGPT tersambung.');
+        toast('success', t('ext.signin.chatgptConnected'));
         return;
       }
       await new Promise((r) => setTimeout(r, started.intervalMs));
     }
-    throw new Error('Kode kedaluwarsa sebelum disetujui. Coba lagi.');
+    throw new Error(t('ext.signin.codeExpired'));
   };
 
   // -- Google: consent in a tab, callback URL pasted back --------------------
 
   const startGoogle = async () => {
-    if (!(await grant())) return toast('error', 'Izin akses ditolak — sign-in tidak bisa jalan.');
+    if (!(await grant())) return toast('error', t('ext.signin.permissionDenied'));
     try {
       const { verifier, challenge } = await generatePkce();
       const state = randomState();
@@ -127,12 +128,12 @@ export function SignInPanel({
 
   const finishGoogle = async () => {
     const started = pending.current;
-    if (!started) return toast('error', 'Mulai dari tombol "Masuk dengan Google" dulu.');
-    setBusy('Menukar kode…');
+    if (!started) return toast('error', t('ext.signin.startWithGoogle'));
+    setBusy(t('ext.signin.exchangingCode'));
     try {
       const code = parseCallbackUrl(pasted, started.state);
       const tokens = await googleExchangeCode(code, started.verifier);
-      setBusy('Menyiapkan project Code Assist…');
+      setBusy(t('ext.signin.preparingProject'));
       const account = await resolveCodeAssistAccount(tokens.accessToken, projectId);
       await store({
         ...DEFAULT_OAUTH,
@@ -146,7 +147,7 @@ export function SignInPanel({
       });
       pending.current = null;
       setPasted('');
-      toast('success', 'Google tersambung.');
+      toast('success', t('ext.signin.googleConnected'));
     } catch (e) {
       fail(e);
     } finally {
@@ -168,7 +169,7 @@ export function SignInPanel({
         <button
           onClick={() => {
             void store(DEFAULT_OAUTH);
-            toast('success', 'Akun diputus.');
+            toast('success', t('ext.signin.disconnected'));
           }}
         >
           Keluar
@@ -190,7 +191,7 @@ export function SignInPanel({
       {provider === 'chatgpt' ? (
         <>
           <button onClick={() => void startChatGpt()} disabled={!!busy}>
-            {busy || 'Masuk dengan ChatGPT'}
+            {busy || t('ext.signin.withChatgpt')}
           </button>
           {device && (
             <p className="hint">
@@ -216,7 +217,7 @@ export function SignInPanel({
             onChange={(e) => setPasted(e.target.value)}
           />
           <button className="primary" onClick={() => void finishGoogle()} disabled={!!busy || !pasted}>
-            {busy || 'Selesaikan sign-in'}
+            {busy || t('ext.signin.finish')}
           </button>
           <input
             type="text"
