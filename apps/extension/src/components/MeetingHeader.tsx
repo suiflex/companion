@@ -114,7 +114,11 @@ export function MeetingHeader({
 
       {openCount > 0 && (
         <div className="mh-carry">
-          <span dangerouslySetInnerHTML={{ __html: t('ext.header.carryOpen', { count: openCount }) }} />
+          {t('ext.header.carryOpen', { count: '\u0000' })
+            .split('\u0000')
+            .flatMap((part, idx) =>
+              idx === 0 ? [part] : [<strong key={idx}>{openCount}</strong>, part],
+            )}
           {carry!.openActions.length > 0 && (
             <span className="dim">{t('ext.header.openActions', { count: carry!.openActions.length })}</span>
           )}

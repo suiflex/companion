@@ -422,8 +422,8 @@ export const en = {
   'ext.data.sharePassphraseHint':
     'The recipient needs this passphrase to open the file. Anyone who has it can read the meeting.',
   'ext.data.exportSelected': 'Export the selected meeting',
-  'ext.data.backupHint':
-    'Every meeting in one file: transcripts, notes, chat and documents. API keys, tokens and the audit log are <b>not</b> included — which is what makes the file safe to keep, and why you have to set your AI provider up again after restoring.',
+  'ext.data.backupNot': 'not',
+  'ext.data.backupHint': 'Every meeting in one file: transcripts, notes, chat and documents. API keys, tokens and the audit log are {not} included — which is what makes the file safe to keep, and why you have to set your AI provider up again after restoring.',
   'ext.data.restoreHint':
     'Restoring adds rather than replaces: a meeting already in this profile is not overwritten, so restoring the same file twice changes nothing.',
   'ext.data.backupDownloaded': 'Backup of {count} meetings downloaded.',
@@ -477,7 +477,7 @@ export const en = {
   'ext.err.unknownDbOp': 'Unknown database operation: {op}',
   'ext.err.dbNoResponse': 'The database did not respond.',
   'ext.err.svgRenderFailed': 'Could not render the SVG to an image',
-  'ext.header.carryOpen': '<strong>{count}</strong> items from earlier meetings are still open',
+  'ext.header.carryOpen': '{count} items from earlier meetings are still open',
   'ext.header.openPrevious': 'open the earlier meeting',
   'ext.palette.askAi': 'Ask the AI about these results',
   'ext.provider.modelsFailed': 'The model list could not be fetched ({error}) — type it in instead.',

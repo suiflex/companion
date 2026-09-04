@@ -536,9 +536,16 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
 
       <fieldset className="field-group">
         <legend>{t('ext.data.backup')}</legend>
-        {/* The bold run is part of the sentence, so the catalogue carries the
-            markup and the component trusts its own strings. */}
-        <p className="hint" dangerouslySetInnerHTML={{ __html: t('ext.data.backupHint') }} />
+        {/* The emphasis is spliced in as an element rather than shipped as
+            markup in the catalogue: no innerHTML, and the sentence around it
+            stays one translatable string. */}
+        <p className="hint">
+          {t('ext.data.backupHint', { not: '\u0000' })
+            .split('\u0000')
+            .flatMap((part, idx) =>
+              idx === 0 ? [part] : [<b key={idx}>{t('ext.data.backupNot')}</b>, part],
+            )}
+        </p>
         <p className="hint">{t('ext.data.restoreHint')}</p>
         <div className="subbar">
           <button

@@ -419,8 +419,8 @@ export const id: Record<keyof typeof en, string> = {
   'ext.data.sharePassphraseHint':
     'Penerima butuh passphrase ini untuk membuka berkas. Siapa pun yang punya passphrase-nya bisa membaca isi rapat.',
   'ext.data.exportSelected': 'Ekspor rapat terpilih',
-  'ext.data.backupHint':
-    'Semua rapat dalam satu berkas: transkrip, notulen, chat dan dokumen. API key, token dan log audit <b>tidak</b> ikut — itulah yang membuat berkas ini aman disimpan, dan sebabnya kamu perlu memasang ulang provider AI setelah memulihkan.',
+  'ext.data.backupNot': 'tidak',
+  'ext.data.backupHint': 'Semua rapat dalam satu berkas: transkrip, notulen, chat dan dokumen. API key, token dan log audit {not} ikut — itulah yang membuat berkas ini aman disimpan, dan sebabnya kamu perlu memasang ulang provider AI setelah memulihkan.',
   'ext.data.restoreHint':
     'Memulihkan bersifat menambah: rapat yang sudah ada di profil ini tidak ditimpa, jadi memulihkan berkas yang sama dua kali tidak mengubah apa pun.',
   'ext.data.backupDownloaded': 'Cadangan {count} rapat diunduh.',
@@ -474,7 +474,7 @@ export const id: Record<keyof typeof en, string> = {
   'ext.err.unknownDbOp': 'Operasi database tidak dikenal: {op}',
   'ext.err.dbNoResponse': 'Database tidak merespons.',
   'ext.err.svgRenderFailed': 'Gagal merender SVG ke gambar',
-  'ext.header.carryOpen': '<strong>{count}</strong> hal dari rapat sebelumnya masih terbuka',
+  'ext.header.carryOpen': '{count} hal dari rapat sebelumnya masih terbuka',
   'ext.header.openPrevious': 'buka rapat sebelumnya',
   'ext.palette.askAi': 'Tanya AI tentang hasil ini',
   'ext.provider.modelsFailed': 'Daftar model tidak bisa diambil ({error}) — ketik manual.',
