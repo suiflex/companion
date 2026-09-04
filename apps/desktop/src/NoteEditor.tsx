@@ -44,14 +44,21 @@ export function NoteEditor({
         // already summarized upstream by the extension.
         [Crepe.Feature.AI]: false,
         [Crepe.Feature.Latex]: false,
-        // Off by default in Crepe, which is why the editor looked like it had
-        // no controls at all: the selection toolbar and the slash menu only
-        // appear once you are already editing. This is the always-visible row
-        // — headings, bold, lists, code block, quote, table, link.
-        [Crepe.Feature.TopBar]: true,
+        // No persistent toolbar. Formatting appears when text is selected —
+        // the Toolbar feature, on by default — so an unselected note is just
+        // the note. A row of buttons above the body made this read as a form
+        // to fill in rather than a document to write.
+        [Crepe.Feature.TopBar]: false,
       },
       featureConfigs: {
-        [Crepe.Feature.Placeholder]: { text: t('desktop.editor.bodyPlaceholder') },
+        // `block` rather than the default, so *every* empty block carries the
+        // hint instead of only an empty document. The slash menu and the drag
+        // handle were always here; nothing said so, which is the same as not
+        // having them.
+        [Crepe.Feature.Placeholder]: {
+          text: t('desktop.editor.blockPlaceholder'),
+          mode: 'block',
+        },
       },
     })
 

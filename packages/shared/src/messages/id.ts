@@ -32,7 +32,6 @@ export const id: Record<keyof typeof en, string> = {
 
   // -- desktop: editor ------------------------------------------------------
   'desktop.editor.titlePlaceholder': 'Judul nota',
-  'desktop.editor.bodyPlaceholder': 'Tulis di sini…',
   'desktop.editor.unsaved': 'belum disimpan',
   'desktop.editor.updated': 'diperbarui {date}',
   'desktop.editor.trash': 'Pindah ke sampah',
@@ -585,6 +584,8 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.settings.confirmEmptyFolder':
     'Pakai {path} sebagai vault? Companion akan membuat folder .transcript di dalamnya. Isi vault-mu sekarang tidak dipindah atau dihapus.',
   'desktop.settings.cancel': 'Batal',
+
+  'desktop.editor.blockPlaceholder': "Ketik '/' untuk perintah",
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',

@@ -36,7 +36,6 @@ export const en = {
 
   // -- desktop: editor ------------------------------------------------------
   'desktop.editor.titlePlaceholder': 'Note title',
-  'desktop.editor.bodyPlaceholder': 'Write here…',
   'desktop.editor.unsaved': 'unsaved',
   'desktop.editor.updated': 'updated {date}',
   'desktop.editor.trash': 'Move to trash',
@@ -588,6 +587,8 @@ export const en = {
   'desktop.settings.confirmEmptyFolder':
     'Use {path} as the vault? Companion will create a .transcript folder inside it. Nothing in your current vault is moved or deleted.',
   'desktop.settings.cancel': 'Cancel',
+
+  'desktop.editor.blockPlaceholder': "Type '/' for commands",
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
