@@ -1,3 +1,4 @@
+mod settings;
 mod vault;
 
 use tauri::Manager;
@@ -9,7 +10,11 @@ pub fn run() {
         // The frontend asks; the update itself is fetched and verified in Rust
         // against the pubkey in tauri.conf.json, then `process` relaunches.
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_process::init());
+        .plugin(tauri_plugin_process::init())
+        // Provider calls leave through Rust: the WebView's CSP allows
+        // `connect-src 'self' ipc:` and nothing else, and the hosts to allow
+        // cannot be enumerated because the base URL is typed by the user.
+        .plugin(tauri_plugin_http::init());
     // Test-only, compiled out entirely without `--features wdio`.
     #[cfg(feature = "wdio")]
     let builder = builder
@@ -46,6 +51,10 @@ pub fn run() {
             vault::append_vault_line,
             vault::vault_mtime,
             vault::trash_vault_file,
+            settings::load_ai_settings,
+            settings::save_ai_settings,
+            settings::load_secret,
+            settings::save_secret,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Companion Desktop");
