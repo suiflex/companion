@@ -36,6 +36,7 @@ pub fn run() {
             vault::reset_vault_root,
             vault::probe_vault_root,
             vault::default_vault_root,
+            vault::open_external,
             vault::list_vault,
             vault::read_vault_file,
             vault::write_vault_file,

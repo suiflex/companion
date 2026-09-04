@@ -595,6 +595,10 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.field.addProperty': 'Tambah properti',
   'desktop.field.hideEmpty': 'Sembunyikan properti kosong',
 
+  'sponsor.title': 'Dukung Companion',
+  'sponsor.github': 'GitHub Sponsors',
+  'sponsor.saweria': 'Saweria',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Versi {version} tersedia.',
 };

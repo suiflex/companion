@@ -330,6 +330,22 @@ mod tests {
     }
 
     #[test]
+    fn open_external_refuses_anything_that_is_not_a_web_url() {
+        // The argument comes from the WebView, which renders note content. On
+        // macOS `open` will happily launch a file or an application, so the
+        // scheme is the only thing standing between a note and the shell.
+        for bad in [
+            "file:///etc/passwd",
+            "/Applications/Calculator.app",
+            "javascript:alert(1)",
+            "ftp://example.com",
+            "",
+        ] {
+            assert!(open_external(bad.into()).is_err(), "allowed: {bad}");
+        }
+    }
+
+    #[test]
     fn probe_reports_a_folder_without_touching_it() {
         let dir = tmp("probe");
         fs::write(dir.join("a.md"), "# one").unwrap();
@@ -352,4 +368,33 @@ mod tests {
         assert!(!gone.exists);
         assert_eq!(gone.markdown, 0);
     }
+}
+
+/// Hand a URL to the operating system's browser.
+///
+/// Deliberately not a Tauri plugin: this is one `Command` and a scheme check,
+/// and a plugin would mean a crate, a capability entry and a wider surface for
+/// the sake of it.
+///
+/// The scheme check is the point. The argument arrives from the WebView, and
+/// the WebView renders note content — without it, a crafted string could reach
+/// the shell through `open`/`xdg-open`, which happily launch files and
+/// applications, not just web pages.
+#[tauri::command]
+pub fn open_external(url: String) -> Result<(), String> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err(format!("refusing to open a non-web URL: {url}"));
+    }
+    let launcher = if cfg!(target_os = "macos") {
+        "open"
+    } else if cfg!(target_os = "windows") {
+        "explorer"
+    } else {
+        "xdg-open"
+    };
+    std::process::Command::new(launcher)
+        .arg(&url)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }

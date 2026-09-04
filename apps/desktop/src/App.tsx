@@ -10,6 +10,7 @@ import { DateField } from './DateField'
 import { MeetingMeta } from './MeetingMeta'
 import { Select, type Option, type Tone } from './Select'
 import { useToast } from './toast'
+import { activeSponsorLinks } from './sponsor'
 import {
   applyTheme,
   loadThemePref,
@@ -666,6 +667,19 @@ export default function App() {
           ◈
         </button>
         <span className="rail-spacer" />
+        {activeSponsorLinks().map((link) => (
+          <button
+            key={link.id}
+            type="button"
+            className="rail-btn"
+            data-tip={`${t('sponsor.title')} · ${t(link.label)}`}
+            data-tip-side="right"
+            aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
+            onClick={() => void invoke('open_external', { url: link.url })}
+          >
+            ♥
+          </button>
+        ))}
         <button
           type="button"
           className="rail-btn"

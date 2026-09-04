@@ -598,6 +598,10 @@ export const en = {
   'desktop.field.addProperty': 'Add property',
   'desktop.field.hideEmpty': 'Hide empty properties',
 
+  'sponsor.title': 'Support Companion',
+  'sponsor.github': 'GitHub Sponsors',
+  'sponsor.saweria': 'Saweria',
+
   // -- desktop: updater -----------------------------------------------------
   'desktop.update.available': 'Version {version} is available.',
 } as const;

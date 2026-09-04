@@ -8,6 +8,7 @@ import {
 } from '@meetcc/shared'
 
 import { listProjects, listSessions } from '../lib/db'
+import { activeSponsorLinks } from '../lib/sponsor'
 import { resolveTheme, watchSystemTheme, type ThemePref } from '../lib/theme'
 import { locale, t } from '@meetcc/shared/i18n'
 
@@ -315,6 +316,20 @@ export function Sidebar({
           ⚙
         </button>
       </div>
+      {activeSponsorLinks().length > 0 && (
+        <p className='sidebar-sponsor'>
+          {activeSponsorLinks().map((link) => (
+            <a
+              key={link.id}
+              href={link.url}
+              target='_blank'
+              rel='noreferrer noopener'
+              title={`${t('sponsor.title')} · ${t(link.label)}`}>
+              ♥ {t(link.label)}
+            </a>
+          ))}
+        </p>
+      )}
       <p className='sidebar-credit'>
         <img className='credit-logo' src='icons/suiflex.svg' alt='' />
         powered by suiflex
