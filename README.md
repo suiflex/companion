@@ -35,7 +35,7 @@ Two products, released together on one tag. Take one or both — neither needs t
 
 The extension is easiest through the terminal installer below, which also keeps
 it updated. Firefox users get it from
-[addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/companion%40suiflex.dev/),
+[addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/meet-companion/),
 where Firefox handles updates itself.
 
 > **The desktop builds are not code-signed yet.** macOS refuses a downloaded
