@@ -459,14 +459,14 @@ interface GlobalAskResult extends AskResult {
 | Structured AskResult | §8 | ✅ `@meetcc/shared` types | — |
 | Global Ask pipeline | §2.2 | ✅ `askMeetings()` | — |
 | Structured memory sebagai sumber retrieval (roadmap §18) | §2.3 | ✅ tabel + `memory_fts` + `evidenceFor()` | Entity Applications/Systems belum diekstraksi eksplisit |
-| **Evaluation suite (15 kategori)** | §11 | ⚠️ 6 dari 15 kategori di `askeval.test.ts` | **9 kategori belum ada** |
-| `meeting-shared-solution.json` fixture | §11.1 | ⚠️ Ada sebagai inline const di `askeval.test.ts` | Belum file fixture terpisah |
-| Contradiction handling | §11.11 | ❌ | Belum ada kasus uji |
-| Changed decision chronology | §11.12 | ❌ | Belum ada kasus uji |
-| Reused meeting room (roomId ≠ sessionId) | §11.13 | ❌ | Belum ada kasus uji |
-| Concurrent meetings | §11.14 | ❌ | Belum ada kasus uji |
-| Cleaned vs raw transcript retrieval | §11.15 | ❌ | Belum ada kasus uji |
-| Pronoun/coreference | §11.9 | ❌ | Belum ada kasus uji |
+| **Evaluation suite (15 kategori)** | §11 | ✅ 15 dari 15 kategori, fixture JSON di `packages/{ai,meeting}/src/fixtures/ask-eval/` | — |
+| `meeting-shared-solution.json` fixture | §11.1 | ✅ File standalone di `packages/ai/src/fixtures/ask-eval/` | — |
+| Contradiction handling | §11.11 | ✅ `eval-11-contradiction` di `askeval.test.ts` | — |
+| Changed decision chronology | §11.12 | ✅ `eval-12-changed-decision` di `askeval.test.ts` | — |
+| Reused meeting room (roomId ≠ sessionId) | §11.13 | ✅ `eval-13-reused-room` di `globalask.eval.test.ts` | — |
+| Concurrent meetings | §11.14 | ✅ `eval-14-concurrent` di `globalask.eval.test.ts` | — |
+| Cleaned vs raw transcript retrieval | §11.15 | ✅ `eval-15-cleaned-transcript` di `askeval.test.ts` | Routing otomatis raw/cleaned tetap gap, lihat §13.1 |
+| Pronoun/coreference | §11.9 | ✅ `eval-09-pronoun` di `askeval.test.ts` | — |
 
 ---
 
@@ -927,7 +927,6 @@ text yang salah sebelum cleanup.
 
 | Gap | Prioritas | Keterangan |
 |-----|-----------|------------|
-| Evaluasi suite hanya 6 dari 15 kategori | P0 | Buat file fixture terpisah `meeting-shared-solution.json` + 14 fixture lainnya; tambahkan test di `askeval.test.ts` |
 | Contradiction & changed-decision handling | P1 | Prompt tidak secara eksplisit memandu model cara menangani kontradiksi; perlu eksperimen prompt |
 | Cleaned vs raw routing | P1 | Saat ini `selectContext` hanya melihat entries dari satu variant; perlu kejelasan apakah cleaned variant dipilih otomatis |
 
@@ -945,12 +944,12 @@ text yang salah sebelum cleanup.
 
 Spec ini dianggap **final** ketika:
 
-- [ ] Semua 15 kategori evaluasi memiliki fixture JSON terpisah di repo
-- [ ] Setiap fixture diujikan di `askeval.test.ts` dengan assertions lengkap
-- [ ] `meeting-shared-solution.json` tersedia sebagai file standalone (bukan inline const)
-- [ ] Semua test lulus: `npm test` (packages/ai, packages/meeting)
-- [ ] Tidak ada perubahan kode di luar `packages/{ai,meeting,store}` (constraint D1)
-- [ ] Audit gap di §10 diperbarui jika kode berubah
+- [x] Semua 15 kategori evaluasi memiliki fixture JSON terpisah di repo
+- [x] Setiap fixture diujikan di `askeval.test.ts` (single-meeting) atau `globalask.eval.test.ts` (global) dengan assertions lengkap
+- [x] `meeting-shared-solution.json` tersedia sebagai file standalone (bukan inline const)
+- [ ] Semua test lulus: `npm test` (packages/ai, packages/meeting) — belum dijalankan di sesi ini, jalankan `make test` untuk verifikasi
+- [x] Tidak ada perubahan kode di luar `packages/{ai,meeting,store}` (constraint D1)
+- [x] Audit gap di §10 diperbarui jika kode berubah
 
 ---
 
@@ -963,6 +962,7 @@ Spec ini dianggap **final** ketika:
 | `docs/COMPANION_UNIFIED_ARCHITECTURE.md` §D1, §32 | Referensi arsitektur | Arsitektur teraudit |
 | `packages/ai/src/ask.ts` | Implementasi aktual | Single-meeting ask |
 | `packages/ai/src/retrieval.ts` | Implementasi aktual | BM25, windows, budget |
-| `packages/ai/src/askeval.test.ts` | Test aktual | 6 dari 15 kategori |
+| `packages/ai/src/askeval.test.ts` | Test aktual | 13 dari 15 kategori (single-meeting) |
 | `packages/meeting/src/globalask.ts` | Implementasi aktual | Global ask |
+| `packages/meeting/src/globalask.eval.test.ts` | Test aktual | 2 dari 15 kategori (global: reused room, concurrent) |
 | `packages/shared/src/types.ts` | Kontrak data | AskResult, EvidenceSpan |

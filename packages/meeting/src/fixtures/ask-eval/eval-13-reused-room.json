@@ -1,0 +1,25 @@
+{
+  "id": "eval-13-reused-room",
+  "roomId": "xdr-fdbe-zqz",
+  "sessions": [
+    {
+      "sessionId": "session-monday",
+      "title": "Monday standup",
+      "startedAt": "2026-08-25T07:00:00Z",
+      "entries": [{ "speaker": "Akbar", "text": "Deploy ke staging hari ini", "offset": 0 }]
+    },
+    {
+      "sessionId": "session-wednesday",
+      "title": "Wednesday standup",
+      "startedAt": "2026-08-27T07:00:00Z",
+      "entries": [{ "speaker": "Widi", "text": "Deploy ke production besok", "offset": 0 }]
+    }
+  ],
+  "question": "Kapan deploy ke production?",
+  "expected": {
+    "answerability": "explicit",
+    "mustMention": ["besok"],
+    "forbidden": ["staging"],
+    "notes": "Only the Wednesday session is relevant; Monday (staging) is not the answer."
+  }
+}

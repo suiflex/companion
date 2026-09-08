@@ -1,0 +1,19 @@
+{
+  "id": "eval-15-cleaned-transcript",
+  "entries": [],
+  "entries_raw": [
+    { "speaker": "Akbar", "text": "Target tahun 2003 harus tercapai", "offset": 0 },
+    { "speaker": "Widi", "text": "Oke noted", "offset": 30 }
+  ],
+  "entries_cleaned": [
+    { "speaker": "Akbar", "text": "Target tahun 2023 harus tercapai", "offset": 0 },
+    { "speaker": "Widi", "text": "Oke noted", "offset": 30 }
+  ],
+  "question": "Apa target tahun yang disebutkan?",
+  "expected": {
+    "answerability": "explicit",
+    "mustMention": ["2023"],
+    "forbidden": ["2003"],
+    "notes": "Retrieval and the answer must be based on the cleaned transcript, not raw. UI may still show cleanup provenance."
+  }
+}

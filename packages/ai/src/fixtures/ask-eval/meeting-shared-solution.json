@@ -1,0 +1,17 @@
+{
+  "id": "eval-02-partial",
+  "entries": [
+    { "speaker": "Rina", "text": "Kita mulai dari status insiden kemarin", "offset": 0 },
+    { "speaker": "Akbar", "text": "Ada beberapa aplikasi yang terdampak, bukan cuma satu", "offset": 40 },
+    { "speaker": "Widi", "text": "Solusinya nanti dishare untuk semua aplikasi atau dibuat terpisah per aplikasi?", "offset": 70 },
+    { "speaker": "Akbar", "text": "Dua-duanya masih dipertimbangkan, belum ada keputusan final", "offset": 100 },
+    { "speaker": "Rina", "text": "Oke, kita bahas lagi minggu depan setelah data lengkap", "offset": 130 }
+  ],
+  "question": "gimana caranya solusi dari beberapa aplikasi yang terdampak?",
+  "expected": {
+    "answerability": "partial",
+    "mustMention": ["belum ada keputusan final", "shared", "terpisah"],
+    "forbidden": ["Tidak disebutkan dalam rapat"],
+    "notes": "The regression case: the meeting DID discuss the topic, the old engine wrongly answered not-found."
+  }
+}

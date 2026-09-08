@@ -1,0 +1,14 @@
+{
+  "id": "eval-04-not-found",
+  "entries": [
+    { "speaker": "Rina", "text": "Deadline rilis Jumat depan", "offset": 0 },
+    { "speaker": "Manan", "text": "Siap, saya kerjakan", "offset": 20 }
+  ],
+  "question": "Berapa node Kubernetes yang kita pakai?",
+  "expected": {
+    "answerability": "not_found",
+    "mustMention": [],
+    "forbidden": ["Tidak disebutkan dalam rapat"],
+    "notes": "not_found may read 'Tidak ada bagian rapat yang membahas hal ini' — not the forbidden canned refusal."
+  }
+}

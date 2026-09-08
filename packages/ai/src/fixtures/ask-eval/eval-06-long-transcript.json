@@ -1,0 +1,28 @@
+{
+  "id": "eval-06-long-transcript",
+  "fillerBefore": {
+    "count": 400,
+    "template": "pembukaan dan laporan rutin bagian {i} soal operasional harian tim",
+    "startOffset": 0,
+    "step": 10,
+    "speaker": "Rina"
+  },
+  "entries": [
+    { "speaker": "Akbar", "text": "Ada beberapa aplikasi yang terdampak", "offset": 4000 },
+    { "speaker": "Widi", "text": "Solusinya shared atau terpisah?", "offset": 4020 }
+  ],
+  "fillerAfter": {
+    "count": 400,
+    "template": "penutup dan administrasi bagian {i} soal jadwal berikutnya",
+    "startOffset": 5000,
+    "step": 10,
+    "speaker": "Rina"
+  },
+  "question": "gimana caranya solusi dari beberapa aplikasi yang terdampak?",
+  "expected": {
+    "answerability": "partial",
+    "mustMention": ["aplikasi yang terdampak", "shared", "terpisah"],
+    "forbidden": ["pembukaan dan laporan rutin bagian 0", "penutup dan administrasi bagian 399"],
+    "notes": "The prompt sent to the model must not contain head/tail filler, only the relevant part."
+  }
+}

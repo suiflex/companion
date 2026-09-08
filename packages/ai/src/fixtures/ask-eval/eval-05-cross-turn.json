@@ -1,0 +1,16 @@
+{
+  "id": "eval-05-cross-turn",
+  "entries": [
+    { "speaker": "Gunawan", "text": "Arsitektur microservice sudah final", "offset": 0 },
+    { "speaker": "Akbar", "text": "Tapi untuk Freeport kita pakai monolith dulu", "offset": 30 },
+    { "speaker": "Widi", "text": "Jadi Freeport bukan microservice?", "offset": 60 },
+    { "speaker": "Akbar", "text": "Betul, monolith untuk fase pertama", "offset": 90 }
+  ],
+  "question": "Bagaimana arsitektur untuk Freeport?",
+  "expected": {
+    "answerability": "inferred",
+    "mustMention": ["monolith", "fase pertama"],
+    "forbidden": ["Tidak disebutkan dalam rapat"],
+    "notes": "Answer should draw on Gunawan (general) plus Akbar (Freeport-specific)."
+  }
+}
