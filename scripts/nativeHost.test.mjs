@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync, chmodSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   extensionIdFor,
   extensionIdFromKey,
   hostManifest,
   hostManifestDir,
+  verifyInstalledHost,
   wrapperScript,
 } from './nativeHost.mjs';
 import manifest from '../apps/extension/public/manifest.json' with { type: 'json' };
@@ -77,5 +81,73 @@ describe('wrapperScript', () => {
   it('quotes paths so a space in them cannot split the command', () => {
     const sh = wrapperScript('/usr/bin/node', '/Users/a b/Application Support/native-host.mjs');
     expect(sh).toContain('"/Users/a b/Application Support/native-host.mjs"');
+  });
+});
+
+describe('verifyInstalledHost', () => {
+  let dir, manifestPath, wrapperPath, hostPath;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'meetcc-nativehost-'));
+    manifestPath = join(dir, 'dev.suiflex.companion.json');
+    wrapperPath = join(dir, 'native-host');
+    hostPath = join(dir, 'native-host.mjs');
+    writeFileSync(wrapperPath, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+    writeFileSync(hostPath, '// host\n');
+  });
+
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  const write = (m) => writeFileSync(manifestPath, JSON.stringify(m));
+
+  it('passes for a correctly written Chromium manifest', () => {
+    write(hostManifest('abc', wrapperPath, 'chromium'));
+    const r = verifyInstalledHost({ manifestPath, wrapperPath, hostPath, extensionId: 'abc', engine: 'chromium' });
+    expect(r).toEqual({ ok: true, problems: [] });
+  });
+
+  it('passes for a correctly written Gecko manifest', () => {
+    write(hostManifest('a@b', wrapperPath, 'gecko'));
+    const r = verifyInstalledHost({ manifestPath, wrapperPath, hostPath, extensionId: 'a@b', engine: 'gecko' });
+    expect(r).toEqual({ ok: true, problems: [] });
+  });
+
+  it('catches a stale manifest pinned to the wrong extension id (§36.2)', () => {
+    write(hostManifest('dev-id-not-prod', wrapperPath, 'chromium'));
+    const r = verifyInstalledHost({ manifestPath, wrapperPath, hostPath, extensionId: 'prod-id', engine: 'chromium' });
+    expect(r.ok).toBe(false);
+    expect(r.problems.some((p) => p.includes('wrong extension id'))).toBe(true);
+  });
+
+  it('catches a missing manifest', () => {
+    const r = verifyInstalledHost({
+      manifestPath: join(dir, 'missing.json'),
+      wrapperPath,
+      hostPath,
+      extensionId: 'abc',
+      engine: 'chromium',
+    });
+    expect(r.ok).toBe(false);
+    expect(r.problems.some((p) => p.includes('manifest missing'))).toBe(true);
+  });
+
+  it('catches a manifest pointing at a different wrapper path', () => {
+    write(hostManifest('abc', '/some/other/path', 'chromium'));
+    const r = verifyInstalledHost({ manifestPath, wrapperPath, hostPath, extensionId: 'abc', engine: 'chromium' });
+    expect(r.problems.some((p) => p.includes("manifest 'path'"))).toBe(true);
+  });
+
+  it('catches a missing host binary', () => {
+    write(hostManifest('abc', wrapperPath, 'chromium'));
+    rmSync(hostPath);
+    const r = verifyInstalledHost({ manifestPath, wrapperPath, hostPath, extensionId: 'abc', engine: 'chromium' });
+    expect(r.problems.some((p) => p.includes('host binary missing'))).toBe(true);
+  });
+
+  it('catches a non-executable wrapper', () => {
+    write(hostManifest('abc', wrapperPath, 'chromium'));
+    chmodSync(wrapperPath, 0o644);
+    const r = verifyInstalledHost({ manifestPath, wrapperPath, hostPath, extensionId: 'abc', engine: 'chromium' });
+    expect(r.problems.some((p) => p.includes('not executable'))).toBe(true);
   });
 });

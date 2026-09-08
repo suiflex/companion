@@ -196,10 +196,20 @@ a known friction mode for the Windows clean-VM run to quantify.
    paths; the installer's last step self-checks manifest presence, `path`
    executability, and `allowed_origins ==` shipped extension ID (nibble
    derivation, cross-OS stable — confirmed identical on both executed OS).
+   **Implemented:** `verifyInstalledHost` (`scripts/nativeHost.mjs`), wired
+   into `companion install`'s `registerNativeHost` and covered by
+   `scripts/nativeHost.test.mjs`. Still only exercised via the fake-filesystem
+   unit tests — not yet run as the last step of a real clean-VM install.
 4. The extension treats `Specified native messaging host not found.` /
    `Access to the specified native messaging host is forbidden.` /
    (Windows) `host not registered` as three distinct machine-readable signals
    for the ADR-008 queue fallback — all three observed or documented.
+   **Implemented:** `classifyBridgeError` (`apps/extension/src/lib/bridgeError.ts`)
+   tags every `bridge.error` audit line with its category. The extension's
+   runtime *behavior* on failure was already uniform (retry next sweep, local
+   capture unaffected) before this — what was missing was making the category
+   legible in the audit log for installer troubleshooting, which is what this
+   closes; it has not been exercised against a real Windows `lastError` string.
 5. The localhost-IPC fallback stays **off the table** without ADR-008 threat
    review (unchanged). Nothing in the executed evidence raises its priority.
 

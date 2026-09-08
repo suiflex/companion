@@ -24,7 +24,7 @@
 // Firefox is the exception to (1): its manifests are global, not per-profile.
 
 import { createHash } from 'node:crypto';
-import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { accessSync, constants, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
 
@@ -118,4 +118,49 @@ export function installHost({ browser, profileDir, hostSource, extensionId, node
   writeFileSync(manifestPath, `${JSON.stringify(hostManifest(extensionId, wrapperPath, browser.engine), null, 2)}\n`);
 
   return { manifestPath, wrapperPath, hostPath };
+}
+
+/**
+ * spike-native-messaging-installer.md GO condition #3: the installer's last
+ * step self-checks manifest presence, wrapper executability, and that
+ * `allowed_origins`/`allowed_extensions` names the extension id it was just
+ * given — so a stale manifest from a previous install (dev vs prod id, §36.2)
+ * is caught here instead of surfacing later as a silent `forbidden`.
+ *
+ * Read-only: never writes, so it is safe to call right after `installHost`
+ * or standalone as a `companion doctor`-style check.
+ */
+export function verifyInstalledHost({ manifestPath, wrapperPath, hostPath, extensionId, engine }) {
+  const problems = [];
+
+  if (!existsSync(manifestPath)) {
+    problems.push(`manifest missing: ${manifestPath}`);
+  } else {
+    let manifest;
+    try {
+      manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    } catch {
+      problems.push(`manifest is not valid JSON: ${manifestPath}`);
+    }
+    if (manifest) {
+      const expectedOrigin = engine === 'gecko' ? extensionId : `chrome-extension://${extensionId}/`;
+      const actualOrigin = engine === 'gecko' ? manifest.allowed_extensions?.[0] : manifest.allowed_origins?.[0];
+      if (actualOrigin !== expectedOrigin) {
+        problems.push(`manifest points at the wrong extension id: expected ${expectedOrigin}, found ${actualOrigin ?? '(none)'}`);
+      }
+      if (manifest.path !== wrapperPath) {
+        problems.push(`manifest 'path' does not match the installed wrapper: expected ${wrapperPath}, found ${manifest.path}`);
+      }
+    }
+  }
+
+  if (!existsSync(hostPath)) problems.push(`host binary missing: ${hostPath}`);
+
+  try {
+    accessSync(wrapperPath, constants.X_OK);
+  } catch {
+    problems.push(`wrapper is not executable: ${wrapperPath}`);
+  }
+
+  return { ok: problems.length === 0, problems };
 }

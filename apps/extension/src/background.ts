@@ -26,6 +26,7 @@ import { obsidianVault } from '@meetcc/exporters/obsidian';
 import { loadSettingsForAI } from './lib/aiSettings';
 import { makeZip } from './lib/zip';
 import { toBridgeBatch } from './lib/bridgeBatch';
+import { classifyBridgeError } from './lib/bridgeError';
 import { getStore, handleDb, refreshHighlights, syncIndex } from './db';
 import {
   appendAudit,
@@ -522,7 +523,14 @@ async function deliverToDesktop(meeting: Meeting): Promise<void> {
     // per worker so a permanently missing host cannot flood the audit log.
     if (!bridgeErrorLogged) {
       bridgeErrorLogged = true;
-      await appendAudit('bridge.error', res.error ?? 'native-host-error');
+      // spike-native-messaging-installer.md GO condition #4: keep the three
+      // distinct failure classes distinguishable in the audit log instead of
+      // one opaque string, so "host not installed" doesn't get confused with
+      // "installed under the wrong extension id" during troubleshooting.
+      await appendAudit(
+        'bridge.error',
+        `[${classifyBridgeError(res.error)}] ${res.error ?? 'native-host-error'}`,
+      );
     }
     return; // desktop not installed, or host down — try again next sweep
   }
