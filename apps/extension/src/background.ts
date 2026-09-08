@@ -34,6 +34,7 @@ import {
   clearMeeting,
   deriveTitle,
   effectiveClean,
+  ensureReleaseT0,
   fetchLatestRelease,
   getAnalysis,
   getTitle,
@@ -206,6 +207,11 @@ function scheduleAlarms(): void {
 
 chrome.runtime.onInstalled.addListener(scheduleAlarms);
 chrome.runtime.onStartup.addListener(scheduleAlarms);
+// §32.1 gate anchor: stamped once, on the first run of the build that ships
+// it — install for new users, update for existing ones — not guessed later
+// from whatever the audit ring still holds.
+chrome.runtime.onInstalled.addListener(() => void ensureReleaseT0(Date.now()));
+chrome.runtime.onStartup.addListener(() => void ensureReleaseT0(Date.now()));
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name.startsWith('sweep')) void sweep();
@@ -418,7 +424,10 @@ async function handleExportAudit(): Promise<{
   ok: true; count: number; json: string;
 }> {
   const events = await loadAudit();
-  const gate = gateSummary(events, Date.now());
+  // belt-and-suspenders: the onInstalled/onStartup listeners stamp T0 already,
+  // but ensureReleaseT0 is idempotent, so a missed listener still self-heals.
+  const t0 = await ensureReleaseT0(Date.now());
+  const gate = gateSummary(events, Date.now(), t0);
   return {
     ok: true,
     count: events.length,

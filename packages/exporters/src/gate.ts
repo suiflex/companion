@@ -7,10 +7,10 @@ import type { AuditEvent } from '@meetcc/shared'
 // from the capped audit ring (chrome.storage, AUDIT_RING_MAX = 5.000 events,
 // never uploaded).
 //
-// Anchor assumption (single-user proxy, must stay documented): the log's
-// oldest surviving event stands in for "release day" on this device. At 5.000
-// events (§32.1 W3) the ring holds the whole 14-day gate window per device;
-// if the cap ever shrinks again, re-check week-2 slices before trusting them.
+// Anchor: a release T0 persisted once per device (packages/shared/src/storage.ts
+// `ensureReleaseT0`), stamped the first time this build runs — not guessed from
+// whatever the audit ring happens to still hold. The caller passes it in so
+// this module stays a pure function of its inputs.
 
 export const GATE_EVENT = 'export.obsidian'
 export const PROBE_WINDOW_DAYS = 14
@@ -29,7 +29,7 @@ function exportTimes(events: AuditEvent[], anchor: number): number[] {
 }
 
 export interface GateSummary {
-  /** Epoch ms of the device anchor (oldest surviving audit event). */
+  /** Epoch ms of the device anchor (the persisted release T0). */
   anchor: number;
   /** ≥1 export inside the window — this device's G1 contribution. */
   g1Adopted: boolean;
@@ -45,16 +45,13 @@ export interface GateSummary {
 }
 
 /**
- * Per-device probe numbers for §32.1. `now` is injected (not Date.now()) so
- * the calculation is reproducible; the window is trailing [now-14d, now) but
- * the anchor is the log itself — events older than the surviving ring are
- * simply not visible and never guessed.
+ * Per-device probe numbers for §32.1. `releaseT0` is the persisted anchor;
+ * `now` is injected (not Date.now()) so the calculation is reproducible and
+ * also caps the anchor — a clock-skewed or corrupted future T0 can never
+ * push the window ahead of the current time.
  */
-export function gateSummary(events: AuditEvent[], now: number): GateSummary {
-  const anchor = Math.min(
-    ...events.map((e) => Date.parse(e.time)).filter(Number.isFinite),
-    now,
-  )
+export function gateSummary(events: AuditEvent[], now: number, releaseT0: number): GateSummary {
+  const anchor = Math.min(releaseT0, now)
   const times = exportTimes(events, anchor)
   const boundary = anchor + 7 * DAY_MS
   const week1 = times.filter((t) => t < boundary).length

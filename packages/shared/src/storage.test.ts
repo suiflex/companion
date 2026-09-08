@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   appendAudit,
+  ensureReleaseT0,
+  getReleaseT0,
   loadAudit,
   loadDashboard,
   loadSettings,
@@ -199,5 +201,17 @@ describe('audit ring (§32.1 W3)', () => {
     const log = await loadAudit();
     expect(log).toHaveLength(701);
     expect(log.at(-1)?.event).toBe('export.obsidian');
+  });
+});
+
+describe('release T0 (§32.1 gate anchor)', () => {
+  it('is unset until the first call', async () => {
+    expect(await getReleaseT0()).toBeNull();
+  });
+
+  it('stamps the given time once, then keeps returning it', async () => {
+    expect(await ensureReleaseT0(1000)).toBe(1000);
+    expect(await ensureReleaseT0(2000)).toBe(1000); // already set, second call is a no-op
+    expect(await getReleaseT0()).toBe(1000);
   });
 });
