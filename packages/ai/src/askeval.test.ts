@@ -149,14 +149,34 @@ describe('eval-03: inferred answer', () => {
 });
 
 describe('eval-04: truly not found', () => {
-  it('answers not_found without calling the model a second time', async () => {
+  // A meeting this short always fits the prompt budget whole (selectContext
+  // "small meetings go in whole"), so the model is still asked — the
+  // retrieval-level early-return only triggers on a transcript too long to
+  // fit, which eval-06/07 cover. Here "not found" has to be the model's own
+  // graded answer.
+  it('answers not_found for a question the meeting never touches', async () => {
     const fx = loadFixture('eval-04-not-found');
+    await evalFixture(
+      fx,
+      PLAN({ intent: 'recall', keywords: ['kubernetes'] }),
+      JSON.stringify({
+        answer: 'Tidak ada bagian rapat yang membahas hal ini.',
+        answerability: 'not_found',
+        confidence: 0.2,
+        evidence: [],
+        missing: [],
+        followUps: [],
+      }),
+    );
+  });
+
+  it('skips the second model call when retrieval genuinely finds nothing in a long meeting', async () => {
+    const long = withEntryIds(fixtureEntries(loadFixture('eval-06-long-transcript')));
     const r = recorder(PLAN({ intent: 'recall', keywords: ['kubernetes'] }));
-    const result = await askMeeting(r.client, meetingOf(withEntryIds(fixtureEntries(fx))), null, [], fx.question);
+    const result = await askMeeting(r.client, meetingOf(long), null, [], 'berapa node kubernetes kita?');
 
     expect(result.answerability).toBe('not_found');
     expect(result.evidence).toEqual([]);
-    expect(result.answer).not.toContain(fx.expected.forbidden[0]);
     expect(r.prompts).toHaveLength(1); // planner only
   });
 });
