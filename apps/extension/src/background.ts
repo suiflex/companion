@@ -21,6 +21,7 @@ import {
   type PipelineResult,
 } from '@meetcc/meeting';
 import { GATE_EVENT, describeGate, gateSummary } from '@meetcc/exporters/gate';
+import { describeG3, g3Rollup } from '@meetcc/exporters/g3';
 import { obsidianVault } from '@meetcc/exporters/obsidian';
 import { loadSettingsForAI } from './lib/aiSettings';
 import { makeZip } from './lib/zip';
@@ -418,8 +419,9 @@ async function handleResolveSession(raw: string): Promise<{ sessionId: string }>
 
 // §32.1 W4: the gate review reads this device's audit ring as JSON. Local
 // download only — the ring never leaves the device (no telemetry, unchanged).
-// The per-device §32.1 snapshot (gateSummary) rides along so the review can
-// read G1/G2 numbers straight from the file.
+// The per-device §32.1 snapshots (gateSummary for G1/G2, g3Rollup for G3)
+// ride along so the review can read every demand signal straight from the
+// file.
 async function handleExportAudit(): Promise<{
   ok: true; count: number; json: string;
 }> {
@@ -428,6 +430,7 @@ async function handleExportAudit(): Promise<{
   // but ensureReleaseT0 is idempotent, so a missed listener still self-heals.
   const t0 = await ensureReleaseT0(Date.now());
   const gate = gateSummary(events, Date.now(), t0);
+  const g3 = g3Rollup(events, Date.now());
   return {
     ok: true,
     count: events.length,
@@ -437,6 +440,7 @@ async function handleExportAudit(): Promise<{
         ringMax: AUDIT_RING_MAX,
         count: events.length,
         gate: { ...gate, describe: describeGate(gate) },
+        g3: { ...g3, describe: describeG3(g3) },
         events,
       },
       null,
