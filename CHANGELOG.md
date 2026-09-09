@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.12.0](https://github.com/suiflex/companion/compare/v1.11.0...v1.12.0) (2026-09-09)
+
+
+### Features
+
+* **exporters:** add the G3 weekly cross-meeting Ask rollup ([49998bb](https://github.com/suiflex/companion/commit/49998bb41ca6042e58f59a32b576246314261a79))
+* **installer:** self-check the native host, classify bridge errors ([296722f](https://github.com/suiflex/companion/commit/296722fd8b8049a34a4261b237bf0a015e14a12a))
+
+
+### Bug Fixes
+
+* **ai:** correct eval-04's not_found expectation ([0b57428](https://github.com/suiflex/companion/commit/0b57428078e3c465603b3848e35813271d077894))
+* **gate:** persist a release T0 instead of guessing it from the audit ring ([56e6871](https://github.com/suiflex/companion/commit/56e6871f3b365372bcec9581280f59af35867b94))
+
+
+### Performance Improvements
+
+* **exporters:** index g3Rollup's week bucket instead of scanning ([f201946](https://github.com/suiflex/companion/commit/f201946980bf53bb700d84ea494034126d4e9f5f))
+
 ## [1.11.0](https://github.com/suiflex/companion/compare/v1.10.0...v1.11.0) (2026-09-04)
 
 
