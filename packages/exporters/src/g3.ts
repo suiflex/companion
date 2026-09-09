@@ -43,8 +43,9 @@ export interface G3Rollup {
  * silently vanishing from it.
  */
 export function g3Rollup(events: AuditEvent[], now: number): G3Rollup {
+  const windowStart = now - G3_WEEKS * WEEK_MS
   const weeks: G3Week[] = Array.from({ length: G3_WEEKS }, (_, i) => ({
-    start: now - (G3_WEEKS - i) * WEEK_MS,
+    start: windowStart + i * WEEK_MS,
     qualifying: 0,
     total: 0,
   }))
@@ -52,8 +53,11 @@ export function g3Rollup(events: AuditEvent[], now: number): G3Rollup {
     if (e.event !== G3_EVENT) continue
     const t = Date.parse(e.time)
     if (!Number.isFinite(t)) continue
-    const week = weeks.find((w) => t >= w.start && t < w.start + WEEK_MS)
-    if (!week) continue
+    // weeks are evenly spaced from windowStart, so the bucket is a direct
+    // index instead of a linear scan per event.
+    const idx = Math.floor((t - windowStart) / WEEK_MS)
+    if (idx < 0 || idx >= G3_WEEKS) continue
+    const week = weeks[idx]
     week.total++
     if (meetingsCited(e.detail) >= G3_MIN_MEETINGS) week.qualifying++
   }
