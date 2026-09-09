@@ -11,7 +11,8 @@
     "./docpdf": "./src/docpdf.ts",
     "./tasks": "./src/tasks.ts",
     "./obsidian": "./src/obsidian.ts",
-    "./gate": "./src/gate.ts"
+    "./gate": "./src/gate.ts",
+    "./g3": "./src/g3.ts"
   },
   "dependencies": {
     "@meetcc/shared": "*",

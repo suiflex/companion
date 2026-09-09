@@ -1,0 +1,16 @@
+{
+  "id": "eval-11-contradiction",
+  "entries": [
+    { "speaker": "Akbar", "text": "Kita harus pakai microservice untuk semua", "offset": 0 },
+    { "speaker": "Widi", "text": "Menurutku monolith lebih cocok untuk tim kecil", "offset": 30 },
+    { "speaker": "Akbar", "text": "Tapi kita butuh scalability", "offset": 60 },
+    { "speaker": "Widi", "text": "Scale-nya belum sebesar itu untuk sekarang", "offset": 90 }
+  ],
+  "question": "Apa keputusan arsitektur yang diambil?",
+  "expected": {
+    "answerability": "partial",
+    "mustMention": ["microservice", "monolith", "belum", "diputuskan"],
+    "forbidden": ["Tidak disebutkan dalam rapat"],
+    "notes": "Answer must show both positions and state it is not final."
+  }
+}

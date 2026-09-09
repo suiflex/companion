@@ -1,0 +1,16 @@
+{
+  "id": "eval-09-pronoun",
+  "entries": [
+    { "speaker": "Rina", "text": "Freeport minta timeline dipercepat", "offset": 0 },
+    { "speaker": "Akbar", "text": "Oke, kita coba skip phase testing", "offset": 30 },
+    { "speaker": "Widi", "text": "Kalau skip testing, risikonya tinggi", "offset": 60 },
+    { "speaker": "Rina", "text": "Iya, tapi mereka sudah menunggu lama", "offset": 90 }
+  ],
+  "question": "Siapa yang meminta itu dipercepat?",
+  "expected": {
+    "answerability": "explicit",
+    "mustMention": ["Freeport"],
+    "forbidden": ["Tidak disebutkan dalam rapat"],
+    "notes": "'itu' refers to 'timeline'; Freeport is the party asking."
+  }
+}

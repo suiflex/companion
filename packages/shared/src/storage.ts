@@ -36,6 +36,7 @@ export const DOCPROG_PREFIX = 'docprog:';
 export const TITLE_PREFIX = 'title:';
 const SETTINGS_KEY = 'settings';
 export const AUDIT_KEY = 'audit';
+const RELEASE_T0_KEY = 'releaseT0';
 
 /** Heartbeat is every 5s; 15s of silence means the tab left the call. */
 export const LIVE_THRESHOLD_MS = 15_000;
@@ -378,4 +379,24 @@ export async function appendAudit(event: string, detail = ''): Promise<void> {
 
 export async function loadAudit(): Promise<AuditEvent[]> {
   return (await chrome.storage.local.get(AUDIT_KEY))[AUDIT_KEY] ?? [];
+}
+
+// -- §32.1 gate anchor --
+
+/**
+ * The demand-gate window (G1/G2, packages/exporters/src/gate.ts) needs a
+ * fixed "release day" per device. The audit ring is capped and evicts, so it
+ * cannot serve as that anchor; this stamps one real timestamp on first call
+ * and returns the same value forever after — set once, read many times.
+ */
+export async function ensureReleaseT0(now: number): Promise<number> {
+  const stored = (await chrome.storage.local.get(RELEASE_T0_KEY))[RELEASE_T0_KEY];
+  if (typeof stored === 'number') return stored;
+  await chrome.storage.local.set({ [RELEASE_T0_KEY]: now });
+  return now;
+}
+
+export async function getReleaseT0(): Promise<number | null> {
+  const stored = (await chrome.storage.local.get(RELEASE_T0_KEY))[RELEASE_T0_KEY];
+  return typeof stored === 'number' ? stored : null;
 }

@@ -1,0 +1,24 @@
+{
+  "id": "eval-14-concurrent",
+  "sessions": [
+    {
+      "sessionId": "meeting-alpha",
+      "title": "Alpha Team - Payment",
+      "startedAt": "2026-08-25T09:00:00Z",
+      "entries": [{ "speaker": "Akbar", "text": "Payment gateway pakai Midtrans", "offset": 0 }]
+    },
+    {
+      "sessionId": "meeting-beta",
+      "title": "Beta Team - Auth",
+      "startedAt": "2026-08-25T10:00:00Z",
+      "entries": [{ "speaker": "Widi", "text": "Auth pakai Auth0", "offset": 0 }]
+    }
+  ],
+  "question": "Apa keputusan teknis dari kedua team hari ini?",
+  "expected": {
+    "answerability": "explicit",
+    "mustMention": ["Midtrans", "Auth0"],
+    "forbidden": ["Tidak disebutkan dalam rapat"],
+    "notes": "Answer must attribute each fact to the meeting it came from."
+  }
+}

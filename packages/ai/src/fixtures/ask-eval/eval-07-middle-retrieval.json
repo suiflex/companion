@@ -1,0 +1,28 @@
+{
+  "id": "eval-07-middle-retrieval",
+  "fillerBefore": {
+    "count": 400,
+    "template": "pembukaan dan laporan rutin bagian {i} soal operasional harian tim",
+    "startOffset": 0,
+    "step": 10,
+    "speaker": "Rina"
+  },
+  "entries": [
+    { "speaker": "Rina", "text": "Status insiden kemarin", "offset": 4000 },
+    { "speaker": "Akbar", "text": "Terdampak beberapa aplikasi", "offset": 4020 }
+  ],
+  "fillerAfter": {
+    "count": 400,
+    "template": "penutup dan administrasi bagian {i} soal jadwal berikutnya",
+    "startOffset": 5000,
+    "step": 10,
+    "speaker": "Rina"
+  },
+  "question": "apa status insiden kemarin?",
+  "expected": {
+    "answerability": "explicit",
+    "mustMention": ["insiden"],
+    "forbidden": ["pembukaan dan laporan rutin bagian 0"],
+    "notes": "Covered span must include the middle turns, not just the ends."
+  }
+}

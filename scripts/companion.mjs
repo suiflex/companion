@@ -30,7 +30,7 @@ import { join, dirname, resolve } from 'node:path';
 import { homedir, platform } from 'node:os';
 import { extractZip } from './unzip.mjs';
 import { pickerFrame } from './picker.mjs';
-import { extensionIdFor, installHost } from './nativeHost.mjs';
+import { extensionIdFor, installHost, verifyInstalledHost } from './nativeHost.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const COMPANION_HOME = process.env.COMPANION_HOME || null;
@@ -356,6 +356,11 @@ async function registerNativeHost(browser, profileDir, extensionId, hostSource) 
   try {
     const done = installHost({ browser, profileDir, hostSource: await hostSource(), extensionId });
     console.log(`    desktop bridge: registered (${done.manifestPath})`);
+    const check = verifyInstalledHost({ ...done, extensionId, engine: browser.engine });
+    if (!check.ok) {
+      console.log('    desktop bridge: self-check found problems:');
+      for (const p of check.problems) console.log(`      - ${p}`);
+    }
   } catch (e) {
     console.log(`    desktop bridge: not registered (${e.message})`);
   }

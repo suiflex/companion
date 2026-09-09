@@ -21,10 +21,12 @@ import {
   type PipelineResult,
 } from '@meetcc/meeting';
 import { GATE_EVENT, describeGate, gateSummary } from '@meetcc/exporters/gate';
+import { describeG3, g3Rollup } from '@meetcc/exporters/g3';
 import { obsidianVault } from '@meetcc/exporters/obsidian';
 import { loadSettingsForAI } from './lib/aiSettings';
 import { makeZip } from './lib/zip';
 import { toBridgeBatch } from './lib/bridgeBatch';
+import { classifyBridgeError } from './lib/bridgeError';
 import { getStore, handleDb, refreshHighlights, syncIndex } from './db';
 import {
   appendAudit,
@@ -34,6 +36,7 @@ import {
   clearMeeting,
   deriveTitle,
   effectiveClean,
+  ensureReleaseT0,
   fetchLatestRelease,
   getAnalysis,
   getTitle,
@@ -206,6 +209,11 @@ function scheduleAlarms(): void {
 
 chrome.runtime.onInstalled.addListener(scheduleAlarms);
 chrome.runtime.onStartup.addListener(scheduleAlarms);
+// §32.1 gate anchor: stamped once, on the first run of the build that ships
+// it — install for new users, update for existing ones — not guessed later
+// from whatever the audit ring still holds.
+chrome.runtime.onInstalled.addListener(() => void ensureReleaseT0(Date.now()));
+chrome.runtime.onStartup.addListener(() => void ensureReleaseT0(Date.now()));
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name.startsWith('sweep')) void sweep();
@@ -412,13 +420,18 @@ async function handleResolveSession(raw: string): Promise<{ sessionId: string }>
 
 // §32.1 W4: the gate review reads this device's audit ring as JSON. Local
 // download only — the ring never leaves the device (no telemetry, unchanged).
-// The per-device §32.1 snapshot (gateSummary) rides along so the review can
-// read G1/G2 numbers straight from the file.
+// The per-device §32.1 snapshots (gateSummary for G1/G2, g3Rollup for G3)
+// ride along so the review can read every demand signal straight from the
+// file.
 async function handleExportAudit(): Promise<{
   ok: true; count: number; json: string;
 }> {
   const events = await loadAudit();
-  const gate = gateSummary(events, Date.now());
+  // belt-and-suspenders: the onInstalled/onStartup listeners stamp T0 already,
+  // but ensureReleaseT0 is idempotent, so a missed listener still self-heals.
+  const t0 = await ensureReleaseT0(Date.now());
+  const gate = gateSummary(events, Date.now(), t0);
+  const g3 = g3Rollup(events, Date.now());
   return {
     ok: true,
     count: events.length,
@@ -428,6 +441,7 @@ async function handleExportAudit(): Promise<{
         ringMax: AUDIT_RING_MAX,
         count: events.length,
         gate: { ...gate, describe: describeGate(gate) },
+        g3: { ...g3, describe: describeG3(g3) },
         events,
       },
       null,
@@ -509,7 +523,14 @@ async function deliverToDesktop(meeting: Meeting): Promise<void> {
     // per worker so a permanently missing host cannot flood the audit log.
     if (!bridgeErrorLogged) {
       bridgeErrorLogged = true;
-      await appendAudit('bridge.error', res.error ?? 'native-host-error');
+      // spike-native-messaging-installer.md GO condition #4: keep the three
+      // distinct failure classes distinguishable in the audit log instead of
+      // one opaque string, so "host not installed" doesn't get confused with
+      // "installed under the wrong extension id" during troubleshooting.
+      await appendAudit(
+        'bridge.error',
+        `[${classifyBridgeError(res.error)}] ${res.error ?? 'native-host-error'}`,
+      );
     }
     return; // desktop not installed, or host down — try again next sweep
   }

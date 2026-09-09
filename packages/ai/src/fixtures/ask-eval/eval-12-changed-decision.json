@@ -1,0 +1,16 @@
+{
+  "id": "eval-12-changed-decision",
+  "entries": [
+    { "speaker": "Akbar", "text": "Untuk sekarang kita pakai kubernetes", "offset": 0 },
+    { "speaker": "Widi", "text": "Oke, kubernetes untuk fase pertama", "offset": 30 },
+    { "speaker": "Rina", "text": "Update: ternyata Docker Compose lebih cocok untuk MVP", "offset": 4000 },
+    { "speaker": "Akbar", "text": "Ya, kita switch ke Docker Compose dulu", "offset": 4030 }
+  ],
+  "question": "Bagaimana evolusi keputusan deployment?",
+  "expected": {
+    "answerability": "inferred",
+    "mustMention": ["kubernetes", "docker compose", "switch"],
+    "forbidden": ["Tidak disebutkan dalam rapat"],
+    "notes": "Answer must show the chronology: kubernetes -> docker compose."
+  }
+}

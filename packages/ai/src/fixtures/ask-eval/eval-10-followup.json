@@ -1,0 +1,19 @@
+{
+  "id": "eval-10-followup",
+  "history": [
+    { "role": "user", "content": "Apa keputusan tentang payment gateway?" },
+    { "role": "assistant", "content": "Tim memutuskan menggunakan Midtrans." }
+  ],
+  "entries": [
+    { "speaker": "Akbar", "text": "Midtrans sudah terintegrasi", "offset": 0 },
+    { "speaker": "Widi", "text": "Fee-nya 2.5% per transaksi", "offset": 30 },
+    { "speaker": "Akbar", "text": "Oke kita proceed dengan Midtrans", "offset": 60 }
+  ],
+  "question": "Berapa fee-nya?",
+  "expected": {
+    "answerability": "explicit",
+    "mustMention": ["2.5%", "transaksi"],
+    "forbidden": ["Tidak disebutkan dalam rapat"],
+    "notes": "'fee-nya' refers to Midtrans, found via history plus retrieval."
+  }
+}

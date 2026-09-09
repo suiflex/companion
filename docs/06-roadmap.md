@@ -44,8 +44,8 @@ Repository snapshot verified on 1 September 2026:
 |---|---|---|
 | Ask v2 | **In progress:** six eval groups are coded; the 15 standalone JSON fixtures required by the spec are absent | Add the missing fixtures and finish the spec DoD |
 | Obsidian export | **Implemented, release unverified:** UI/background handlers and `export.obsidian` audit events exist | Fix the gate clock below, then release and record T0 |
-| G1/G2 clock | **Blocking probe release:** `gateSummary` still anchors to the oldest surviving audit event; no persisted release T0 exists | Persist one release T0 and make the tested gate calculation use it |
-| G3 measurement | **Partially implemented:** `ask.global` records `meetingsCited`; no weekly trend rollup exists | Add the smallest local four-week rollup and regression test |
+| G1/G2 clock | **Fixed:** `ensureReleaseT0` (packages/shared/src/storage.ts) persists one release T0, stamped on install/update via `chrome.runtime.onInstalled`/`onStartup`; `gateSummary` now takes it as a required anchor instead of guessing from the audit ring | Release the export probe and record T0 in the gate review |
+| G3 measurement | **Fixed:** `g3Rollup` (packages/exporters/src/g3.ts) buckets `ask.global`'s `meetingsCited` into the trailing 4 weeks and reports whether qualifying (≥2 meetings) queries trend upward; included in the audit export alongside `gate` | Collect real usage once the export probe ships and T0 is recorded |
 | Native messaging spike | **GO with conditions:** protocol passed on macOS/Linux; clean-VM timing, Windows execution, uninstall/update, and signing remain unverified or pending | Complete the recorded conditions before desktop distribution |
 | Companion Desktop | **Foundation built (pre-gate):** `apps/desktop` Tauri 2 workspace, `packages/vault` (canonical .md, identity, derived FTS index), WebView note editor, extension→native-host→vault bridge, cross-platform installers | Await Stage G; then build the selected full Desktop scope (file watcher, trash/restore UI, import/export, meetings) |
 

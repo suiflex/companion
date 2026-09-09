@@ -28,3 +28,4 @@ tests/
 suitest.config.json
 suitest-output/
 .suitest/
+.forgeguard/

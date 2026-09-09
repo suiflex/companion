@@ -1,0 +1,14 @@
+{
+  "id": "eval-03-inferred",
+  "entries": [
+    { "speaker": "Akbar", "text": "Service existing masih bisa dipakai", "offset": 0 },
+    { "speaker": "Widi", "text": "Jadi tidak perlu service baru?", "offset": 20 },
+    { "speaker": "Akbar", "text": "Iya, pakai existing saja", "offset": 40 }
+  ],
+  "question": "Apakah tim memutuskan untuk membuat service baru?",
+  "expected": {
+    "answerability": "inferred",
+    "mustMention": ["existing", "tidak perlu"],
+    "forbidden": ["Tidak disebutkan dalam rapat"]
+  }
+}

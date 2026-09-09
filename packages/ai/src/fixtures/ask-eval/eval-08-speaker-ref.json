@@ -1,0 +1,15 @@
+{
+  "id": "eval-08-speaker-ref",
+  "entries": [
+    { "speaker": "Akbar", "text": "Service existing masih bisa dipakai", "offset": 0 },
+    { "speaker": "Widi", "text": "Oke noted", "offset": 20 },
+    { "speaker": "Akbar", "text": "Deploy ke production minggu depan", "offset": 40 }
+  ],
+  "question": "Apa kata Akbar tentang deployment?",
+  "expected": {
+    "answerability": "explicit",
+    "mustMention": ["production", "minggu depan"],
+    "forbidden": ["Tidak disebutkan dalam rapat"],
+    "notes": "Retrieval must pull the Akbar lines, not just Widi's."
+  }
+}

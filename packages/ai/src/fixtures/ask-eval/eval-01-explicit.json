@@ -1,0 +1,13 @@
+{
+  "id": "eval-01-explicit",
+  "entries": [
+    { "speaker": "Akbar", "text": "Kita putuskan semua aplikasi pakai shared service.", "offset": 0 },
+    { "speaker": "Widi", "text": "Oke, shared service untuk semua.", "offset": 40 }
+  ],
+  "question": "Apa keputusan tentang service untuk aplikasi?",
+  "expected": {
+    "answerability": "explicit",
+    "mustMention": ["shared service", "keputusan"],
+    "forbidden": ["Tidak disebutkan dalam rapat"]
+  }
+}

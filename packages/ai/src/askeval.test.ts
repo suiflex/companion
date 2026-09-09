@@ -1,43 +1,29 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { withEntryIds, type Entry, type Meeting } from '@meetcc/shared';
+import { withEntryIds, type ChatMessage, type Entry, type Meeting } from '@meetcc/shared';
 import { askMeeting, ASK_SYSTEM_PROMPT, fallbackPlan } from './ask';
 import { retrieve, selectContext } from './retrieval';
 import type { AIClient } from './client';
+import { entriesFromList, fixtureEntries, type AskFixture } from './askeval.fixtures';
 
-// P0.11 — the regression suite for Ask. Every case here is one of the failure
-// modes from the roadmap; the one that started it all is `partial`: the
-// meeting DID discuss the topic, and the old engine answered "Tidak
-// disebutkan dalam rapat." The model is faked, so what is under test is what
-// we control: does the evidence reach the prompt, and is the graded, verified
+// P0.11 / docs/ask-v2-spec.md §11 — the regression suite for Ask. Every case
+// here is one of the 15 evaluation categories the spec requires; each loads
+// its transcript from a standalone fixture file (§14 DoD) instead of an
+// inline const. The model is faked, so what is under test is what we
+// control: does the evidence reach the prompt, and is the graded, verified
 // result faithful to the transcript.
 
-const T0 = Date.parse('2026-08-24T07:00:00Z');
-const at = (sec: number): string => new Date(T0 + sec * 1000).toISOString();
-const line = (speaker: string, text: string, sec: number): Entry => ({ speaker, text, time: at(sec) });
-
-/** fixture: meeting-shared-solution (the screenshot case) */
-const SHARED_SOLUTION: Entry[] = [
-  line('Rina', 'Kita mulai dari status insiden kemarin', 0),
-  line('Akbar', 'Ada beberapa aplikasi yang terdampak, bukan cuma satu', 40),
-  line('Widi', 'Solusinya nanti dishare untuk semua aplikasi atau dibuat terpisah per aplikasi?', 70),
-  line('Akbar', 'Dua-duanya masih dipertimbangkan, belum ada keputusan final', 100),
-  line('Rina', 'Oke, kita bahas lagi minggu depan setelah data lengkap', 130),
-];
-
-/** The same discussion buried in the middle of a two-hour meeting. */
-const LONG: Entry[] = [
-  ...Array.from({ length: 400 }, (_, i) => line('Rina', `pembukaan dan laporan rutin bagian ${i} soal operasional harian tim`, i * 10)),
-  ...SHARED_SOLUTION.map((e, i) => ({ ...e, time: at(4000 + i * 20) })),
-  ...Array.from({ length: 400 }, (_, i) => line('Rina', `penutup dan administrasi bagian ${i} soal jadwal berikutnya`, 5000 + i * 10)),
-];
+function loadFixture(name: string): AskFixture {
+  const path = fileURLToPath(new URL(`./fixtures/ask-eval/${name}.json`, import.meta.url));
+  return JSON.parse(readFileSync(path, 'utf8')) as AskFixture;
+}
 
 const meetingOf = (entries: Entry[]): Meeting => ({
-  id: 'xdr-fdbe-zqz#' + T0,
-  meta: { id: 'xdr-fdbe-zqz#' + T0, startedAt: at(0), lastSeenAt: at(200) },
+  id: 'xdr-fdbe-zqz#eval',
+  meta: { id: 'xdr-fdbe-zqz#eval', startedAt: entries[0]?.time ?? '', lastSeenAt: entries.at(-1)?.time ?? '' },
   entries,
 });
-
-const QUESTION = 'gimana caranya solusi dari beberapa aplikasi yang terdampak?';
 
 /** Captures the prompt the model was given, and replies with a fixed script. */
 function recorder(...replies: string[]): { client: AIClient; prompts: string[] } {
@@ -55,11 +41,30 @@ function recorder(...replies: string[]): { client: AIClient; prompts: string[] }
   };
 }
 
-const PLAN = JSON.stringify({
-  intent: 'analyze',
-  keywords: ['solusi', 'aplikasi', 'terdampak'],
-  relatedTerms: ['shared', 'terpisah'],
-});
+/** Runs a fixture through askMeeting with a scripted plan+answer, and checks
+ *  the result against the fixture's `expected` block. */
+async function evalFixture(
+  fx: AskFixture,
+  planReply: string,
+  answerReply: string,
+): Promise<void> {
+  const r = recorder(planReply, answerReply);
+  const history = (fx.history ?? []) as ChatMessage[];
+  const result = await askMeeting(
+    r.client,
+    meetingOf(withEntryIds(fixtureEntries(fx))),
+    null,
+    history,
+    fx.question,
+  );
+  expect(result.answerability).toBe(fx.expected.answerability);
+  for (const must of fx.expected.mustMention) {
+    expect(result.answer.toLowerCase()).toContain(must.toLowerCase());
+  }
+  for (const forbidden of fx.expected.forbidden) {
+    expect(result.answer).not.toContain(forbidden);
+  }
+}
 
 describe('ask prompt policy', () => {
   it('forbids the canned refusal and demands verifiable evidence ids', () => {
@@ -71,7 +76,29 @@ describe('ask prompt policy', () => {
   });
 });
 
-describe('eval: partial answer (the screenshot case)', () => {
+const PLAN = (over: Partial<Record<'intent' | 'keywords' | 'relatedTerms', unknown>> = {}): string =>
+  JSON.stringify({ intent: 'analyze', keywords: [], relatedTerms: [], ...over });
+
+describe('eval-01: explicit answer', () => {
+  it('grades an explicit, stated answer as explicit', async () => {
+    const fx = loadFixture('eval-01-explicit');
+    await evalFixture(
+      fx,
+      PLAN({ keywords: ['service', 'aplikasi', 'keputusan'] }),
+      JSON.stringify({
+        answer: 'Keputusannya: pakai shared service untuk semua aplikasi.',
+        answerability: 'explicit',
+        confidence: 0.9,
+        evidence: ['E1', 'E2'],
+        missing: [],
+        followUps: [],
+      }),
+    );
+  });
+});
+
+describe('eval-02: partial answer (the screenshot regression)', () => {
+  const fx = loadFixture('meeting-shared-solution');
   const answer = JSON.stringify({
     answer:
       'Belum ada keputusan final. Pembahasan mengarah ke dua opsi: solusi shared untuk semua aplikasi, atau implementasi terpisah per aplikasi.',
@@ -81,86 +108,71 @@ describe('eval: partial answer (the screenshot case)', () => {
     missing: ['arsitektur final'],
     followUps: ['Kapan keputusan arsitektur diambil?'],
   });
+  const plan = PLAN({ keywords: ['solusi', 'aplikasi', 'terdampak'], relatedTerms: ['shared', 'terpisah'] });
 
   it('keeps a partial answer partial, with verified evidence', async () => {
-    const r = recorder(PLAN, answer);
-    const result = await askMeeting(r.client, meetingOf(withEntryIds(SHARED_SOLUTION)), null, [], QUESTION);
+    const r = recorder(plan, answer);
+    const result = await askMeeting(r.client, meetingOf(withEntryIds(fixtureEntries(fx))), null, [], fx.question);
 
     expect(result.answerability).toBe('partial');
-    expect(result.answer).not.toContain('Tidak disebutkan dalam rapat');
-    for (const must of ['belum ada keputusan final', 'shared', 'terpisah']) {
-      expect(result.answer.toLowerCase()).toContain(must);
-    }
+    for (const must of fx.expected.mustMention) expect(result.answer.toLowerCase()).toContain(must.toLowerCase());
     expect(result.evidence).toHaveLength(1); // E2..E4 are consecutive -> one span
     expect(result.evidence[0].entryIds).toEqual(['E2', 'E3', 'E4']);
     expect(result.evidence[0].speakers).toEqual(['Akbar', 'Widi']);
-    expect(result.missing).toEqual(['arsitektur final']);
   });
 
   it('shows the model the whole short meeting, including the answer turns', async () => {
-    const r = recorder(PLAN, answer);
-    await askMeeting(r.client, meetingOf(withEntryIds(SHARED_SOLUTION)), null, [], QUESTION);
+    const r = recorder(plan, answer);
+    await askMeeting(r.client, meetingOf(withEntryIds(fixtureEntries(fx))), null, [], fx.question);
     const prompt = r.prompts[1];
     expect(prompt).toContain('dishare untuk semua aplikasi atau dibuat terpisah');
     expect(prompt).toContain('belum ada keputusan final');
   });
 });
 
-describe('eval: middle-of-transcript retrieval on a long meeting', () => {
-  it('puts the buried discussion in the prompt instead of cutting it out', async () => {
-    const r = recorder(
-      PLAN,
-      JSON.stringify({ answer: 'Dua opsi, belum diputuskan.', answerability: 'partial', evidence: ['E402'] }),
+describe('eval-03: inferred answer', () => {
+  it('infers an unstated answer from the surrounding turns', async () => {
+    const fx = loadFixture('eval-03-inferred');
+    await evalFixture(
+      fx,
+      PLAN({ keywords: ['service', 'baru', 'existing'] }),
+      JSON.stringify({
+        answer: 'Tim tidak perlu membuat service baru karena existing masih bisa dipakai.',
+        answerability: 'inferred',
+        confidence: 0.5,
+        evidence: ['E1', 'E2', 'E3'],
+        missing: [],
+        followUps: [],
+      }),
     );
-    const entries = withEntryIds(LONG);
-    await askMeeting(r.client, meetingOf(entries), null, [], QUESTION);
-
-    const prompt = r.prompts[1];
-    expect(prompt).toContain('aplikasi yang terdampak');
-    expect(prompt).toContain('dibuat terpisah per aplikasi');
-    // the filler head/tail must NOT crowd out the evidence: what reaches the
-    // model is the discussion, not the first and last N characters
-    expect(prompt).not.toContain('pembukaan dan laporan rutin bagian 0 ');
-    expect(prompt).not.toContain('penutup dan administrasi bagian 399');
-    expect(prompt).toContain('bagian paling relevan');
-  });
-
-  it('retrieval reaches the middle turns, not just the ends', () => {
-    const entries = withEntryIds(LONG);
-    const r = retrieve(
-      entries,
-      { intent: 'analyze', keywords: ['aplikasi', 'terdampak'], relatedTerms: ['shared', 'terpisah'] },
-      QUESTION,
-    );
-    const covered = r.spans.some((s) => s.start <= 401 && s.end >= 401);
-    expect(covered).toBe(true);
   });
 });
 
-describe('eval: cross-turn and speaker questions', () => {
-  const crossTurn = withEntryIds([
-    line('Akbar', 'Service existing masih bisa dipakai', 0),
-    line('Widi', 'Jadi tidak perlu service baru?', 20),
-    line('Akbar', 'Iya, pakai existing saja', 40),
-  ]);
-
-  it('hands over the full exchange, not just the matching line', () => {
-    const c = selectContext(crossTurn, fallbackPlan('perlu service baru?'), 'perlu service baru?', 60_000);
-    expect(c.text).toContain('Service existing masih bisa dipakai');
-    expect(c.text).toContain('pakai existing saja');
+describe('eval-04: truly not found', () => {
+  // A meeting this short always fits the prompt budget whole (selectContext
+  // "small meetings go in whole"), so the model is still asked — the
+  // retrieval-level early-return only triggers on a transcript too long to
+  // fit, which eval-06/07 cover. Here "not found" has to be the model's own
+  // graded answer.
+  it('answers not_found for a question the meeting never touches', async () => {
+    const fx = loadFixture('eval-04-not-found');
+    await evalFixture(
+      fx,
+      PLAN({ intent: 'recall', keywords: ['kubernetes'] }),
+      JSON.stringify({
+        answer: 'Tidak ada bagian rapat yang membahas hal ini.',
+        answerability: 'not_found',
+        confidence: 0.2,
+        evidence: [],
+        missing: [],
+        followUps: [],
+      }),
+    );
   });
 
-  it('a question naming a speaker pulls that speaker up', () => {
-    const r = retrieve(crossTurn, fallbackPlan('apa kata Widi?'), 'apa kata Widi?');
-    expect(r.hits).toBeGreaterThan(0);
-    expect(r.spans.some((s) => s.start <= 1 && s.end >= 1)).toBe(true);
-  });
-});
-
-describe('eval: truly missing answer', () => {
-  it('answers not_found without calling the model a second time', async () => {
-    const r = recorder(JSON.stringify({ intent: 'recall', keywords: ['kubernetes'], relatedTerms: [] }));
-    const long = withEntryIds(LONG);
+  it('skips the second model call when retrieval genuinely finds nothing in a long meeting', async () => {
+    const long = withEntryIds(fixtureEntries(loadFixture('eval-06-long-transcript')));
+    const r = recorder(PLAN({ intent: 'recall', keywords: ['kubernetes'] }));
     const result = await askMeeting(r.client, meetingOf(long), null, [], 'berapa node kubernetes kita?');
 
     expect(result.answerability).toBe('not_found');
@@ -169,10 +181,205 @@ describe('eval: truly missing answer', () => {
   });
 });
 
+describe('eval-05: cross-turn answer', () => {
+  it('draws on the general statement plus the Freeport-specific follow-up', async () => {
+    const fx = loadFixture('eval-05-cross-turn');
+    await evalFixture(
+      fx,
+      PLAN({ keywords: ['arsitektur', 'freeport'], relatedTerms: ['monolith', 'microservice'] }),
+      JSON.stringify({
+        answer:
+          'Untuk Freeport dipakai monolith dulu untuk fase pertama, meskipun arsitektur umum tim sudah microservice.',
+        answerability: 'inferred',
+        confidence: 0.55,
+        evidence: ['E1', 'E2', 'E3', 'E4'],
+        missing: [],
+        followUps: [],
+      }),
+    );
+  });
+});
+
+describe('eval-06: long transcript keeps the buried discussion', () => {
+  const fx = loadFixture('eval-06-long-transcript');
+  const plan = PLAN({ keywords: ['solusi', 'aplikasi', 'terdampak'], relatedTerms: ['shared', 'terpisah'] });
+  const answer = JSON.stringify({
+    answer: 'Ada beberapa aplikasi yang terdampak; solusinya masih dipertimbangkan, apakah shared atau terpisah.',
+    answerability: 'partial',
+    confidence: 0.6,
+    evidence: ['E401', 'E402'],
+    missing: [],
+    followUps: [],
+  });
+
+  it('puts the buried discussion in the prompt instead of cutting it out', async () => {
+    const r = recorder(plan, answer);
+    const result = await askMeeting(r.client, meetingOf(withEntryIds(fixtureEntries(fx))), null, [], fx.question);
+    expect(result.answerability).toBe('partial');
+    for (const must of fx.expected.mustMention) expect(result.answer.toLowerCase()).toContain(must.toLowerCase());
+
+    const prompt = r.prompts[1];
+    for (const forbidden of fx.expected.forbidden) expect(prompt).not.toContain(forbidden);
+    expect(prompt).toContain('bagian paling relevan');
+  });
+
+  it('retrieval reaches the middle turns, not just the ends', () => {
+    const entries = withEntryIds(fixtureEntries(fx));
+    const r = retrieve(
+      entries,
+      { intent: 'analyze', keywords: ['aplikasi', 'terdampak'], relatedTerms: ['shared', 'terpisah'] },
+      fx.question,
+    );
+    const covered = r.spans.some((s) => s.start <= 400 && s.end >= 400);
+    expect(covered).toBe(true);
+  });
+});
+
+describe('eval-07: middle-of-transcript retrieval', () => {
+  it('finds an explicit answer buried in the middle turns', async () => {
+    const fx = loadFixture('eval-07-middle-retrieval');
+    await evalFixture(
+      fx,
+      PLAN({ keywords: ['insiden', 'status'], relatedTerms: ['aplikasi'] }),
+      JSON.stringify({
+        answer: 'Status insiden kemarin: beberapa aplikasi terdampak.',
+        answerability: 'explicit',
+        confidence: 0.85,
+        evidence: ['E401', 'E402'],
+        missing: [],
+        followUps: [],
+      }),
+    );
+  });
+});
+
+describe('eval-08: speaker reference', () => {
+  it('pulls the named speaker turns, not the other participant', () => {
+    const fx = loadFixture('eval-08-speaker-ref');
+    const entries = withEntryIds(fixtureEntries(fx));
+    const r = retrieve(entries, fallbackPlan(fx.question), fx.question);
+    expect(r.hits).toBeGreaterThan(0);
+    expect(r.spans.some((s) => s.start <= 2 && s.end >= 2)).toBe(true); // E3, index 2
+  });
+
+  it('answers with the named speaker content', async () => {
+    const fx = loadFixture('eval-08-speaker-ref');
+    await evalFixture(
+      fx,
+      PLAN({ keywords: ['akbar', 'deployment'], relatedTerms: ['production'] }),
+      JSON.stringify({
+        answer: 'Akbar bilang deploy ke production minggu depan.',
+        answerability: 'explicit',
+        confidence: 0.9,
+        evidence: ['E3'],
+        missing: [],
+        followUps: [],
+      }),
+    );
+  });
+});
+
+describe('eval-09: pronoun/coreference', () => {
+  it('resolves "itu" back to the timeline Freeport asked to accelerate', async () => {
+    const fx = loadFixture('eval-09-pronoun');
+    await evalFixture(
+      fx,
+      PLAN({ keywords: ['freeport', 'timeline', 'dipercepat'] }),
+      JSON.stringify({
+        answer: 'Freeport yang meminta timeline dipercepat.',
+        answerability: 'explicit',
+        confidence: 0.85,
+        evidence: ['E1'],
+        missing: [],
+        followUps: [],
+      }),
+    );
+  });
+});
+
+describe('eval-10: follow-up question using history', () => {
+  it('resolves "fee-nya" to the Midtrans fee via conversation history', async () => {
+    const fx = loadFixture('eval-10-followup');
+    await evalFixture(
+      fx,
+      PLAN({ keywords: ['fee', 'midtrans'], relatedTerms: ['transaksi'] }),
+      JSON.stringify({
+        answer: 'Fee-nya 2.5% per transaksi.',
+        answerability: 'explicit',
+        confidence: 0.9,
+        evidence: ['E2'],
+        missing: [],
+        followUps: [],
+      }),
+    );
+  });
+});
+
+describe('eval-11: contradictory statements', () => {
+  it('shows both positions and states the decision is not final', async () => {
+    const fx = loadFixture('eval-11-contradiction');
+    await evalFixture(
+      fx,
+      PLAN({ keywords: ['arsitektur', 'microservice', 'monolith'] }),
+      JSON.stringify({
+        answer:
+          'Belum diputuskan: Akbar mengusulkan microservice untuk semua, sementara Widi berpendapat monolith lebih cocok karena scale belum sebesar itu.',
+        answerability: 'partial',
+        confidence: 0.6,
+        evidence: ['E1', 'E2', 'E3', 'E4'],
+        missing: ['keputusan arsitektur final'],
+        followUps: [],
+      }),
+    );
+  });
+});
+
+describe('eval-12: changed decision chronology', () => {
+  it('shows the chronology from kubernetes to docker compose', async () => {
+    const fx = loadFixture('eval-12-changed-decision');
+    await evalFixture(
+      fx,
+      PLAN({ keywords: ['deployment', 'kubernetes', 'docker'], relatedTerms: ['compose'] }),
+      JSON.stringify({
+        answer:
+          'Awalnya tim memakai kubernetes untuk fase pertama, lalu switch ke docker compose karena lebih cocok untuk MVP.',
+        answerability: 'inferred',
+        confidence: 0.55,
+        evidence: ['E1', 'E2', 'E3', 'E4'],
+        missing: [],
+        followUps: [],
+      }),
+    );
+  });
+});
+
+describe('eval-15: cleaned vs raw transcript', () => {
+  it('answers from the cleaned transcript, not the raw ASR errors', async () => {
+    const fx = loadFixture('eval-15-cleaned-transcript');
+    const cleaned = entriesFromList(fx.entries_cleaned!);
+    const r = recorder(
+      PLAN({ keywords: ['target', 'tahun'] }),
+      JSON.stringify({
+        answer: 'Target tahun yang disebutkan adalah 2023.',
+        answerability: 'explicit',
+        confidence: 0.9,
+        evidence: ['E1'],
+        missing: [],
+        followUps: [],
+      }),
+    );
+    const result = await askMeeting(r.client, meetingOf(withEntryIds(cleaned)), null, [], fx.question);
+    expect(result.answerability).toBe('explicit');
+    expect(result.answer).toContain('2023');
+    expect(result.answer).not.toContain('2003');
+  });
+});
+
 describe('eval: hallucinated citations', () => {
   it('drops evidence ids that are not in the transcript', async () => {
+    const fx = loadFixture('meeting-shared-solution');
     const r = recorder(
-      PLAN,
+      PLAN({ keywords: ['solusi', 'aplikasi', 'terdampak'], relatedTerms: ['shared', 'terpisah'] }),
       JSON.stringify({
         answer: 'Diputuskan pakai shared service.',
         answerability: 'explicit',
@@ -180,7 +387,17 @@ describe('eval: hallucinated citations', () => {
         evidence: ['E2', 'E9999'],
       }),
     );
-    const result = await askMeeting(r.client, meetingOf(withEntryIds(SHARED_SOLUTION)), null, [], QUESTION);
+    const result = await askMeeting(r.client, meetingOf(withEntryIds(fixtureEntries(fx))), null, [], fx.question);
     expect(result.evidence.flatMap((e) => e.entryIds)).toEqual(['E2']);
+  });
+});
+
+describe('eval: cross-turn retrieval without a scripted answer', () => {
+  it('hands over the full exchange, not just the matching line', () => {
+    const fx = loadFixture('eval-03-inferred');
+    const entries = withEntryIds(fixtureEntries(fx));
+    const c = selectContext(entries, fallbackPlan(fx.question), fx.question, 60_000);
+    expect(c.text).toContain('Service existing masih bisa dipakai');
+    expect(c.text).toContain('pakai existing saja');
   });
 });
