@@ -34,6 +34,13 @@ export async function fetchWithTimeout(url: string, init: RequestInit): Promise<
     if ((e as Error).name === 'AbortError') {
       throw new AIError(`Timeout: provider tidak merespons dalam ${REQUEST_TIMEOUT_MS / 1000}s`, true);
     }
+    const msg = (e as Error).message;
+    if (/Failed to fetch|NetworkError/i.test(msg) && /localhost|127\.0\.0\.1/i.test(url)) {
+      throw new AIError(
+        `Koneksi ke local LLM gagal (${msg}). Pastikan service aktif dan CORS diizinkan (mis. OLLAMA_ORIGINS="*").`,
+        true,
+      );
+    }
     throw new AIError(`Network error: ${(e as Error).message}`, true);
   } finally {
     clearTimeout(timer);

@@ -131,17 +131,20 @@ export function SettingsView({
    *  user just configured are requested here, where the click is the gesture
    *  Chrome requires. Declining only means those calls will fail, so it is a
    *  warning, not a blocked save. */
-  const grantOrigins = async (next: Settings): Promise<void> => {
+  const grantOrigins = async (next: Settings): Promise<boolean> => {
     const origins = requiredOrigins(next);
-    if (!origins.length) return;
+    if (!origins.length) return true;
     try {
-      if (await chrome.permissions.contains({ origins })) return;
+      if (await chrome.permissions.contains({ origins })) return true;
       const granted = await chrome.permissions.request({ origins });
       if (!granted) {
         toast('error', 'Izin akses endpoint ditolak — panggilan ke layanan itu akan gagal.');
+        return false;
       }
+      return true;
     } catch (e) {
       toast('error', t('ext.settings.permissionFailed', { error: (e as Error).message }));
+      return false;
     }
   };
 
