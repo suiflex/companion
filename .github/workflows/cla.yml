@@ -1,0 +1,61 @@
+name: CLA Assistant
+
+# pull_request_target is required for fork PRs. This workflow never checks out
+# or executes pull-request code; it only processes GitHub event metadata.
+on:
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened, closed, synchronize]
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  cla:
+    runs-on: ubuntu-latest
+    steps:
+      # Labels are applied with suiflex-bot credentials. The CLA action keeps
+      # GITHUB_TOKEN because it writes signatures to this repository's branch.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.SUIFLEX_BOT_APP_ID }}
+          private-key: ${{ secrets.SUIFLEX_BOT_PRIVATE_KEY }}
+
+      - name: CLA Assistant Lite
+        id: cla
+        if: (github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA') || github.event_name == 'pull_request_target'
+        uses: contributor-assistant/github-action@ca4a40a7d1004f18d9960b404b97e5f30a505a08 # v2.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path-to-signatures: signatures/version1/cla.json
+          path-to-document: https://github.com/suiflex/companion/blob/develop/CLA.md
+          branch: cla-signatures
+          allowlist: mulhamna,badrus123,*[bot]
+          custom-notsigned-prcomment: >
+            Thanks for your contribution! Before we can merge, please read our
+            [Contributor License Agreement](https://github.com/suiflex/companion/blob/develop/CLA.md)
+            and sign it by posting the comment below.
+          custom-pr-sign-comment: I have read the CLA Document and I hereby sign the CLA
+          custom-allsigned-prcomment: All contributors have signed the CLA
+          lock-pullrequest-aftermerge: false
+
+      - name: Label the signing state
+        if: (steps.cla.outcome == 'success' || steps.cla.outcome == 'failure') && github.event.action != 'closed'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR: ${{ github.event.pull_request.number || github.event.issue.number }}
+          SIGNED: ${{ steps.cla.outcome == 'success' }}
+        run: |
+          if [ "$SIGNED" = "true" ]; then
+            add='cla: signed'; remove='cla: not signed'
+          else
+            add='cla: not signed'; remove='cla: signed'
+          fi
+          gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" \
+            --add-label "$add" --remove-label "$remove"
