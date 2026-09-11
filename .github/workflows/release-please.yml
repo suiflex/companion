@@ -1,14 +1,12 @@
 name: release-please
 
 on:
-  # A maintainer starts release preparation explicitly after batching changes.
+  # Maintainers prepare or update the release PR explicitly.
   workflow_dispatch:
-  # Every merge to develop, which finalizes a merged release PR into a tag.
-  #
-  # This replaces a `pull_request: [closed]` trigger rather than joining it:
-  # merging a release PR is itself a push to develop, so both would fire and
-  # the release would be created twice.
-  push:
+  # Only a merged release-please PR finalizes a release. Ordinary PR merges
+  # must never create a tag or GitHub Release.
+  pull_request:
+    types: [closed]
     branches: [develop]
 
 permissions:
@@ -21,6 +19,10 @@ concurrency:
 
 jobs:
   release-please:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release-please--'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,9 +31,6 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
-      # A PAT rather than GITHUB_TOKEN: a tag pushed with GITHUB_TOKEN does not
-      # trigger another workflow, so build.yml would never see the v* tag and
-      # the release would ship with no artifacts attached.
       - uses: googleapis/release-please-action@v5
         id: release
         with:
@@ -40,13 +39,56 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # release-please names a release after its tag; the extension and the
-      # desktop app now ship from that one tag, so the title says the product
-      # rather than the tag.
-      - name: Prefix the release title with the product name
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+      # Attribute the pending release branch so the credited changelog is
+      # already on develop when the release PR is merged.
+      - name: Attribute contributors in the changelog
+        if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
         run: |
-          gh release edit "${{ steps.release.outputs.tag_name }}" \
-            --title "Meet Companion v${{ steps.release.outputs.version }}"
+          branch=$(jq -r '.headBranchName // empty' <<<"$RELEASE_PR")
+          if [ -z "$branch" ]; then
+            branch=$(gh pr list --state open --label "autorelease: pending" \
+              --json headRefName --jq '.[0].headRefName')
+          fi
+          if [ -z "$branch" ]; then
+            echo "no open release PR; nothing to attribute"
+            exit 0
+          fi
+          script=$(mktemp)
+          cp .github/scripts/attribute_changelog.py "$script"
+          git fetch origin "$branch"
+          git checkout "$branch"
+          PRODUCT_NAME="Meet Companion" python3 "$script" CHANGELOG.md
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "changelog already attributed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: attribute changelog contributors"
+          git push origin "$branch"
+
+      # Use the credited changelog block as the GitHub Release body.
+      - name: Set release title and credited notes
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          git checkout develop
+          gh release edit "$TAG" --title "Meet Companion $TAG"
+          version="${TAG#v}"
+          awk -v h="[$version](" '
+            index($0, "## " h) == 1 || index($0, "## Meet Companion: " h) == 1 { grab = 1; next }
+            grab && /^## / { exit }
+            grab { print }
+          ' CHANGELOG.md | sed '/./,$!d' > release-notes.md
+          if [ -s release-notes.md ] && grep -q '^### ' release-notes.md; then
+            gh release edit "$TAG" --notes-file release-notes.md
+          else
+            echo "no credited block for $version yet; leaving the body as-is"
+          fi
+          rm -f release-notes.md
