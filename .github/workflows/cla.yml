@@ -36,7 +36,7 @@ jobs:
           path-to-signatures: signatures/version1/cla.json
           path-to-document: https://github.com/suiflex/companion/blob/develop/CLA.md
           branch: cla-signatures
-          allowlist: mulhamna,badrus123,*[bot]
+          allowlist: mulhamna,MULHAM,badrus123,*[bot]
           custom-notsigned-prcomment: >
             Thanks for your contribution! Before we can merge, please read our
             [Contributor License Agreement](https://github.com/suiflex/companion/blob/develop/CLA.md)
