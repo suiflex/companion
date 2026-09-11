@@ -1,3 +1,12 @@
 {
-   "signedContributors": []
+  "signedContributors": [
+    {
+      "name": "resincode",
+      "id": 5574999,
+      "comment_id": 5632724780,
+      "created_at": "2026-09-11T09:54:31Z",
+      "repoId": 1298749532,
+      "pullRequestNo": 61
+    }
+  ]
 }
