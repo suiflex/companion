@@ -1,0 +1,98 @@
+name: Publish Extension to Firefox Add-ons (AMO)
+
+# Firefox Add-ons (AMO) publication is deliberately maintainer-triggered. Version
+# bumps and GitHub releases do not publish to AMO automatically.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # AMO's rate limiter answers 429 with a "try again in N seconds" window that
+  # has measured up to half an hour on this add-on. Four attempts spaced out
+  # cover the observed throttle lengths; the job stays well under GitHub's
+  # six-hour ceiling.
+  AMO_ATTEMPTS: 4
+
+jobs:
+  publish:
+    name: Build and submit extension to AMO
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'suiflex'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Read extension version
+        id: meta
+        run: echo "version=$(node -p "require('./apps/extension/public/manifest.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Build extension
+        run: make build-extension
+
+      - name: Pack Chromium and Firefox artifacts
+        run: make pack
+
+      - name: Pack the source archive for AMO
+        run: make pack-source
+
+      # Submits to the listed channel, which puts it in Mozilla's review queue —
+      # AMO then distributes and auto-updates it.
+      #
+      # The loop is the whole point of this job: the submit call fails on
+      # Mozilla's side far more often than on ours, and every observed failure
+      # so far has been a throttle ("Request was throttled. Expected available
+      # in N seconds." — v1.6.0 after 1825s, v1.7.0 after 593s). web-ext has no
+      # retry flag, so the backoff lives here: 60s, 5m, 15m between attempts.
+      - name: Submit the Firefox build to AMO
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+        run: |
+          set -u
+          attempt=1
+          max=$AMO_ATTEMPTS
+          while [ "$attempt" -le "$max" ]; do
+            echo "::group::AMO submission attempt ${attempt}/${max}"
+            # Actions runs this block under `bash -e`, and a bare failing
+            # command aborts the step — which would kill the retry loop on
+            # attempt one. `|| status=$?` exempts the call from -e while
+            # still capturing web-ext's real exit code.
+            status=0
+            # Not `make sign-firefox`: that target is the plain one-shot call,
+            # while this loop owns the AMO retry policy described above.
+            npx web-ext sign --channel=listed \
+              --source-dir apps/extension/dist-firefox \
+              --artifacts-dir web-ext-artifacts \
+              --amo-metadata docs/amo/amo-metadata.json \
+              --upload-source-code "meetcc-source-v${{ steps.meta.outputs.version }}.zip" || status=$?
+            echo "::endgroup::"
+            if [ "$status" -eq 0 ]; then
+              echo "Submitted on attempt ${attempt}."
+              exit 0
+            fi
+            if [ "$attempt" -eq "$max" ]; then
+              echo "::error::AMO submission failed ${max} times (last exit ${status})."
+              echo "::error::If the failure is a throttle, wait for the cooldown and re-run this job:"
+              echo "::error::gh workflow run publish-firefox.yml  (or Re-run failed jobs)."
+              exit "$status"
+            fi
+            case "$attempt" in
+              1) backoff=60 ;;
+              2) backoff=300 ;;
+              *) backoff=900 ;;
+            esac
+            echo "Attempt ${attempt} failed (exit ${status}). Retrying in ${backoff}s."
+            sleep "$backoff"
+            attempt=$((attempt + 1))
+          done
