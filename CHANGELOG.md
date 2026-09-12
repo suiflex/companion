@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.12.0](https://github.com/suiflex/companion/compare/v1.11.0...v1.12.0) (2026-09-12)
+
+
+### Features
+
+* **exporters:** add the G3 weekly cross-meeting Ask rollup (@wahyuakbarwibowo) ([49998bb](https://github.com/suiflex/companion/commit/49998bb41ca6042e58f59a32b576246314261a79))
+* **installer:** self-check the native host, classify bridge errors (@wahyuakbarwibowo) ([296722f](https://github.com/suiflex/companion/commit/296722fd8b8049a34a4261b237bf0a015e14a12a))
+
+
+### Bug Fixes
+
+* **ai, extension:** handle host permission rejections and distinguish local LLM CORS errors ([309cfd9](https://github.com/suiflex/companion/commit/309cfd91e2d5fcc665d8dab1a095e6f049fe29ff))
+* **ai, extension:** handle host permission rejections and distinguish local LLM CORS errors (@resincode) ([590f7a4](https://github.com/suiflex/companion/commit/590f7a4aeeed045c444fa394976f2bc0a95b8b97))
+* **ai:** correct eval-04's not_found expectation (@wahyuakbarwibowo) ([0b57428](https://github.com/suiflex/companion/commit/0b57428078e3c465603b3848e35813271d077894))
+* **gate:** persist a release T0 instead of guessing it from the audit ring (@wahyuakbarwibowo) ([56e6871](https://github.com/suiflex/companion/commit/56e6871f3b365372bcec9581280f59af35867b94))
+
+
+### Performance Improvements
+
+* **exporters:** index g3Rollup's week bucket instead of scanning (@wahyuakbarwibowo) ([f201946](https://github.com/suiflex/companion/commit/f201946980bf53bb700d84ea494034126d4e9f5f))
+
+
+### Thanks
+
+Thanks to everyone who contributed to this release:
+
+* @wahyuakbarwibowo
+* @resincode
+
+
+### New Contributors
+
+* @resincode made their first contribution
+
 ## [1.11.0](https://github.com/suiflex/companion/compare/v1.10.0...v1.11.0) (2026-09-04)
 
 
