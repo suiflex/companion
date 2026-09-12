@@ -133,11 +133,13 @@ version submission.
 
 ## Step 8 — Submit the version
 
-Do **not** upload by hand. Tag a release and CI does it:
+Do **not** upload by hand via the developer hub form. Trigger the dedicated
+GitHub Actions workflow (`Publish Extension to Firefox Add-ons (AMO)`):
 
 ```
 release-please prepares the PR  ->  merge it  ->  tag v1.6.0 pushed
-  ->  build.yml packs the source archive
+  ->  maintainer triggers .github/workflows/publish-firefox.yml
+  ->  packs the source archive and Firefox artifact
   ->  web-ext sign --channel=listed --upload-source-code
   ->  the version enters Mozilla's review queue
 ```
