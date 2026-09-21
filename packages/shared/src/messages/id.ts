@@ -640,6 +640,9 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.vault.saveTo': 'Simpan ke…',
   'desktop.vault.moved': 'Dipindahkan ke {folder}.',
   'desktop.vault.rootFolder': 'Akar vault',
+  'desktop.vault.confirmTrash': 'Pindahkan nota ini ke sampah?',
+  'desktop.vault.confirmTrashDirty': 'Perubahan yang belum disimpan akan hilang.',
+  'desktop.vault.discardDraft': 'Buang nota ini? Isinya belum pernah disimpan.',
 
   'desktop.vault.duplicateSessionKey':
     '{path} memakai session key yang sama dengan nota lain, jadi tidak masuk pencarian.',
