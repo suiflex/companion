@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS, type Settings } from '@meetcc/shared';
 import { PROVIDER_PRESETS } from './client';
-import { listModels } from './models';
+import { listModels, showsAsChips } from './models';
 
 const s = (over: Partial<Settings>): Settings => ({ ...DEFAULT_SETTINGS, ...over });
 
@@ -82,5 +82,15 @@ describe('listModels', () => {
   it('tolerates a malformed payload', async () => {
     answer({ data: 'nope' });
     expect(await listModels(s({ provider: 'openai', apiKey: 'k' }))).toEqual([]);
+  });
+});
+
+describe('showsAsChips', () => {
+  it('lists a short catalogue whole, and leaves a long one to the datalist', () => {
+    const names = (n: number) => Array.from({ length: n }, (_, i) => `m${i}`);
+    expect(showsAsChips([])).toBe(false);
+    expect(showsAsChips(names(3))).toBe(true);
+    expect(showsAsChips(names(12))).toBe(true);
+    expect(showsAsChips(names(13))).toBe(false);
   });
 });

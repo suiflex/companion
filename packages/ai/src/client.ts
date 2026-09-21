@@ -52,11 +52,20 @@ export const PROVIDER_PRESETS: Record<ProviderId, ProviderPreset> = {
 
 export function resolveConfig(s: Settings): Settings {
   const preset = PROVIDER_PRESETS[s.provider];
+  const baseUrl = (s.baseUrl || preset.baseUrl).replace(/\/+$/, '');
   return {
     ...s,
-    baseUrl: (s.baseUrl || preset.baseUrl).replace(/\/+$/, ''),
+    baseUrl: s.provider === 'ollama' ? ollamaV1(baseUrl) : baseUrl,
     model: s.model || preset.model,
   };
+}
+
+/** Ollama serves its OpenAI-compatible API under `/v1`, and its own native API
+ *  under `/api` — the one its docs show first, so it is what gets typed. Both
+ *  `/models` and `/chat/completions` 404 under `/api`; take the server root
+ *  from whichever form was given and point it at `/v1`. */
+function ollamaV1(url: string): string {
+  return url.replace(/\/(?:api|v1)$/, '') + '/v1';
 }
 
 /** Validate settings before use; returns a human-readable problem or null. */

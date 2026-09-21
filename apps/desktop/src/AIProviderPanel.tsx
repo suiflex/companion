@@ -9,7 +9,7 @@
 // would be worse than saying so.
 import { useEffect, useMemo, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import { PROVIDER_PRESETS, createClient, listModels, resolveConfig, validateSettings } from '@meetcc/ai'
+import { PROVIDER_PRESETS, createClient, listModels, resolveConfig, showsAsChips, validateSettings } from '@meetcc/ai'
 import { switchProvider } from '@meetcc/shared/provider'
 import type { ProviderId, Settings } from '@meetcc/shared/types'
 import { t } from '@meetcc/shared/i18n'
@@ -161,6 +161,21 @@ export function AIProviderPanel() {
                 ? t('desktop.ai.modelsAvailable', { count: models.length })
                 : t('desktop.ai.modelsPrompt')}
             </p>
+            {showsAsChips(models) && (
+              <div className="model-chips">
+                {models.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={m === settings.model ? 'model-chip active' : 'model-chip'}
+                    aria-pressed={m === settings.model}
+                    onClick={() => set({ model: m })}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="setting-actions">
             <input

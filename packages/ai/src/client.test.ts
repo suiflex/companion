@@ -16,6 +16,19 @@ describe('resolveConfig', () => {
     );
   });
 
+  it('ollama accepts the native /api, the /v1 or the bare root, and resolves all to /v1', () => {
+    for (const baseUrl of ['http://localhost:11434/api', 'http://localhost:11434/v1/', 'http://localhost:11434', '']) {
+      expect(resolveConfig(s({ provider: 'ollama', baseUrl })).baseUrl).toBe('http://localhost:11434/v1');
+    }
+    expect(resolveConfig(s({ provider: 'ollama', baseUrl: 'http://gpu-box:11434/api' })).baseUrl).toBe(
+      'http://gpu-box:11434/v1',
+    );
+  });
+
+  it('leaves a custom provider\'s /api path alone', () => {
+    expect(resolveConfig(s({ provider: 'custom', baseUrl: 'http://x/api' })).baseUrl).toBe('http://x/api');
+  });
+
   it('user values win over presets', () => {
     const cfg = resolveConfig(s({ provider: 'openai', model: 'gpt-4.1', baseUrl: 'https://proxy/v1' }));
     expect(cfg.model).toBe('gpt-4.1');

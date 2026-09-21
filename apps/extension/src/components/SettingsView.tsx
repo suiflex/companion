@@ -5,6 +5,7 @@ import {
   PROVIDER_PRESETS,
   requiredOrigins,
   resolveConfig,
+  showsAsChips,
   validateSettings,
 } from '@meetcc/ai';
 import {
@@ -377,6 +378,21 @@ export function SettingsView({
                   ? t('ext.provider.modelsAvailable', { count: models.length })
                   : t('ext.provider.modelsPrompt'))}
             </span>
+            {showsAsChips(models) && (
+              <div className="model-chips">
+                {models.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={m === settings.model ? 'model-chip active' : 'model-chip'}
+                    aria-pressed={m === settings.model}
+                    onClick={() => set({ model: m })}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )}
           </label>
         )}
 

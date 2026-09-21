@@ -765,6 +765,17 @@ button.ghost {
 }
 .ask-chip:hover:not(:disabled) { color: var(--phosphor); border-color: var(--phosphor); }
 
+/* The loaded model names, when there are few enough to show whole. */
+.model-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.model-chip {
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  color: var(--text-dim);
+}
+.model-chip:hover:not(:disabled) { color: var(--phosphor); border-color: var(--phosphor); }
+.model-chip.active { color: var(--phosphor); border-color: var(--phosphor); background: var(--phosphor-dim); }
+
 .ask-thread { display: flex; flex-direction: column; gap: 10px; }
 
 .bubble {

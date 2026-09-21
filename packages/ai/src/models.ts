@@ -2,6 +2,17 @@ import type { Settings } from '@meetcc/shared';
 import { AIError, PROVIDER_PRESETS, resolveConfig } from './client';
 import { fetchWithTimeout } from './providers';
 
+const CHIPS_MAX = 12;
+
+/** Whether a settings screen should list these models in full rather than
+ *  leave them to the `<datalist>`, which only offers the names that match what
+ *  is already typed — so once a model is chosen it offers that one and nothing
+ *  else, however many the provider serves. Past a dozen, typing to narrow is
+ *  the better tool. */
+export function showsAsChips(models: string[]): boolean {
+  return models.length > 0 && models.length <= CHIPS_MAX;
+}
+
 /**
  * Model names the user can pick from for these settings.
  *

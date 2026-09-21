@@ -1190,6 +1190,31 @@ body {
   border-color: var(--accent);
 }
 
+/* The loaded model names, when there are few enough to show whole. */
+.model-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.model-chip {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.model-chip:hover { color: var(--fg); border-color: var(--fg-muted); }
+
+.model-chip.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* The provider select is the widest control on the screen; let it size to the
    row rather than to its longest option, which would be an OpenAI-length name
    deciding the layout. */
