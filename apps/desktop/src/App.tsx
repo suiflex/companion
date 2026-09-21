@@ -341,10 +341,24 @@ export default function App() {
   const [indexDown, setIndexDown] = useState(false)
   // The duplicate-key warning already shown, so it is not repeated per poll.
   const reportedRef = useRef('')
+  // A brand-new note is a draft with no file yet. Pre-selecting its "New note"
+  // default title shows a beginner it is editable and lets them type straight
+  // over it, the way renaming a file in Finder selects the name. `freshIdRef`
+  // stops the selection from repeating on every keystroke.
+  const titleRef = useRef<HTMLInputElement>(null)
+  const freshIdRef = useRef<string | null>(null)
   // Bumped when the language changes, purely to force a re-render: `t()` reads
   // a module-level language that React cannot see.
   const [, setLangTick] = useState(0)
   useEffect(() => onLangChange(() => setLangTick((n) => n + 1)), [])
+  // Select the title of a brand-new note (no file yet) once, so typing replaces
+  // the "New note" default. Never for notes that already live on disk.
+  useEffect(() => {
+    if (note && !selected && freshIdRef.current !== note.id) {
+      freshIdRef.current = note.id
+      titleRef.current?.select()
+    }
+  }, [note, selected])
   const [themePref, setThemePref] = useState<ThemePref>(loadThemePref)
   const toast = useToast()
   const [langPref, setLangPref] = useState<LangPref>(loadLangPref)
@@ -590,7 +604,7 @@ export default function App() {
       body: '',
     }
     // A new note belongs where you were looking, but `selected` has to stay
-    // null: it means "this note has a file", and `remove()` reads it to decide
+    // null: it means "this note has a file", and `trash()` reads it to decide
     // between trashing a file and simply dropping an unsaved draft. The folder
     // travels separately until the first save gives the note a path.
     setTarget(selected ? selected.split('/').slice(0, -1).join('/') : null)
@@ -630,22 +644,47 @@ export default function App() {
     }
   }
 
-  async function remove() {
-    if (!vault) return
-    try {
-      // a note that was never saved has no file — dropping it is the delete
-      if (selected) {
+  function trash() {
+    if (!vault || !note || pending) return
+    // A note that was never saved has no file. An untouched draft drops
+    // silently; one with typed content asks first — there is no file to come
+    // back from, so a single misfire would erase real work.
+    if (!selected) {
+      const drop = async () => {
+        setNote(null)
+        setSelected(null)
+        setDirty(false)
+        setError(null)
+      }
+      if (dirty) {
+        setConfirm({
+          message: t('desktop.vault.discardDraft'),
+          label: t('desktop.editor.discard'),
+          run: drop,
+        })
+      } else {
+        drop()
+      }
+      return
+    }
+    // Trashing is destructive and there is no restore view yet, so ask first.
+    // Kept out of `guard`: this is not "save then continue", it is "sure you
+    // want to throw this away?" — and a dirty note carries its own warning.
+    setConfirm({
+      message: dirty
+        ? `${t('desktop.editor.confirmUnsaved')} ${t('desktop.vault.confirmTrashDirty')}`
+        : t('desktop.vault.confirmTrash'),
+      label: t('desktop.editor.trash'),
+      run: async () => {
         await vault.trash(selected)
         await refresh(vault)
         toast('info', t('desktop.toast.trashed'))
-      }
-      setNote(null)
-      setSelected(null)
-      setDirty(false)
-      setError(null)
-    } catch (e) {
-      setError(String(e))
-    }
+        setNote(null)
+        setSelected(null)
+        setDirty(false)
+        setError(null)
+      },
+    })
   }
 
   /**
@@ -1018,6 +1057,7 @@ export default function App() {
           ) : note ? (
             <>
               <input
+                ref={titleRef}
                 className="title-input"
                 value={note.title}
                 placeholder={t('desktop.editor.titlePlaceholder')}
@@ -1063,7 +1103,7 @@ export default function App() {
                   ]}
                   onChange={(v) => (selected ? void moveNote(v) : setTarget(v))}
                 />
-                <button type="button" className="btn danger" onClick={remove}>
+                <button type="button" className="btn danger" onClick={trash}>
                   {t('desktop.editor.trash')}
                 </button>
                 {/* The label says what the button does: for a delivered
@@ -1081,6 +1121,14 @@ export default function App() {
             <div className="empty">
               <h1>{t('desktop.editor.emptyTitle')}</h1>
               <p>{t('desktop.editor.emptyBody')}</p>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => guard(openNew)}
+                disabled={!vault}
+              >
+                {t('desktop.vault.newNote')}
+              </button>
             </div>
           )}
           {confirm && (

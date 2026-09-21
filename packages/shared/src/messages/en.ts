@@ -643,6 +643,9 @@ export const en = {
   'desktop.vault.saveTo': 'Save to…',
   'desktop.vault.moved': 'Moved to {folder}.',
   'desktop.vault.rootFolder': 'Vault root',
+  'desktop.vault.confirmTrash': 'Move this note to the trash?',
+  'desktop.vault.confirmTrashDirty': 'Unsaved changes will be lost.',
+  'desktop.vault.discardDraft': 'Discard this note? Its content was never saved.',
 
   'desktop.vault.duplicateSessionKey':
     '{path} shares a session key with another note, so it is missing from search.',
