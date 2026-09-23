@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.15.0](https://github.com/suiflex/companion/compare/v1.14.0...v1.15.0) (2026-09-23)
+
+
+### Features
+
+* **desktop:** confirm trash and discard of draft notes ([b01abc9](https://github.com/suiflex/companion/commit/b01abc91c8e8098efabc6e637a558e4f7090b0db))
+
+
+### Bug Fixes
+
+* **ai:** bound streamed completions by idle time and fail on stream errors ([5409ba5](https://github.com/suiflex/companion/commit/5409ba5ba8fd7ee5200246e73625e2bb28648400))
+* **ai:** stream OpenAI-compatible completions so idle proxies do not cut them ([c35e86a](https://github.com/suiflex/companion/commit/c35e86ad100ae7eb630ada8bde2b61abb7651162))
+* **ai:** stream OpenAI-compatible completions so idle proxies do not cut them ([cc767a2](https://github.com/suiflex/companion/commit/cc767a2a7d3397dc5d6b25ae187cca1c34579c02))
+* **installer:** pick MSI or per-user NSIS based on admin role ([348bc89](https://github.com/suiflex/companion/commit/348bc894579483b51872843fd78b3d850ffea6c1))
+* **installer:** pick MSI or per-user NSIS based on admin role ([4288b4b](https://github.com/suiflex/companion/commit/4288b4bd4b9ee73b787aec797c64ba82a257bc4e))
+
 ## [1.14.0](https://github.com/suiflex/companion/compare/v1.13.0...v1.14.0) (2026-09-18)
 
 
