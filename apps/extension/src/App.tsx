@@ -26,7 +26,6 @@ import { KnowledgeView } from './components/KnowledgeView';
 import { MeetingHeader } from './components/MeetingHeader';
 import { DecisionLog } from './components/DecisionLog';
 import { SettingsView } from './components/SettingsView';
-import { UpdateBanner } from './components/UpdateBanner';
 import { ToastProvider, useToast } from './toast';
 
 type Tab = 'summary' | 'transcript' | 'diagram' | 'ask' | 'docs';
@@ -211,7 +210,6 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
         onDelete={(id) => void handleDelete(id)}
       />
       <main className="main">
-        <UpdateBanner />
         {showKnowledge ? (
           <KnowledgeView onOpenMeeting={openMeeting} seedQuestion={seedQuestion} />
         ) : showSettings ? (
