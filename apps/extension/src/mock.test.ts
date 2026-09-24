@@ -45,7 +45,7 @@ describe('standalone dev mock', () => {
 
   it('loadDashboard returns parsed meetings and analyses', async () => {
     const dash = await loadDashboard();
-    expect(dash.meetings.length).toBe(2);
+    expect(dash.meetings.length).toBe(15);
     expect(dash.meetings[0].id).toBe('meet/arch-sync-2026');
     expect(dash.records['meet/arch-sync-2026']).toBeDefined();
     expect(dash.titles['meet/arch-sync-2026']).toBe('Q3 System Architecture & Performance Review');
