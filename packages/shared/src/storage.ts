@@ -15,6 +15,7 @@ import {
   type Meeting,
   type MeetingDocs,
   type MeetingMeta,
+  type MiniContext,
   type OAuthSettings,
   type Settings,
   type StoredDoc,
@@ -35,6 +36,7 @@ export const CLEAN_PREFIX = 'clean:';
 export const DOCPROG_PREFIX = 'docprog:';
 export const TITLE_PREFIX = 'title:';
 export const CONTEXT_PREFIX = 'context:';
+export const MINI_CONTEXTS_KEY = 'mini_contexts';
 const SETTINGS_KEY = 'settings';
 export const AUDIT_KEY = 'audit';
 const RELEASE_T0_KEY = 'releaseT0';
@@ -195,6 +197,15 @@ export async function saveContext(id: string, context: string): Promise<void> {
   } else {
     await chrome.storage.local.set({ [key]: trimmed });
   }
+}
+
+export async function getMiniContexts(): Promise<MiniContext[]> {
+  const res = await chrome.storage.local.get(MINI_CONTEXTS_KEY);
+  return (res[MINI_CONTEXTS_KEY] as MiniContext[] | undefined) ?? [];
+}
+
+export async function saveMiniContexts(contexts: MiniContext[]): Promise<void> {
+  await chrome.storage.local.set({ [MINI_CONTEXTS_KEY]: contexts });
 }
 
 // -- cleaned transcript (AI-corrected ASR errors, kept alongside the raw one) --

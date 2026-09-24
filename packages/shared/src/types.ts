@@ -293,3 +293,13 @@ export interface DocProgressRecord {
   startedAt: string;
   updatedAt: string; // stale = crashed run
 }
+
+/** Mini context / glossary item with tags for meeting context injection. */
+export interface MiniContext {
+  id: string;
+  term: string;
+  definition: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
