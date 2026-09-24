@@ -247,9 +247,11 @@ function setupMock(): void {
     }
   }
 
-  // Seed initial data if empty
-  if (Object.keys(memory).length === 0) {
-    memory = createInitialStorage();
+  // Seed initial data if empty or missing meetings
+  const hasMeetings = Object.keys(memory).some((k) => k.startsWith('meta:'));
+  if (!hasMeetings) {
+    const initial = createInitialStorage();
+    memory = { ...initial, ...memory };
     setStorageItem(STORAGE_KEY, JSON.stringify(memory));
   }
 
@@ -354,7 +356,30 @@ function setupMock(): void {
       getURL: (path: string) => `/${path.replace(/^\//, '')}`,
       sendMessage: async (msg: unknown) => {
         console.info('[Dev Mock chrome.runtime.sendMessage]', msg);
-        return { ok: true, rows: [] };
+        const m = msg as { type?: string; op?: string; args?: Record<string, unknown> } | undefined;
+        if (m?.type === 'db') {
+          if (m.op === 'session') {
+            const sid = (m.args?.id as string) || '';
+            return {
+              ok: true,
+              data: {
+                id: sid,
+                startedAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+                endedAt: null,
+                durationMs: 35 * 60 * 1000,
+                platform: 'google-meet',
+                participants: ['Sarah Chen', 'Alex Rivera', 'Budi Santoso', 'Maya Lin'],
+                projectId: null,
+                agenda: '',
+              },
+            };
+          }
+          if (m.op === 'carry-over') {
+            return { ok: true, data: { openActions: [], openQuestions: [] } };
+          }
+          return { ok: true, data: [] };
+        }
+        return { ok: true, data: [] };
       },
       onMessage: {
         addListener: () => {},

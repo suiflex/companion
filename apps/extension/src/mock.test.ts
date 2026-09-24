@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { loadDashboard } from '@meetcc/shared';
 
 describe('standalone dev mock', () => {
   beforeEach(async () => {
@@ -42,6 +43,14 @@ describe('standalone dev mock', () => {
     expect(all['analysis:meet/arch-sync-2026']).toBeDefined();
   });
 
+  it('loadDashboard returns parsed meetings and analyses', async () => {
+    const dash = await loadDashboard();
+    expect(dash.meetings.length).toBe(2);
+    expect(dash.meetings[0].id).toBe('meet/arch-sync-2026');
+    expect(dash.records['meet/arch-sync-2026']).toBeDefined();
+    expect(dash.titles['meet/arch-sync-2026']).toBe('Q3 System Architecture & Performance Review');
+  });
+
   it('supports getting specific keys and arrays of keys', async () => {
     const titleRes = await chrome.storage.local.get('title:meet/arch-sync-2026');
     expect(titleRes['title:meet/arch-sync-2026']).toBe('Q3 System Architecture & Performance Review');
@@ -78,8 +87,25 @@ describe('standalone dev mock', () => {
     expect(chrome.runtime.getManifest().name).toContain('Meet Companion');
     expect(chrome.runtime.getURL('icons/suiflex.svg')).toBe('/icons/suiflex.svg');
 
-    const sendRes = await chrome.runtime.sendMessage({ type: 'test' });
-    expect(sendRes).toEqual({ ok: true, rows: [] });
+    const sendRes = (await chrome.runtime.sendMessage({ type: 'test' })) as { ok: boolean };
+    expect(sendRes.ok).toBe(true);
+
+    const sessionRes = (await chrome.runtime.sendMessage({
+      type: 'db',
+      op: 'session',
+      args: { id: 'meet/arch-sync-2026' },
+    })) as { ok: boolean; data: { id: string; participants: string[] } };
+    expect(sessionRes.ok).toBe(true);
+    expect(sessionRes.data.participants).toBeInstanceOf(Array);
+    expect(sessionRes.data.participants.length).toBeGreaterThan(0);
+
+    const carryRes = (await chrome.runtime.sendMessage({
+      type: 'db',
+      op: 'carry-over',
+      args: { sessionId: 'meet/arch-sync-2026' },
+    })) as { ok: boolean; data: { openActions: unknown[] } };
+    expect(carryRes.ok).toBe(true);
+    expect(carryRes.data.openActions).toEqual([]);
 
     expect(await chrome.permissions.contains({ origins: ['<all_urls>'] })).toBe(true);
     expect(await chrome.permissions.request({ origins: ['<all_urls>'] })).toBe(true);
