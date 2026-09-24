@@ -668,3 +668,78 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
     </>
   );
 }
+
+export function VersionPanel() {
+  const manifest = chrome.runtime.getManifest();
+  const version = manifest.version ?? '0.0.0';
+
+  return (
+    <div className="version-panel">
+      <fieldset className="field-group">
+        <legend>{t('ext.version.title')}</legend>
+        <div className="version-badge-row">
+          <span className="version-pill">{t('ext.version.current', { version })}</span>
+          <a
+            className="version-release-link"
+            href="https://github.com/suiflex/companion/releases"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('ext.version.downloadReleases')}
+          </a>
+        </div>
+      </fieldset>
+
+      <fieldset className="field-group">
+        <legend>{t('ext.version.chromeTitle')}</legend>
+        <ol className="version-steps">
+          <li>{t('ext.version.chromeStep1')}</li>
+          <li>{t('ext.version.chromeStep2')}</li>
+          <li>{t('ext.version.chromeStep3')}</li>
+          <li>{t('ext.version.chromeStep4')}</li>
+        </ol>
+      </fieldset>
+
+      <fieldset className="field-group">
+        <legend>{t('ext.version.firefoxTitle')}</legend>
+        <ol className="version-steps">
+          <li>{t('ext.version.firefoxStep1')}</li>
+          <li>{t('ext.version.firefoxStep2')}</li>
+          <li>{t('ext.version.firefoxStep3')}</li>
+          <li>{t('ext.version.firefoxStep4')}</li>
+        </ol>
+      </fieldset>
+
+      <fieldset className="field-group">
+        <legend>{t('ext.version.desktopTitle')}</legend>
+        <p className="hint">{t('ext.version.desktopDesc')}</p>
+        <div className="subbar">
+          <a
+            className="version-btn"
+            href="https://github.com/suiflex/companion/releases"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('ext.version.platformMac')}
+          </a>
+          <a
+            className="version-btn"
+            href="https://github.com/suiflex/companion/releases"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('ext.version.platformWindows')}
+          </a>
+          <a
+            className="version-btn"
+            href="https://github.com/suiflex/companion/releases"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('ext.version.platformLinux')}
+          </a>
+        </div>
+      </fieldset>
+    </div>
+  );
+}
