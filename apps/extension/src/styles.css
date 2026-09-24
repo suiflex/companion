@@ -112,24 +112,33 @@ button:focus-visible, select:focus-visible, input:focus-visible, .meeting:focus-
 /* ── sidebar ── */
 
 .sidebar {
-  width: 268px;
+  width: 276px;
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 14px 10px;
+  height: 100vh;
   border-right: 1px solid var(--hairline);
   background: var(--panel);
-  overflow-y: auto;
-  overflow-x: hidden; /* never a horizontal scrollbar in a nav rail */
+  overflow: hidden;
 }
 
-/* collapsed: 46px icon rail, everything still one click away */
+/* collapsed: 48px icon rail, everything still one click away */
 .sidebar.collapsed {
-  width: 46px;
+  width: 48px;
   padding: 12px 6px;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
+}
+
+.sidebar.collapsed .icon-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  border-radius: 8px;
 }
 
 .rail-live {
@@ -140,38 +149,227 @@ button:focus-visible, select:focus-visible, input:focus-visible, .meeting:focus-
   animation: pulse 1.8s ease-out infinite;
 }
 
+/* Fixed top area */
+.sidebar-top {
+  flex: none;
+  padding: 14px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--hairline);
+}
+
 .brand {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 2px 6px 10px;
-  border-bottom: 1px solid var(--hairline);
+  padding: 0 2px 2px;
 }
 
-/* bottom action rail: theme / decisions / settings live here, not crammed
-   into the brand row — the brand stays readable at any width */
-.sidebar-foot {
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 10px 4px 0;
-  border-top: 1px solid var(--hairline);
+.brand-logo {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  object-fit: contain;
 }
 
-/* The sponsor links live in the icon row now; as anchors they need the
-   button's own centring, which a <button> got for free. */
-a.icon-btn {
+.brand-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.collapse-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
   display: inline-flex;
   align-items: center;
-  text-decoration: none;
+  justify-content: center;
+  font-size: 13px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-dim);
+  border-radius: 6px;
+}
+.collapse-btn:hover {
+  background: var(--panel-2);
+  color: var(--text);
+  border-color: var(--hairline-2);
 }
 
+/* Quick search button */
+.sidebar-search-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 120ms ease;
+}
+
+.sidebar-search-btn:hover {
+  border-color: var(--hairline-2);
+  background: var(--hairline);
+  color: var(--text);
+}
+
+.sidebar-search-icon {
+  font-size: 14px;
+  color: var(--text-faint);
+  flex: none;
+}
+
+.sidebar-search-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-search-kbd {
+  font: 500 10px/1 var(--font-mono);
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--panel);
+  border: 1px solid var(--hairline-2);
+  color: var(--text-faint);
+  flex: none;
+}
+
+/* Global Nav (Knowledge Base & Decisions) */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 120ms ease;
+}
+
+.sidebar-nav-btn:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.sidebar-nav-icon {
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+  color: var(--phosphor);
+  flex: none;
+}
+
+.sidebar-nav-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Scrollable middle area */
+.sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: var(--hairline-2);
+  border-radius: 99px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+}
+
+/* Fixed bottom area */
+.sidebar-bottom {
+  flex: none;
+  border-top: 1px solid var(--hairline);
+  padding: 10px 12px 12px;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* bottom action rail: generous sizes */
+.sidebar-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-foot .icon-btn,
+.sidebar-foot a.icon-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: var(--panel-2);
+  font-size: 15px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.sidebar-foot .icon-btn:hover,
+.sidebar-foot a.icon-btn:hover {
+  border-color: var(--phosphor);
+  color: var(--phosphor);
+  background: var(--phosphor-dim);
+}
 
 .sidebar-credit {
-  padding: 2px 6px 0;
-  font-size: 10px;
-  color: var(--text-dim);
+  margin: 0;
+  padding: 2px 0 0;
+  font-size: 10.5px;
+  color: var(--text-faint);
   text-align: center;
   display: flex;
   align-items: center;
@@ -182,17 +380,25 @@ a.icon-btn {
 .credit-logo { width: 13px; height: 13px; object-fit: contain; }
 
 /* meeting row: select button + delete affordance revealed on hover/focus */
-.meeting-row { display: flex; align-items: center; gap: 2px; }
+.meeting-row { display: flex; align-items: center; gap: 4px; }
 .meeting-row .meeting { flex: 1; min-width: 0; }
 
 .meeting-del {
   flex: none;
-  padding: 4px 6px;
-  font-size: 11px;
-  border-color: transparent;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
   background: transparent;
+  color: var(--text-faint);
   opacity: 0;
-  transition: opacity 120ms;
+  cursor: pointer;
+  transition: opacity 120ms, color 120ms, background 120ms;
 }
 .meeting-row:hover .meeting-del,
 .meeting-del:focus-visible { opacity: 1; }
@@ -200,26 +406,6 @@ a.icon-btn {
   color: var(--danger);
   border-color: var(--danger);
   background: var(--danger-dim);
-}
-
-.brand-logo {
-  width: 26px;
-  height: 26px;
-  flex: none;
-  object-fit: contain;
-}
-
-.brand-name {
-  flex: 1;
-  min-width: 0;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .icon-btn { padding: 4px 8px; border-radius: 7px; font-size: 13px; }
@@ -239,19 +425,28 @@ a.icon-btn {
 .meeting {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   width: 100%;
-  padding: 8px 6px;
-  border: 0;
-  border-radius: var(--r);
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: transparent;
   color: inherit;
   font: inherit;
   text-align: left;
+  cursor: pointer;
+  transition: all 120ms ease;
 }
 
-.meeting:hover { background: var(--panel-2); border: 0; }
-.meeting.selected { background: var(--panel-2); box-shadow: inset 2px 0 0 var(--phosphor); }
+.meeting:hover {
+  background: var(--panel-2);
+  border-color: var(--hairline);
+}
+.meeting.selected {
+  background: var(--panel-2);
+  border-color: var(--hairline-2);
+  box-shadow: inset 3px 0 0 var(--phosphor);
+}
 
 .status {
   width: 7px;
