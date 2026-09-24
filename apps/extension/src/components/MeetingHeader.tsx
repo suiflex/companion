@@ -1,9 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SessionRow } from '@meetcc/store';
 import type { CarryOver } from '@meetcc/meeting';
 import { carryOver, db, getSession, listProjects } from '../lib/db';
-import { getContext, saveContext } from '@meetcc/shared';
+import {
+  getContext,
+  getMiniContexts,
+  saveContext,
+  watchStorage,
+  MINI_CONTEXTS_KEY,
+  type MiniContext,
+} from '@meetcc/shared';
 import { locale, t } from '@meetcc/shared/i18n';
+import { useToast } from '../toast';
 
 // P1.5 — a meeting is more than a room code: date, duration, participants and
 // platform (§21). P1.9/P2.3 ride along here because this is where they matter
@@ -34,6 +42,41 @@ export function MeetingHeader({
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [failed, setFailed] = useState(false);
   const [agenda, setAgenda] = useState('');
+  const [availableContexts, setAvailableContexts] = useState<MiniContext[]>([]);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const toast = useToast();
+
+  const loadMiniContextsList = () => {
+    void getMiniContexts().then(setAvailableContexts).catch(() => undefined);
+  };
+
+  useEffect(() => {
+    loadMiniContextsList();
+    return watchStorage(loadMiniContextsList, [MINI_CONTEXTS_KEY]);
+  }, []);
+
+  const uniqueTags = useMemo(() => {
+    const set = new Set<string>();
+    for (let i = 0; i < availableContexts.length; i++) {
+      const tags = availableContexts[i].tags;
+      for (let j = 0; j < tags.length; j++) {
+        set.add(tags[j].toLowerCase());
+      }
+    }
+    return Array.from(set).sort();
+  }, [availableContexts]);
+
+  const tagCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (let i = 0; i < availableContexts.length; i++) {
+      const tags = availableContexts[i].tags;
+      for (let j = 0; j < tags.length; j++) {
+        const tg = tags[j].toLowerCase();
+        map.set(tg, (map.get(tg) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [availableContexts]);
 
   useEffect(() => {
     let alive = true;
@@ -81,6 +124,38 @@ export function MeetingHeader({
     await db('set-session-project', { id: sessionId, projectId }).catch(() => undefined);
   };
 
+  const insertSingle = (ctx: MiniContext) => {
+    const snippet = `[${ctx.term}]: ${ctx.definition}`;
+    const nextAgenda = agenda ? `${agenda}\n${snippet}` : snippet;
+    setAgenda(nextAgenda);
+    void saveContext(sessionId, nextAgenda).catch(() => undefined);
+    void db('set-session-agenda', { id: sessionId, agenda: nextAgenda }).catch(() => undefined);
+    toast('success', t('ext.header.contextInserted'));
+    setPopoverOpen(false);
+  };
+
+  const insertTag = (tag: string) => {
+    const target = tag.toLowerCase();
+    const snippets: string[] = [];
+    for (let i = 0; i < availableContexts.length; i++) {
+      const c = availableContexts[i];
+      for (let j = 0; j < c.tags.length; j++) {
+        if (c.tags[j].toLowerCase() === target) {
+          snippets.push(`[${c.term}]: ${c.definition}`);
+          break;
+        }
+      }
+    }
+    if (!snippets.length) return;
+    const added = snippets.join('\n');
+    const nextAgenda = agenda ? `${agenda}\n${added}` : added;
+    setAgenda(nextAgenda);
+    void saveContext(sessionId, nextAgenda).catch(() => undefined);
+    void db('set-session-agenda', { id: sessionId, agenda: nextAgenda }).catch(() => undefined);
+    toast('success', t('ext.header.contextInserted'));
+    setPopoverOpen(false);
+  };
+
   const openCount = (carry?.openActions.length ?? 0) + (carry?.openQuestions.length ?? 0);
 
   return (
@@ -94,19 +169,86 @@ export function MeetingHeader({
           </span>
         )}
         <span className="spacer" />
-        <input
-          className="mh-agenda"
-          value={agenda}
-          placeholder={t('ext.header.contextPlaceholder')}
-          aria-label={t('ext.header.context')}
-          title={t('ext.header.context')}
-          onChange={(e) => setAgenda(e.target.value)}
-          onBlur={() => {
-            void saveContext(sessionId, agenda).catch(() => undefined);
-            if (agenda === (session.agenda ?? '')) return;
-            void db('set-session-agenda', { id: sessionId, agenda }).catch(() => undefined);
-          }}
-        />
+        <div className="mh-agenda-wrap">
+          <input
+            className="mh-agenda"
+            value={agenda}
+            placeholder={t('ext.header.contextPlaceholder')}
+            aria-label={t('ext.header.context')}
+            title={t('ext.header.context')}
+            onChange={(e) => setAgenda(e.target.value)}
+            onBlur={() => {
+              void saveContext(sessionId, agenda).catch(() => undefined);
+              if (agenda === (session.agenda ?? '')) return;
+              void db('set-session-agenda', { id: sessionId, agenda }).catch(() => undefined);
+            }}
+          />
+          <button
+            type="button"
+            className="mh-insert-btn"
+            title={t('ext.header.insertContext')}
+            onClick={() => setPopoverOpen((v) => !v)}
+          >
+            ✦
+          </button>
+          {popoverOpen && (
+            <div className="mh-context-popover">
+              <div className="mh-popover-head">
+                <span className="mh-popover-title">{t('ext.header.contextPopoverTitle')}</span>
+                <button
+                  type="button"
+                  className="mh-popover-close"
+                  onClick={() => setPopoverOpen(false)}
+                  aria-label={t('ext.header.close')}
+                >
+                  ✕
+                </button>
+              </div>
+              {availableContexts.length === 0 ? (
+                <p className="section-empty">{t('ext.header.noContextsAvailable')}</p>
+              ) : (
+                <div className="mh-popover-body">
+                  {uniqueTags.length > 0 && (
+                    <div className="mh-popover-group">
+                      <span className="dim">{t('ext.header.insertByTag')}</span>
+                      <div className="mh-popover-tag-row">
+                        {uniqueTags.map((tg) => {
+                          const count = tagCounts.get(tg) ?? 0;
+                          return (
+                            <button
+                              key={tg}
+                              type="button"
+                              className="mh-tag-insert-btn"
+                              onClick={() => insertTag(tg)}
+                            >
+                              {t('ext.header.insertAllWithTag', { tag: tg, count })}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mh-popover-group">
+                    <span className="dim">{t('ext.header.insertSingle')}</span>
+                    <div className="mh-popover-item-list">
+                      {availableContexts.map((ctx) => (
+                        <button
+                          key={ctx.id}
+                          type="button"
+                          className="mh-ctx-item-btn"
+                          onClick={() => insertSingle(ctx)}
+                        >
+                          <span className="ctx-item-term">{ctx.term}</span>
+                          <span className="dim ctx-item-def">{ctx.definition}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <label className="mh-project">
           Proyek
           <select value={session.projectId ?? ''} onChange={(e) => void assign(e.target.value)}>

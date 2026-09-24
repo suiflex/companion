@@ -959,6 +959,49 @@ function createInitialStorage(): Record<string, unknown> {
     storage[`analysis:${seed.id}`] = analysis;
   }
 
+  storage['mini_contexts'] = [
+    {
+      id: 'ctx-1',
+      term: 'P95 Latency',
+      definition: 'Target respon 95% request selesai di bawah nilai ini (SLA kita < 200ms).',
+      tags: ['infra', 'backend', 'performance'],
+      createdAt: new Date(now - 86400000).toISOString(),
+      updatedAt: new Date(now - 86400000).toISOString(),
+    },
+    {
+      id: 'ctx-2',
+      term: 'SIEM',
+      definition: 'Security Information and Event Management untuk monitoring log & alert anomali.',
+      tags: ['security', 'compliance'],
+      createdAt: new Date(now - 86400000).toISOString(),
+      updatedAt: new Date(now - 86400000).toISOString(),
+    },
+    {
+      id: 'ctx-3',
+      term: 'KMS Rotation',
+      definition: 'Rotasi otomatis asymmetric key encryption setiap 90 hari untuk vault storage.',
+      tags: ['security', 'infra'],
+      createdAt: new Date(now - 86400000).toISOString(),
+      updatedAt: new Date(now - 86400000).toISOString(),
+    },
+    {
+      id: 'ctx-4',
+      term: 'CaaS',
+      definition: 'Container as a Service (cluster Kubernetes internal tim platform engineering).',
+      tags: ['infra', 'devops'],
+      createdAt: new Date(now - 86400000).toISOString(),
+      updatedAt: new Date(now - 86400000).toISOString(),
+    },
+    {
+      id: 'ctx-5',
+      term: 'KYC',
+      definition: 'Know Your Customer: verifikasi identitas nasabah dan pengecekan dokumen resmi.',
+      tags: ['fintech', 'compliance'],
+      createdAt: new Date(now - 86400000).toISOString(),
+      updatedAt: new Date(now - 86400000).toISOString(),
+    },
+  ];
+
   return storage;
 }
 
@@ -1017,6 +1060,10 @@ function setupMock(): void {
   if (meetingCount < 25) {
     const initial = createInitialStorage();
     memory = { ...initial, ...memory };
+    setStorageItem(STORAGE_KEY, JSON.stringify(memory));
+  } else if (!memory['mini_contexts'] || (Array.isArray(memory['mini_contexts']) && memory['mini_contexts'].length === 0)) {
+    const initial = createInitialStorage();
+    memory['mini_contexts'] = initial['mini_contexts'];
     setStorageItem(STORAGE_KEY, JSON.stringify(memory));
   }
 

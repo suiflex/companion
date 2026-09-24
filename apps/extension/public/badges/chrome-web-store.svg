@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="184" height="54" viewBox="0 0 184 54" fill="none">
+  <rect x="0.5" y="0.5" width="183" height="53" rx="4" fill="#101411" stroke="#262d26"/>
+  <g transform="translate(14, 16)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0 1 12 6.545h10.691A12 12 0 0 0 12 0z" fill="#EA4335"/>
+      <path d="M1.931 5.47A11.943 11.943 0 0 0 0 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 0 1-6.865-2.29z" fill="#34A853"/>
+      <path d="M15.273 7.478a5.449 5.449 0 0 1 2.182 6.865L11.502 24A12 12 0 0 0 24 12c0-.337-.014-.67-.042-1H12.002z" fill="#FBBC05"/>
+      <circle cx="12" cy="12" r="5.454" fill="#FFFFFF"/>
+      <circle cx="12" cy="12" r="4.364" fill="#4285F4"/>
+    </svg>
+  </g>
+  <text x="46" y="21" fill="#808a80" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" letter-spacing="0.12em">AVAILABLE IN THE</text>
+  <text x="46" y="38" fill="#f4f4f5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="600">Chrome Web Store</text>
+</svg>
