@@ -579,6 +579,337 @@ const MOCK_SEEDS: MockSeed[] = [
       { task: 'Dokumentasikan hasil demo showcase ke internal knowledge base', owner: 'Frontend Team', due: 'Selesai' },
     ],
   },
+  {
+    id: 'meet/incident-review-ddos',
+    title: 'Post-Incident Review: Cloudflare Rate Limiting & DDoS Mitigation',
+    context: 'Evaluasi insiden serangan HTTP flood ke edge endpoint dan konfigurasi WAF.',
+    minutesAgo: 23040,
+    durationMins: 45,
+    dialogue: [
+      {
+        speaker: 'Budi Santoso (DevOps)',
+        text: 'Rate limiting per IP di level CDN berhasil menahan 98% request mencurigakan saat mitigasi aktif.',
+      },
+      {
+        speaker: 'Sarah Chen (Lead Architect)',
+        text: 'Tambahkan challenge Captcha untuk traffic non-browser agar pengguna asli tidak terblokir.',
+      },
+    ],
+    summary: 'Post-incident review insiden DDoS dan penguatan aturan firewall WAF pada domain utama.',
+    timeline: [
+      { time: '14:00', topic: 'Analisis traffic spike DDoS' },
+      { time: '14:30', topic: 'Aturan rate limiting WAF' },
+    ],
+    decisions: [
+      {
+        what: 'Pasang Managed Challenge pada rate-limit rule 100 req/min',
+        why: 'Memblokir bot scraping tanpa mengganggu pengguna nyata',
+        rejected: ['Blokir IP statis manual'],
+        topic: 'Edge Security',
+      },
+    ],
+    actionItems: [
+      { task: 'Update firewall ruleset di Cloudflare WAF', owner: 'Budi Santoso', due: 'Selesai' },
+    ],
+  },
+  {
+    id: 'teams/sprint-retrospective-41',
+    title: 'Sprint Retrospective: Sprint 41 Reflection & Improvements',
+    context: 'Retrospektif tim akhir Sprint 41 membahas velocity, bottle-neck PR, dan kepuasan kerja.',
+    minutesAgo: 25920,
+    durationMins: 60,
+    dialogue: [
+      {
+        speaker: 'Maya Lin (Product)',
+        text: 'Semua tiket user story selesai tepat waktu, tapi ada beberapa PR yang tertahan review lebih dari 2 hari.',
+      },
+      {
+        speaker: 'Alex Rivera (Backend)',
+        text: 'Kita sepakati review SLA maksimal 24 jam untuk mempercepat siklus merge.',
+      },
+    ],
+    summary: 'Sprint retrospective 41 menetapkan SLA review PR maksimal 24 jam dan otomasi testing lint di git hook.',
+    timeline: [
+      { time: '16:00', topic: 'Review apa yang berjalan baik di Sprint 41' },
+      { time: '16:40', topic: 'Kesepakatan SLA Code Review 24 jam' },
+    ],
+    decisions: [
+      {
+        what: 'Terapkan SLA review PR 24 jam pada hari kerja',
+        why: 'Mencegah stale branches dan merge conflicts berulang',
+        rejected: ['Menghilangkan approval requirement'],
+        topic: 'Engineering Process',
+      },
+    ],
+    actionItems: [
+      { task: 'Pasang bot reminder review PR di Slack channel', owner: 'Alex Rivera', due: 'Selesai' },
+    ],
+  },
+  {
+    id: 'meet/security-compliance-gdpr',
+    title: 'Legal & Privacy: GDPR Compliance & Data Export Spec',
+    context: 'Review regulasi privasi data Uni Eropa dan spesifikasi endpoint download data user.',
+    minutesAgo: 28800,
+    durationMins: 45,
+    dialogue: [
+      {
+        speaker: 'Maya Lin (Product)',
+        text: 'Pengguna di Uni Eropa berhak meminta penghapusan seluruh data transkrip dalam 30 hari.',
+      },
+      {
+        speaker: 'Sarah Chen (Lead Architect)',
+        text: 'Karena data kita tersimpan di vault lokal user, kita sediakan tombol "Delete Vault Permanently" yang transparan.',
+      },
+    ],
+    summary: 'Penyesuaian kepatuhan GDPR pasal "Right to Erasure" pada aplikasi desktop dan browser extension.',
+    timeline: [
+      { time: '11:00', topic: 'Audit persyaratan kepatuhan GDPR' },
+      { time: '11:30', topic: 'Spesifikasi fitur penghapusan data lokal' },
+    ],
+    decisions: [
+      {
+        what: 'Sediakan opsi hard-delete lokal tanpa jejak audit remote',
+        why: 'Memenuhi prinsip privasi penuh GDPR article 17',
+        rejected: ['Soft delete di cloud backend'],
+        topic: 'Privacy Compliance',
+      },
+    ],
+    actionItems: [
+      { task: 'Dokumentasikan panduan privasi GDPR di privacy policy', owner: 'Maya Lin', due: 'Selesai' },
+    ],
+  },
+  {
+    id: 'teams/backend-cache-invalidation',
+    title: 'Backend Sync: Distributed Cache Invalidation Patterns',
+    context: 'Eksplorasi strategi invalidasi cache terdistribusi menggunakan Redis Pub/Sub.',
+    minutesAgo: 31680,
+    durationMins: 50,
+    dialogue: [
+      {
+        speaker: 'Alex Rivera (Backend)',
+        text: 'Pub/Sub Redis memungkinkan node backend langsung menghapus in-memory cache begitu ada event update.',
+      },
+      {
+        speaker: 'Sarah Chen (Lead Architect)',
+        text: 'Pastikan penanganan reconnect socket Redis memiliki jitter backoff yang aman.',
+      },
+    ],
+    summary: 'Diskusi pola invalidasi cache terdistribusi untuk mengurangi pembacaan stale data antar instance.',
+    timeline: [
+      { time: '14:00', topic: 'Evaluasi masalah inkonsistensi cache lokal' },
+      { time: '14:35', topic: 'Desain event bus invalidasi Redis Pub/Sub' },
+    ],
+    decisions: [
+      {
+        what: 'Gunakan Redis Pub/Sub untuk sinyal invalidasi cache L1',
+        why: 'Latensi propagasi sub-millisecond ke seluruh pod backend',
+        rejected: ['Polling timestamp periodik dari database'],
+        topic: 'Distributed Systems',
+      },
+    ],
+    actionItems: [
+      { task: 'Implementasi listener Redis Pub/Sub di sync server', owner: 'Alex Rivera', due: 'Selesai' },
+    ],
+  },
+  {
+    id: 'meet/user-interview-enterprise-pilot',
+    title: 'User Interview: Enterprise Pilot Feedback from Bank Mandiri',
+    context: 'Wawancara feedback pilot project pengguna internal korporat perbankan.',
+    minutesAgo: 34560,
+    durationMins: 60,
+    dialogue: [
+      {
+        speaker: 'Maya Lin (Product)',
+        text: 'Tim analis risiko sangat menyukai fitur Decision Log karena memudahkan lacak jejak keputusan komite.',
+      },
+      {
+        speaker: 'Alex Rivera (Backend)',
+        text: 'Mereka meminta dukungan format ekspor PDF yang bisa diberi watermark logo instansi.',
+      },
+    ],
+    summary: 'Feedback positif dari pengguna uji coba enterprise terkait kemudahan pembuatan MoM otomatis dan audit keputusan.',
+    timeline: [
+      { time: '13:00', topic: 'Presentasi hasil wawancara pilot' },
+      { time: '13:40', topic: 'Prioritas fitur ekspor dokumen resmi' },
+    ],
+    decisions: [
+      {
+        what: 'Tambahkan opsi watermark instansi pada PDF export',
+        why: 'Syarat wajib arsip compliance korporat perbankan',
+        rejected: ['Hanya menyediakan format markdown mentah'],
+        topic: 'Enterprise Features',
+      },
+    ],
+    actionItems: [
+      { task: 'Kembangkan fitur watermark PDF exporter', owner: 'Frontend Team', due: 'Selesai' },
+    ],
+  },
+  {
+    id: 'teams/ci-cd-optimization-arm64',
+    title: 'DevOps: GitHub Actions Runner Migration to ARM64',
+    context: 'Migrasi CI/CD runner ke instance ARM64 untuk memangkas waktu build dan biaya.',
+    minutesAgo: 37440,
+    durationMins: 40,
+    dialogue: [
+      {
+        speaker: 'Budi Santoso (DevOps)',
+        text: 'Runner ARM64 memangkas durasi kompilasi cargo build Tauri dari 14 menit menjadi 6 menit.',
+      },
+      {
+        speaker: 'Sarah Chen (Lead Architect)',
+        text: 'Biaya runner bulanan juga turun sekitar 40%, langsung terapkan ke semua workflow.',
+      },
+    ],
+    summary: 'Optimalisasi pipeline CI/CD GitHub Actions dengan runner ARM64 menghasilkan peningkatan kecepatan 2x lipat.',
+    timeline: [
+      { time: '10:00', topic: 'Benchmark durasi build Rust x86 vs ARM64' },
+      { time: '10:30', topic: 'Pembaruan GitHub workflow matrix' },
+    ],
+    decisions: [
+      {
+        what: 'Alihkan build desktop Tauri ke self-hosted ARM64 runners',
+        why: 'Pangkas waktu CI 55% dan hemat biaya komputasi',
+        rejected: ['Tetap memakai default x86 GitHub runners'],
+        topic: 'CI Infrastructure',
+      },
+    ],
+    actionItems: [
+      { task: 'Update konfigurasi matrix runner di .github/workflows', owner: 'Budi Santoso', due: 'Selesai' },
+    ],
+  },
+  {
+    id: 'meet/design-critique-milkdown',
+    title: 'Design Critique: Note Editor Toolbar & Floating Bubble',
+    context: 'Evaluasi estetika dan ergonomi toolbar formatting pada editor catatan Milkdown.',
+    minutesAgo: 40320,
+    durationMins: 45,
+    dialogue: [
+      {
+        speaker: 'Maya Lin (Product)',
+        text: 'Floating bubble menu lebih ringkas dibanding toolbar atas yang memakan ruang vertikal layar.',
+      },
+      {
+        speaker: 'Sarah Chen (Lead Architect)',
+        text: 'Pastikan keyboard shortcut markdown standar seperti Ctrl+B dan `#` tetap prioritas utama.',
+      },
+    ],
+    summary: 'Penyelarasan tampilan toolbar editor desktop dengan konsep minimalis dan responsif.',
+    timeline: [
+      { time: '15:00', topic: 'Review mockup floating bubble menu' },
+      { time: '15:35', topic: 'Keyboard accessibility & shortcuts' },
+    ],
+    decisions: [
+      {
+        what: 'Implementasikan floating bubble menu seleksi teks di Milkdown',
+        why: 'Tampilan editor lebih bersih dan fokus pada tulisan (zen mode)',
+        rejected: ['Fixed header toolbar yang selalu tampak'],
+        topic: 'Editor UX',
+      },
+    ],
+    actionItems: [
+      { task: 'Styling floating bubble menu di Milkdown plugin', owner: 'Frontend Team', due: 'Selesai' },
+    ],
+  },
+  {
+    id: 'teams/search-engine-sqlite-fts5',
+    title: 'Data Architecture: SQLite FTS5 Ranking & Stemming Tunings',
+    context: 'Eksperimen tuning BM25 ranking dan porter stemmer untuk pencarian cepat transkrip.',
+    minutesAgo: 43200,
+    durationMins: 50,
+    dialogue: [
+      {
+        speaker: 'Alex Rivera (Backend)',
+        text: 'FTS5 dengan bobot BM25 pada judul memberikan relevansi pencarian 80% lebih akurat.',
+      },
+      {
+        speaker: 'Sarah Chen (Lead Architect)',
+        text: 'Integrasikan token stemming Bahasa Indonesia dan Inggris secara bilingual.',
+      },
+    ],
+    summary: 'Tuning algoritma pencarian teks penuh SQLite FTS5 untuk pencarian multibahasa instan di Command Palette.',
+    timeline: [
+      { time: '11:00', topic: 'Evaluasi akurasi pencarian BM25' },
+      { time: '11:40', topic: 'Konfigurasi tokenizer unicode61 & stemmer' },
+    ],
+    decisions: [
+      {
+        what: 'Terapkan bobot BM25: 10.0 untuk judul, 2.0 untuk transkrip',
+        why: 'Menghasilkan hasil pencarian yang langsung relevan bagi pengguna',
+        rejected: ['Default equal-weight ranking'],
+        topic: 'Search Optimization',
+      },
+    ],
+    actionItems: [
+      { task: 'Tulis unit test pencarian BM25 di store.test.ts', owner: 'Alex Rivera', due: 'Selesai' },
+    ],
+  },
+  {
+    id: 'meet/executive-sync-q4-budget',
+    title: 'Executive Sync: Q4 Budget Allocation & Hiring Strategy',
+    context: 'Perencanaan alokasi anggaran operasional dan rekrutmen engineer baru untuk kuartal empat.',
+    minutesAgo: 46080,
+    durationMins: 60,
+    dialogue: [
+      {
+        speaker: 'Sarah Chen (Lead Architect)',
+        text: 'Kita butuh tambahan 1 Senior Backend Engineer untuk menangani real-time sync server.',
+      },
+      {
+        speaker: 'Maya Lin (Product)',
+        text: 'Anggaran disetujui, pembukaan lowongan bisa dipublish mulai minggu depan.',
+      },
+    ],
+    summary: 'Persetujuan anggaran hiring teknis Q4 dan proyeksi biaya infrastruktur cloud untuk ekspansi pengguna.',
+    timeline: [
+      { time: '14:00', topic: 'Review alokasi budget headcount Q4' },
+      { time: '14:45', topic: 'Timeline rekrutmen dan orientasi karyawan' },
+    ],
+    decisions: [
+      {
+        what: 'Buka 2 lowongan rekayasa teknis: 1 Senior Rust Backend & 1 Frontend React',
+        why: 'Mendukung percepatan rilis platform sinkronisasi mobile',
+        rejected: ['Outsourcing tim pihak ketiga'],
+        topic: 'Organizational Strategy',
+      },
+    ],
+    actionItems: [
+      { task: 'Publikasi job description di portal karir', owner: 'HR Team', due: 'Selesai' },
+    ],
+  },
+  {
+    id: 'teams/annual-strategy-vision-2027',
+    title: 'Annual Strategy: Vision 2027 & The Future of Local-First AI',
+    context: 'Sesi visi tahunan membahas tren masa depan asisten rapat berbasis AI lokal dan privasi mutlak.',
+    minutesAgo: 50400,
+    durationMins: 90,
+    dialogue: [
+      {
+        speaker: 'Sarah Chen (Lead Architect)',
+        text: 'Masa depan produktivitas adalah privasi mutlak: user memiliki 100% datanya di perangkat lokal.',
+      },
+      {
+        speaker: 'Maya Lin (Product)',
+        text: 'Companion memimpin paradigma ini dengan kombinasi ekstensi browser ringan dan desktop vault lokal.',
+      },
+    ],
+    summary: 'Perumusan visi strategis jangka panjang Companion sebagai pelopor asisten produktivitas rapat local-first di Asia Tenggara.',
+    timeline: [
+      { time: '09:00', topic: 'Keynote Visi 2027: Era Local-First AI' },
+      { time: '10:00', topic: 'Breakout groups: Produk, Arsitektur, dan Ekosistem' },
+      { time: '10:30', topic: 'Penyusunan manifesto privasi pengguna' },
+    ],
+    decisions: [
+      {
+        what: 'Jadikan "Zero-Cloud Obligation" sebagai DNA utama roadmap Companion 2027',
+        why: 'Diferensiasi kompetitif terkuat terhadap asisten AI berbasis cloud proprietary',
+        rejected: ['Pivot ke model penyimpanan server terpusat'],
+        topic: 'Long-term Vision',
+      },
+    ],
+    actionItems: [
+      { task: 'Susun manifesto produk local-first AI untuk website publik', owner: 'Sarah Chen', due: 'Selesai' },
+    ],
+  },
 ];
 
 function createInitialStorage(): Record<string, unknown> {
@@ -681,9 +1012,9 @@ function setupMock(): void {
     }
   }
 
-  // Seed initial data if empty or has fewer than 15 meetings
+  // Seed initial data if empty or has fewer than 25 meetings
   const meetingCount = Object.keys(memory).filter((k) => k.startsWith('meta:')).length;
-  if (meetingCount < 15) {
+  if (meetingCount < 25) {
     const initial = createInitialStorage();
     memory = { ...initial, ...memory };
     setStorageItem(STORAGE_KEY, JSON.stringify(memory));
