@@ -224,7 +224,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
         <section className="kb-col">
           <h2 className="section-label">
             {t('ext.kb.actionItems')}{' '}
-            {story?.overdueActions.length
+            {story?.overdueActions?.length
               ? t('ext.kb.overdue', { count: story.overdueActions.length })
               : ''}
           </h2>
@@ -258,7 +258,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
 
         <section className="kb-col">
           <h2 className="section-label">{t('ext.kb.changedDecisions')}</h2>
-          {story?.revisions.length ? (
+          {story?.revisions?.length ? (
             <ul className="kb-list">
               {story.revisions.map((r) => (
                 <li key={r.topic} className="kb-revision">
@@ -283,7 +283,7 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
           )}
 
           <h2 className="section-label">{t('ext.kb.chronology')}</h2>
-          {story?.events.length ? (
+          {story?.events?.length ? (
             <ol className="kb-timeline">
               {story.events.slice(-40).map((e, i) => (
                 <li key={`${e.kind}-${e.entityId}-${i}`}>

@@ -107,6 +107,26 @@ describe('standalone dev mock', () => {
     expect(carryRes.ok).toBe(true);
     expect(carryRes.data.openActions).toEqual([]);
 
+    const chronoRes = (await chrome.runtime.sendMessage({
+      type: 'db',
+      op: 'chronology',
+    })) as {
+      ok: boolean;
+      data: { events: unknown[]; openActions: unknown[]; overdueActions: unknown[]; revisions: unknown[] };
+    };
+    expect(chronoRes.ok).toBe(true);
+    expect(chronoRes.data.events).toBeInstanceOf(Array);
+    expect(chronoRes.data.openActions).toBeInstanceOf(Array);
+    expect(chronoRes.data.overdueActions).toBeInstanceOf(Array);
+    expect(chronoRes.data.revisions).toBeInstanceOf(Array);
+
+    const askRes = (await chrome.runtime.sendMessage({
+      type: 'global-ask',
+      question: 'test question',
+    })) as { ok: boolean; result: { answer: string } };
+    expect(askRes.ok).toBe(true);
+    expect(askRes.result.answer).toContain('15 rekaman rapat');
+
     expect(await chrome.permissions.contains({ origins: ['<all_urls>'] })).toBe(true);
     expect(await chrome.permissions.request({ origins: ['<all_urls>'] })).toBe(true);
   });

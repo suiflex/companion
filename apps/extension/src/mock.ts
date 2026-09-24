@@ -790,7 +790,7 @@ function setupMock(): void {
       getURL: (path: string) => `/${path.replace(/^\//, '')}`,
       sendMessage: async (msg: unknown) => {
         console.info('[Dev Mock chrome.runtime.sendMessage]', msg);
-        const m = msg as { type?: string; op?: string; args?: Record<string, unknown> } | undefined;
+        const m = msg as { type?: string; op?: string; args?: Record<string, unknown>; question?: string } | undefined;
         if (m?.type === 'db') {
           if (m.op === 'session') {
             const sid = (m.args?.id as string) || '';
@@ -801,7 +801,7 @@ function setupMock(): void {
                 startedAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
                 endedAt: null,
                 durationMs: 35 * 60 * 1000,
-                platform: 'google-meet',
+                platform: sid.startsWith('teams/') ? 'teams' : 'google-meet',
                 participants: ['Sarah Chen', 'Alex Rivera', 'Budi Santoso', 'Maya Lin'],
                 projectId: null,
                 agenda: '',
@@ -811,7 +811,128 @@ function setupMock(): void {
           if (m.op === 'carry-over') {
             return { ok: true, data: { openActions: [], openQuestions: [] } };
           }
+          if (m.op === 'chronology') {
+            const mockEvents = MOCK_SEEDS.slice(0, 10).map((s, idx) => ({
+              kind: (idx % 2 === 0 ? 'decision' : 'action') as 'decision' | 'action' | 'question' | 'question-resolved',
+              at: new Date(Date.now() - s.minutesAgo * 60 * 1000).toISOString(),
+              sessionId: s.id,
+              sessionTitle: s.title,
+              text: s.actionItems[0]?.task || s.decisions[0]?.what || s.title,
+              entityId: idx + 1,
+            }));
+            const mockRevisions = [
+              {
+                topic: 'Database Architecture',
+                decisions: [
+                  {
+                    id: 1,
+                    sessionId: 'meet/arch-sync-2026',
+                    topic: 'Database Architecture',
+                    decision: 'Implementasi Read/Write Splitting di DataSource layer',
+                    reason: 'Menghilangkan beban query baca berat dari database utama',
+                    rejected: ['Vertical scaling DB utama'],
+                    createdAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+                    supersededBy: null,
+                  },
+                ],
+              },
+              {
+                topic: 'Gateway Caching',
+                decisions: [
+                  {
+                    id: 2,
+                    sessionId: 'meet/arch-sync-2026',
+                    topic: 'Gateway Caching',
+                    decision: 'Redis Caching untuk validasi token sesi auth',
+                    reason: 'Memangkas 60% pemanggilan query auth berulang ke database',
+                    rejected: ['In-memory local cache per instance'],
+                    createdAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+                    supersededBy: null,
+                  },
+                ],
+              },
+            ];
+            const mockActions = MOCK_SEEDS.flatMap((s, sIdx) =>
+              s.actionItems.map((item, aIdx) => ({
+                id: sIdx * 10 + aIdx + 1,
+                sessionId: s.id,
+                task: item.task,
+                owner: item.owner,
+                dueAt: item.due,
+                status: 'open' as const,
+                externalRef: null,
+                externalUrl: null,
+                createdAt: new Date(Date.now() - s.minutesAgo * 60 * 1000).toISOString(),
+              })),
+            );
+
+            return {
+              ok: true,
+              data: {
+                events: mockEvents,
+                revisions: mockRevisions,
+                openQuestions: [],
+                openActions: mockActions,
+                overdueActions: [],
+              },
+            };
+          }
+          if (m.op === 'actions') {
+            const mockActions = MOCK_SEEDS.flatMap((s, sIdx) =>
+              s.actionItems.map((item, aIdx) => ({
+                id: sIdx * 10 + aIdx + 1,
+                sessionId: s.id,
+                task: item.task,
+                owner: item.owner,
+                dueAt: item.due,
+                status: 'open' as const,
+                externalRef: null,
+                externalUrl: null,
+                createdAt: new Date(Date.now() - s.minutesAgo * 60 * 1000).toISOString(),
+              })),
+            );
+            return { ok: true, data: mockActions };
+          }
+          if (m.op === 'set-action-status') {
+            return { ok: true, data: { ok: true } };
+          }
+          if (m.op === 'push-issue') {
+            return { ok: true, data: { ref: 'TRACKER-42', alreadyPushed: false } };
+          }
+          if (m.op === 'refresh-issues') {
+            return { ok: true, data: { checked: 3, changed: 0, failed: [] } };
+          }
           return { ok: true, data: [] };
+        }
+        if (m?.type === 'global-ask') {
+          const q = m.question || '';
+          return {
+            ok: true,
+            result: {
+              answer: `Berdasarkan 15 rekaman rapat: Terkait pertanyaan "${q}", tim menyepakati implementasi arsitektur Read/Write Splitting DB, token caching Redis, dan standar token WCAG 2.1 AA untuk UI extension.`,
+              answerability: 'grounded',
+              confidence: 0.94,
+              sessions: [
+                {
+                  id: 'meet/arch-sync-2026',
+                  title: 'Q3 System Architecture & Performance Review',
+                  startedAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+                },
+                {
+                  id: 'meet/product-ui-revamp',
+                  title: 'Product UI/UX Revamp & Standalone Mode',
+                  startedAt: new Date(Date.now() - 120 * 60 * 1000).toISOString(),
+                },
+              ],
+              evidence: [
+                {
+                  sessionId: 'meet/arch-sync-2026',
+                  speakers: ['Sarah Chen', 'Alex Rivera'],
+                  preview: 'Solusi jangka pendek kita pisahkan query read/write di DataSource layer dan Redis session cache.',
+                },
+              ],
+            },
+          };
         }
         return { ok: true, data: [] };
       },
