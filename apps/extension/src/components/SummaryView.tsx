@@ -1,7 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { locale, t } from '@meetcc/shared/i18n';
-import type { Analysis, AnalysisRecord, Meeting } from '@meetcc/shared';
-import { appendAudit, saveContext } from '@meetcc/shared';
+import type { Analysis, AnalysisRecord, Meeting, MiniContext } from '@meetcc/shared';
+import {
+  appendAudit,
+  saveContext,
+  getContext,
+  getMiniContexts,
+  watchStorage,
+  MINI_CONTEXTS_KEY,
+  CONTEXT_PREFIX,
+} from '@meetcc/shared';
+import { db } from '../lib/db';
 import { toMarkdown } from '@meetcc/exporters/markdown';
 import { obsidianPath, toObsidian } from '@meetcc/exporters/obsidian';
 import { GATE_EVENT } from '@meetcc/exporters/gate';
@@ -156,19 +165,103 @@ function Result({ meeting, analysis }: { meeting: Meeting; analysis: Analysis })
 
 function ContextCard({ meeting }: { meeting: Meeting }) {
   const [context, setContext] = useState(meeting.context ?? '');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!meeting.context?.trim());
   const [saved, setSaved] = useState(false);
+  const [availableContexts, setAvailableContexts] = useState<MiniContext[]>([]);
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const toast = useToast();
 
+  const loadMiniContextsList = () => {
+    void getMiniContexts().then(setAvailableContexts).catch(() => undefined);
+  };
+
   useEffect(() => {
-    setContext(meeting.context ?? '');
-  }, [meeting.context]);
+    loadMiniContextsList();
+    return watchStorage(loadMiniContextsList, [MINI_CONTEXTS_KEY]);
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    void getContext(meeting.id).then((stored) => {
+      if (alive) {
+        const val = stored || meeting.context || '';
+        setContext(val);
+        if (!val.trim()) {
+          setOpen(true);
+        }
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [meeting.id, meeting.context]);
+
+  useEffect(() => {
+    return watchStorage(() => {
+      void getContext(meeting.id).then((ctx) => {
+        if (ctx !== undefined) setContext(ctx);
+      });
+    }, [CONTEXT_PREFIX + meeting.id]);
+  }, [meeting.id]);
+
+  const tagToContexts = useMemo(() => {
+    const map = new Map<string, MiniContext[]>();
+    for (let i = 0; i < availableContexts.length; i++) {
+      const c = availableContexts[i];
+      for (let j = 0; j < c.tags.length; j++) {
+        const tg = c.tags[j].toLowerCase();
+        let list = map.get(tg);
+        if (!list) {
+          list = [];
+          map.set(tg, list);
+        }
+        list.push(c);
+      }
+    }
+    return map;
+  }, [availableContexts]);
+
+  const uniqueTags = useMemo(() => {
+    return Array.from(tagToContexts.keys()).sort();
+  }, [tagToContexts]);
+
+  const tagCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const [tg, list] of tagToContexts.entries()) {
+      map.set(tg, list.length);
+    }
+    return map;
+  }, [tagToContexts]);
 
   const handleSave = async () => {
     await saveContext(meeting.id, context);
+    await db('set-session-agenda', { id: meeting.id, agenda: context }).catch(() => undefined);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     toast('success', t('ext.summary.contextSaved'));
+  };
+
+  const insertSingle = async (ctx: MiniContext) => {
+    const snippet = `[${ctx.term}]: ${ctx.definition}`;
+    const nextContext = context.trim() ? `${context.trim()}\n${snippet}` : snippet;
+    setContext(nextContext);
+    await saveContext(meeting.id, nextContext).catch(() => undefined);
+    await db('set-session-agenda', { id: meeting.id, agenda: nextContext }).catch(() => undefined);
+    toast('success', t('ext.header.contextInserted'));
+    setPopoverOpen(false);
+  };
+
+  const insertTag = async (tag: string) => {
+    const matches = tagToContexts.get(tag.toLowerCase()) ?? [];
+    if (!matches.length) return;
+    const snippets = matches.map((c) => `[${c.term}]: ${c.definition}`);
+    const added = snippets.join('\n');
+    const nextContext = context.trim() ? `${context.trim()}\n${added}` : added;
+    setContext(nextContext);
+    await saveContext(meeting.id, nextContext).catch(() => undefined);
+    await db('set-session-agenda', { id: meeting.id, agenda: nextContext }).catch(() => undefined);
+    toast('success', t('ext.header.contextInserted'));
+    setPopoverOpen(false);
   };
 
   const hasContext = !!context.trim();
@@ -202,6 +295,71 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
             onBlur={handleSave}
             rows={3}
           />
+          <div className="summary-context-quick-insert">
+            <span className="quick-insert-label">
+              ✦ {t('ext.header.insertContext')}:
+            </span>
+            <div className="quick-insert-tags" title={t('ext.header.insertByTag')}>
+              {uniqueTags.map((tg) => {
+                const count = tagCounts.get(tg) ?? 0;
+                return (
+                  <button
+                    key={tg}
+                    type="button"
+                    className="quick-insert-tag-btn"
+                    onClick={() => void insertTag(tg)}
+                    title={t('ext.header.insertAllWithTag', { tag: tg, count })}
+                  >
+                    + #{tg} <span className="tag-count">({count})</span>
+                  </button>
+                );
+              })}
+              {availableContexts.length > 0 && (
+                <div className="quick-insert-single-wrap">
+                  <button
+                    type="button"
+                    className="quick-insert-single-btn"
+                    onClick={() => setPopoverOpen((v) => !v)}
+                  >
+                    ✦ {t('ext.header.insertSingle')} ▾
+                  </button>
+                  {popoverOpen && (
+                    <div className="summary-context-popover">
+                      <div className="summary-popover-head">
+                        <span className="summary-popover-title">{t('ext.header.contextPopoverTitle')}</span>
+                        <button
+                          type="button"
+                          className="summary-popover-close"
+                          onClick={() => setPopoverOpen(false)}
+                          aria-label={t('ext.header.close')}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="summary-popover-item-list">
+                        {availableContexts.map((ctx) => (
+                          <button
+                            key={ctx.id}
+                            type="button"
+                            className="summary-ctx-item-btn"
+                            onClick={() => void insertSingle(ctx)}
+                          >
+                            <span className="ctx-item-term">{ctx.term}</span>
+                            <span className="dim ctx-item-def">{ctx.definition}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {availableContexts.length === 0 && (
+                <span className="dim" style={{ fontSize: 11 }}>
+                  {t('ext.header.noContextsAvailable')}
+                </span>
+              )}
+            </div>
+          </div>
           <div className="summary-context-footer">
             <span className="dim" style={{ fontSize: 11 }}>
               {t('ext.summary.contextHint')}
