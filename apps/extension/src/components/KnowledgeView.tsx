@@ -79,7 +79,8 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formTerm, setFormTerm] = useState('');
   const [formDef, setFormDef] = useState('');
-  const [formTags, setFormTags] = useState('');
+  const [formSelectedTags, setFormSelectedTags] = useState<string[]>([]);
+  const [customTagInput, setCustomTagInput] = useState('');
 
   // Cross-meeting insights state
   const [question, setQuestion] = useState('');
@@ -158,16 +159,68 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
     return results;
   }, [contexts, activeTag, search]);
 
+  const selectedTagSet = useMemo(() => {
+    const s = new Set<string>();
+    for (let i = 0; i < formSelectedTags.length; i++) {
+      s.add(formSelectedTags[i].toLowerCase());
+    }
+    return s;
+  }, [formSelectedTags]);
+
+  const toggleTag = useCallback((tag: string) => {
+    const lower = tag.toLowerCase();
+    setFormSelectedTags((prev) => {
+      let found = false;
+      for (let i = 0; i < prev.length; i++) {
+        if (prev[i].toLowerCase() === lower) {
+          found = true;
+          break;
+        }
+      }
+      if (found) {
+        return prev.filter((t) => t.toLowerCase() !== lower);
+      }
+      return [...prev, tag];
+    });
+  }, []);
+
+  const addCustomTag = useCallback(() => {
+    const trimmed = customTagInput.trim().replace(/^#/, '');
+    if (!trimmed) return;
+    const lower = trimmed.toLowerCase();
+    setFormSelectedTags((prev) => {
+      for (let i = 0; i < prev.length; i++) {
+        if (prev[i].toLowerCase() === lower) return prev;
+      }
+      return [...prev, trimmed];
+    });
+    setCustomTagInput('');
+  }, [customTagInput]);
+
+  const removeTag = useCallback((tagToRemove: string) => {
+    const lower = tagToRemove.toLowerCase();
+    setFormSelectedTags((prev) => prev.filter((t) => t.toLowerCase() !== lower));
+  }, []);
+
   const handleSaveContext = async (e: React.FormEvent) => {
     e.preventDefault();
     const term = formTerm.trim();
     const definition = formDef.trim();
     if (!term || !definition) return;
 
-    const tags = formTags
-      .split(',')
-      .map((t) => t.trim().replace(/^#/, ''))
-      .filter(Boolean);
+    const extra = customTagInput.trim().replace(/^#/, '');
+    const tags = [...formSelectedTags];
+    if (extra) {
+      const extraLower = extra.toLowerCase();
+      let exists = false;
+      for (let i = 0; i < tags.length; i++) {
+        if (tags[i].toLowerCase() === extraLower) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) tags.push(extra);
+    }
 
     const now = new Date().toISOString();
     let updated: MiniContext[];
@@ -192,7 +245,8 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
     setContexts(updated);
     setFormTerm('');
     setFormDef('');
-    setFormTags('');
+    setFormSelectedTags([]);
+    setCustomTagInput('');
     setEditingId(null);
     setIsEditing(false);
     toast('success', t('ext.kb.contextSaved'));
@@ -202,7 +256,8 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
     setEditingId(ctx.id);
     setFormTerm(ctx.term);
     setFormDef(ctx.definition);
-    setFormTags(ctx.tags.join(', '));
+    setFormSelectedTags([...ctx.tags]);
+    setCustomTagInput('');
     setIsEditing(true);
   };
 
@@ -323,7 +378,8 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
                 } else {
                   setFormTerm('');
                   setFormDef('');
-                  setFormTags('');
+                  setFormSelectedTags([]);
+                  setCustomTagInput('');
                   setEditingId(null);
                   setIsEditing(true);
                 }
@@ -348,15 +404,77 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
                   onChange={(e) => setFormTerm(e.target.value)}
                 />
               </label>
-              <label className="field">
+
+              <div className="field kb-tag-selector">
                 <span>{t('ext.kb.tags')}</span>
-                <input
-                  type="text"
-                  value={formTags}
-                  placeholder={t('ext.kb.tagsPlaceholder')}
-                  onChange={(e) => setFormTags(e.target.value)}
-                />
-              </label>
+
+                {allTags.length > 0 && (
+                  <div className="kb-ref-tags-box">
+                    <span className="kb-ref-tags-hint">{t('ext.kb.selectExistingTags')}</span>
+                    <div className="kb-ref-tag-pills">
+                      {allTags.map((tag) => {
+                        const selected = selectedTagSet.has(tag.toLowerCase());
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            className={`ref-tag-pill ${selected ? 'selected' : ''}`}
+                            onClick={() => toggleTag(tag)}
+                          >
+                            <span>#{tag}</span>
+                            {selected && <span className="ref-tag-check">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="kb-tag-input-row">
+                  <input
+                    type="text"
+                    className="kb-new-tag-input"
+                    value={customTagInput}
+                    placeholder={t('ext.kb.tagsPlaceholder')}
+                    onChange={(e) => setCustomTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        addCustomTag();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="kb-add-tag-btn"
+                    onClick={addCustomTag}
+                  >
+                    {t('ext.kb.addTag')}
+                  </button>
+                </div>
+
+                {formSelectedTags.length > 0 && (
+                  <div className="kb-selected-tags-row">
+                    <span className="kb-selected-tags-label">{t('ext.kb.selectedTags')}:</span>
+                    <div className="kb-selected-pills">
+                      {formSelectedTags.map((tag) => (
+                        <span key={tag} className="selected-tag-pill">
+                          #{tag}
+                          <button
+                            type="button"
+                            className="remove-tag-btn"
+                            onClick={() => removeTag(tag)}
+                            aria-label={t('ext.kb.removeTag', { tag })}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <label className="field">
                 <span>{t('ext.kb.definition')}</span>
                 <textarea
@@ -420,9 +538,27 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
           ) : (
             <div className="kb-context-grid">
               {filteredContexts.map((ctx) => (
-                <article key={ctx.id} className="kb-context-card">
+                <article
+                  key={ctx.id}
+                  className="kb-context-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleEdit(ctx)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleEdit(ctx);
+                    }
+                  }}
+                >
                   <div className="ctx-card-head">
-                    <span className="ctx-term">{ctx.term}</span>
+                    <div className="ctx-term-wrap">
+                      <span className="ctx-term">{ctx.term}</span>
+                      <span className="ctx-hover-hint">
+                        <span>✎</span>
+                        <span>{t('ext.kb.clickToEdit')}</span>
+                      </span>
+                    </div>
                     <div className="ctx-tags">
                       {ctx.tags.map((tg) => (
                         <span key={tg} className="ctx-tag-pill">
@@ -433,13 +569,23 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
                   </div>
                   <p className="ctx-def">{ctx.definition}</p>
                   <div className="ctx-card-actions">
-                    <button type="button" className="ctx-btn" onClick={() => handleEdit(ctx)}>
+                    <button
+                      type="button"
+                      className="ctx-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(ctx);
+                      }}
+                    >
                       {t('ext.kb.edit')}
                     </button>
                     <button
                       type="button"
                       className="ctx-btn danger"
-                      onClick={() => void handleDelete(ctx.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleDelete(ctx.id);
+                      }}
                     >
                       {t('ext.kb.deleteContext')}
                     </button>

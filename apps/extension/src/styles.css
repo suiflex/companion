@@ -2128,6 +2128,152 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
   color: var(--text);
 }
 
+.kb-tag-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kb-ref-tags-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--panel);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--hairline);
+}
+
+.kb-ref-tags-hint {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+.kb-ref-tag-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ref-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--hairline-2);
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font: 500 11px/1 var(--font-mono);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.ref-tag-pill:hover {
+  border-color: var(--phosphor);
+  color: var(--text);
+}
+
+.ref-tag-pill.selected {
+  background: var(--phosphor-dim);
+  border-color: var(--phosphor);
+  color: var(--phosphor);
+  font-weight: 600;
+}
+
+.ref-tag-check {
+  font-size: 10px;
+}
+
+.kb-tag-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.kb-new-tag-input {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--hairline-2);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.kb-add-tag-btn {
+  padding: 6px 12px;
+  font-size: 11.5px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--hairline-2);
+  color: var(--text-dim);
+  cursor: pointer;
+  flex: none;
+}
+
+.kb-add-tag-btn:hover {
+  border-color: var(--phosphor);
+  color: var(--text);
+}
+
+.kb-selected-tags-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.kb-selected-tags-label {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.kb-selected-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.selected-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 500 11px/1 var(--font-mono);
+  padding: 3px 6px 3px 8px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  color: var(--amber);
+  border: 1px solid var(--hairline-2);
+}
+
+.remove-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 50%;
+}
+
+.remove-tag-btn:hover {
+  color: var(--danger);
+  background: var(--danger-dim);
+}
+
 .kb-filter-row {
   display: flex;
   flex-wrap: wrap;
@@ -2186,15 +2332,24 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px;
+  padding: 14px;
   background: var(--panel);
   border: 1px solid var(--hairline);
   border-radius: 8px;
-  transition: border-color 120ms ease;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 140ms ease, background-color 140ms ease, transform 140ms ease;
 }
 
 .kb-context-card:hover {
-  border-color: var(--hairline-2);
+  border-color: var(--phosphor);
+  background: var(--panel-2);
+  transform: translateY(-1px);
+}
+
+.kb-context-card:focus-visible {
+  outline: 2px solid var(--phosphor);
+  outline-offset: 1px;
 }
 
 .ctx-card-head {
@@ -2202,6 +2357,27 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
+}
+
+.ctx-term-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ctx-hover-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--phosphor);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.kb-context-card:hover .ctx-hover-hint {
+  opacity: 1;
 }
 
 .ctx-term {
