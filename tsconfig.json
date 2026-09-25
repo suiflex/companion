@@ -19,6 +19,7 @@
       "@meetcc/shared/i18n": ["packages/shared/src/i18n"],
       "@meetcc/ai": ["packages/ai/src"],
       "@meetcc/meeting": ["packages/meeting/src"],
+      "@meetcc/ui": ["packages/ui/src"],
       "@meetcc/store": ["packages/store/src"],
       "@meetcc/mcp": ["packages/mcp/src"],
       "@meetcc/vault": ["packages/vault/src"],
