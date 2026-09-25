@@ -266,40 +266,25 @@ export function KnowledgeView({
   }, [contexts, activeTag, search]);
 
   const selectedTagSet = useMemo(() => {
-    const s = new Set<string>();
-    for (let i = 0; i < formSelectedTags.length; i++) {
-      s.add(formSelectedTags[i].toLowerCase());
-    }
-    return s;
+    return new Set(formSelectedTags.map((t) => t.toLowerCase()));
   }, [formSelectedTags]);
 
   const toggleTag = useCallback((tag: string) => {
     const lower = tag.toLowerCase();
-    setFormSelectedTags((prev) => {
-      let found = false;
-      for (let i = 0; i < prev.length; i++) {
-        if (prev[i].toLowerCase() === lower) {
-          found = true;
-          break;
-        }
-      }
-      if (found) {
-        return prev.filter((t) => t.toLowerCase() !== lower);
-      }
-      return [...prev, tag];
-    });
+    setFormSelectedTags((prev) =>
+      prev.some((t) => t.toLowerCase() === lower)
+        ? prev.filter((t) => t.toLowerCase() !== lower)
+        : [...prev, tag],
+    );
   }, []);
 
   const addCustomTag = useCallback(() => {
     const trimmed = customTagInput.trim().replace(/^#/, '');
     if (!trimmed) return;
     const lower = trimmed.toLowerCase();
-    setFormSelectedTags((prev) => {
-      for (let i = 0; i < prev.length; i++) {
-        if (prev[i].toLowerCase() === lower) return prev;
-      }
-      return [...prev, trimmed];
-    });
+    setFormSelectedTags((prev) =>
+      prev.some((t) => t.toLowerCase() === lower) ? prev : [...prev, trimmed],
+    );
     setCustomTagInput('');
   }, [customTagInput]);
 
@@ -318,14 +303,9 @@ export function KnowledgeView({
     const tags = [...formSelectedTags];
     if (extra) {
       const extraLower = extra.toLowerCase();
-      let exists = false;
-      for (let i = 0; i < tags.length; i++) {
-        if (tags[i].toLowerCase() === extraLower) {
-          exists = true;
-          break;
-        }
+      if (!tags.some((t) => t.toLowerCase() === extraLower)) {
+        tags.push(extra);
       }
-      if (!exists) tags.push(extra);
     }
 
     const now = new Date().toISOString();
@@ -397,6 +377,7 @@ export function KnowledgeView({
     [asking, toast],
   );
 
+  // a question handed over from ⌘K runs immediately
   useEffect(() => {
     if (seedQuestion) {
       setActiveTab('insights');
@@ -429,6 +410,7 @@ export function KnowledgeView({
     }
   };
 
+  // the tracker is where the team actually closes work, so its status wins
   const refreshIssues = async () => {
     setSyncingIssues(true);
     try {

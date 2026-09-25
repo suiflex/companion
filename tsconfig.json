@@ -12,7 +12,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["chrome", "node"],
+    "types": ["chrome", "node", "vite/client"],
     "baseUrl": ".",
     "paths": {
       "@meetcc/shared": ["packages/shared/src"],

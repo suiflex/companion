@@ -4,6 +4,8 @@ import { db } from '../lib/db';
 import { sendMessage } from '../lib/sendMessage';
 import { useToast } from '../toast';
 import { t } from '@meetcc/shared/i18n';
+import chromeBadge from '../../../../assets/badges/chrome-web-store.svg';
+import firefoxBadge from '../../../../assets/badges/firefox-addon.svg';
 
 // The panels behind the Settings tabs: optional integrations (P2.5-P2.10),
 // custom templates (P2.1) and the data tools (snapshot export for the MCP
@@ -711,7 +713,7 @@ export function VersionPanel() {
               className="version-badge-link"
             >
               <img
-                src="badges/chrome-web-store.svg"
+                src={chromeBadge}
                 alt="Chrome Web Store"
                 className="version-badge-img"
               />
@@ -746,7 +748,7 @@ export function VersionPanel() {
               className="version-badge-link"
             >
               <img
-                src="badges/firefox-addon.svg"
+                src={firefoxBadge}
                 alt="Firefox Browser Add-on"
                 className="version-badge-img"
               />
@@ -768,7 +770,7 @@ export function VersionPanel() {
           <div className="version-desktop-actions">
             <a
               className="version-btn"
-              href="https://github.com/suiflex/companion/releases"
+              href="https://github.com/suiflex/companion/releases/latest"
               target="_blank"
               rel="noreferrer"
             >
@@ -776,7 +778,7 @@ export function VersionPanel() {
             </a>
             <a
               className="version-btn"
-              href="https://github.com/suiflex/companion/releases"
+              href="https://github.com/suiflex/companion/releases/latest"
               target="_blank"
               rel="noreferrer"
             >
@@ -784,7 +786,7 @@ export function VersionPanel() {
             </a>
             <a
               className="version-btn"
-              href="https://github.com/suiflex/companion/releases"
+              href="https://github.com/suiflex/companion/releases/latest"
               target="_blank"
               rel="noreferrer"
             >

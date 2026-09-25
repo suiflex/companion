@@ -246,20 +246,8 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
     toast('success', t('ext.summary.contextSaved'));
   };
 
-  const insertSingle = async (ctx: MiniContext) => {
-    const snippet = `[${ctx.term}]: ${ctx.definition}`;
-    const nextContext = context.trim() ? `${context.trim()}\n${snippet}` : snippet;
-    setContext(nextContext);
-    await saveContext(meeting.id, nextContext).catch(() => undefined);
-    await db('set-session-agenda', { id: meeting.id, agenda: nextContext }).catch(() => undefined);
-    toast('success', t('ext.header.contextInserted'));
-    setPopoverOpen(false);
-  };
-
-  const insertTag = async (tag: string) => {
-    const matches = tagToContexts.get(tag.toLowerCase()) ?? [];
-    if (!matches.length) return;
-    const snippets = matches.map((c) => `[${c.term}]: ${c.definition}`);
+  const appendSnippets = async (snippets: string[]) => {
+    if (!snippets.length) return;
     const added = snippets.join('\n');
     const nextContext = context.trim() ? `${context.trim()}\n${added}` : added;
     setContext(nextContext);
@@ -267,6 +255,15 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
     await db('set-session-agenda', { id: meeting.id, agenda: nextContext }).catch(() => undefined);
     toast('success', t('ext.header.contextInserted'));
     setPopoverOpen(false);
+  };
+
+  const insertSingle = (ctx: MiniContext) => {
+    void appendSnippets([`[${ctx.term}]: ${ctx.definition}`]);
+  };
+
+  const insertTag = (tag: string) => {
+    const matches = tagToContexts.get(tag.toLowerCase()) ?? [];
+    void appendSnippets(matches.map((c) => `[${c.term}]: ${c.definition}`));
   };
 
   const hasContext = !!context.trim();
