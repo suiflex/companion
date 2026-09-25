@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 import type { SessionRow } from '@meetcc/store';
 import type { CarryOver } from '@meetcc/meeting';
 import { carryOver, db, getSession, listProjects } from '../lib/db';
-import { getContext, saveContext } from '@meetcc/shared';
+import {
+  getContext,
+  saveContext,
+  watchStorage,
+  CONTEXT_PREFIX,
+} from '@meetcc/shared';
 import { locale, t } from '@meetcc/shared/i18n';
 
 // P1.5 — a meeting is more than a room code: date, duration, participants and
@@ -57,6 +62,14 @@ export function MeetingHeader({
     return () => {
       alive = false;
     };
+  }, [sessionId]);
+
+  useEffect(() => {
+    return watchStorage(() => {
+      void getContext(sessionId).then((ctx) => {
+        if (ctx !== undefined) setAgenda(ctx);
+      });
+    }, [CONTEXT_PREFIX + sessionId]);
   }, [sessionId]);
 
   if (failed || !session) return null;

@@ -13,12 +13,15 @@ import {
   saveTitle,
   getContext,
   saveContext,
+  getMiniContexts,
+  saveMiniContexts,
   watchStorage,
   ANALYSIS_PREFIX,
   AUDIT_KEY,
   AUDIT_RING_MAX,
   CONTEXT_PREFIX,
   META_PREFIX,
+  MINI_CONTEXTS_KEY,
   TITLE_PREFIX,
   TRANSCRIPT_PREFIX,
   WATCH_DEBOUNCE_MS,
@@ -105,6 +108,21 @@ describe('parsers', () => {
 
     await saveContext('new', '   ');
     expect(await getContext('new')).toBe('');
+  });
+
+  it('manages mini contexts in storage', async () => {
+    expect(MINI_CONTEXTS_KEY).toBe('mini_contexts');
+    expect(await getMiniContexts()).toEqual([]);
+    const item = {
+      id: 'ctx-1',
+      term: 'P95',
+      definition: '95th percentile latency',
+      tags: ['infra', 'latency'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await saveMiniContexts([item]);
+    expect(await getMiniContexts()).toEqual([item]);
   });
 });
 

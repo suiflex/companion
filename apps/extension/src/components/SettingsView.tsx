@@ -19,13 +19,13 @@ import {
   type Settings,
 } from '@meetcc/shared';
 import { useToast } from '../toast';
-import { DataPanel, IntegrationsPanel, TemplatesPanel } from './SettingsPanels';
+import { DataPanel, IntegrationsPanel, TemplatesPanel, VersionPanel } from './SettingsPanels';
 import { SignInPanel } from './SignInPanel';
 import { t, LANGS, type LangPref } from '@meetcc/shared/i18n';
 import { applyLang, loadLangPref, saveLangPref } from '../lib/lang';
 import { loadMeetingLangPref, saveMeetingLangPref, type MeetingLangPref } from '../lib/meetingLang';
 
-type Panel = 'provider' | 'integrations' | 'templates' | 'data';
+type Panel = 'provider' | 'integrations' | 'templates' | 'data' | 'version';
 
 // Looked up per render rather than frozen at module load, so switching the
 // language relabels the tabs without a reload.
@@ -34,6 +34,7 @@ const PANEL_LABEL: Record<Panel, Parameters<typeof t>[0]> = {
   integrations: 'ext.settings.tab.integrations',
   templates: 'ext.settings.tab.templates',
   data: 'ext.settings.tab.data',
+  version: 'ext.settings.tab.version',
 };
 
 const langLabel = (p: LangPref): string =>
@@ -237,6 +238,7 @@ export function SettingsView({
         {panel === 'templates' && <TemplatesPanel />}
         {panel === 'data' && <DataPanel selectedMeeting={selectedMeeting} />}
         {panel === 'integrations' && <IntegrationsPanel settings={settings} onChange={set} />}
+        {panel === 'version' && <VersionPanel />}
 
         {panel === 'provider' && (
         <>
@@ -419,7 +421,7 @@ export function SettingsView({
         </>
         )}
 
-        {panel !== 'templates' && panel !== 'data' && (
+        {panel !== 'templates' && panel !== 'data' && panel !== 'version' && (
           <div className="subbar">
             {panel === 'provider' && (
               <button onClick={test} disabled={testing}>

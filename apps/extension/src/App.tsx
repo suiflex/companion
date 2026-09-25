@@ -182,6 +182,15 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
     if (selected) await handleDelete(selected.id);
   };
 
+  const activeView: 'meeting' | 'knowledge' | 'decisions' | 'settings' =
+    showKnowledge
+      ? 'knowledge'
+      : showSettings
+      ? 'settings'
+      : showDecisions
+      ? 'decisions'
+      : 'meeting';
+
   return (
     <div className="app">
       <Sidebar
@@ -190,7 +199,8 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
         records={records}
         titles={titles}
         now={now}
-        selectedId={selected?.id ?? null}
+        selectedId={activeView === 'meeting' ? (selected?.id ?? null) : null}
+        activeView={activeView}
         onSelect={openMeeting}
         onSettings={() => {
           setShowSettings(true);
@@ -213,7 +223,11 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
       <main className="main">
         <UpdateBanner />
         {showKnowledge ? (
-          <KnowledgeView onOpenMeeting={openMeeting} seedQuestion={seedQuestion} />
+          <KnowledgeView
+            onOpenMeeting={openMeeting}
+            onClose={() => setShowKnowledge(false)}
+            seedQuestion={seedQuestion}
+          />
         ) : showSettings ? (
           <SettingsView onClose={() => setShowSettings(false)} selectedMeeting={selected?.id ?? null} />
         ) : showDecisions ? (

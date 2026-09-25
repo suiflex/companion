@@ -1,3 +1,6 @@
+if (import.meta.env.DEV) {
+  await import('./mock');
+}
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

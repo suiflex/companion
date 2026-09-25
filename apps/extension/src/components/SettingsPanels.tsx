@@ -4,6 +4,8 @@ import { db } from '../lib/db';
 import { sendMessage } from '../lib/sendMessage';
 import { useToast } from '../toast';
 import { t } from '@meetcc/shared/i18n';
+import chromeBadge from '../../../../assets/badges/chrome-web-store.svg';
+import firefoxBadge from '../../../../assets/badges/firefox-addon.svg';
 
 // The panels behind the Settings tabs: optional integrations (P2.5-P2.10),
 // custom templates (P2.1) and the data tools (snapshot export for the MCP
@@ -666,5 +668,146 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
         </div>
       </fieldset>
     </>
+  );
+}
+
+const INSTALL_CMD = 'curl -fsSL https://raw.githubusercontent.com/suiflex/companion/develop/scripts/install.sh | bash';
+
+export function VersionPanel() {
+  const manifest = chrome.runtime.getManifest();
+  const version = manifest.version ?? '0.0.0';
+  const toast = useToast();
+
+  const copyTerminalCmd = async () => {
+    await navigator.clipboard.writeText(INSTALL_CMD);
+    toast('success', t('ext.version.copiedCommand'));
+  };
+
+  return (
+    <div className="version-panel">
+      <div className="version-banner">
+        <div className="version-banner-left">
+          <span className="version-title-text">{t('ext.version.title')}</span>
+          <span className="version-pill">{t('ext.version.current', { version })}</span>
+        </div>
+        <a
+          className="version-release-link"
+          href="https://github.com/suiflex/companion/releases"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t('ext.version.downloadReleases')}
+        </a>
+      </div>
+
+      <div className="version-grid">
+        <div className="version-card">
+          <div className="version-card-head">
+            <h3>{t('ext.version.chromeTitle')}</h3>
+          </div>
+          <div className="version-badges-row">
+            <a
+              href="https://chromewebstore.google.com/detail/meet-companion/neeapigpheabagekbdfjdekgdicfckpn"
+              target="_blank"
+              rel="noreferrer"
+              className="version-badge-link"
+            >
+              <img
+                src={chromeBadge}
+                alt="Chrome Web Store"
+                className="version-badge-img"
+              />
+            </a>
+            <a
+              href="https://github.com/suiflex/companion/releases/latest/download/meetcc-extension.zip"
+              target="_blank"
+              rel="noreferrer"
+              className="version-zip-badge"
+            >
+              <span className="zip-icon">⤓</span>
+              <span>{t('ext.version.downloadZip')}</span>
+            </a>
+          </div>
+          <ol className="version-steps">
+            <li>{t('ext.version.chromeStep1')}</li>
+            <li>{t('ext.version.chromeStep2')}</li>
+            <li>{t('ext.version.chromeStep3')}</li>
+            <li>{t('ext.version.chromeStep4')}</li>
+          </ol>
+        </div>
+
+        <div className="version-card">
+          <div className="version-card-head">
+            <h3>{t('ext.version.firefoxTitle')}</h3>
+          </div>
+          <div className="version-badges-row">
+            <a
+              href="https://addons.mozilla.org/en-US/firefox/addon/meet-companion/"
+              target="_blank"
+              rel="noreferrer"
+              className="version-badge-link"
+            >
+              <img
+                src={firefoxBadge}
+                alt="Firefox Browser Add-on"
+                className="version-badge-img"
+              />
+            </a>
+          </div>
+          <ol className="version-steps">
+            <li>{t('ext.version.firefoxStep1')}</li>
+            <li>{t('ext.version.firefoxStep2')}</li>
+            <li>{t('ext.version.firefoxStep3')}</li>
+            <li>{t('ext.version.firefoxStep4')}</li>
+          </ol>
+        </div>
+
+        <div className="version-card">
+          <div className="version-card-head">
+            <h3>{t('ext.version.desktopTitle')}</h3>
+          </div>
+          <p className="hint">{t('ext.version.desktopDesc')}</p>
+          <div className="version-desktop-actions">
+            <a
+              className="version-btn"
+              href="https://github.com/suiflex/companion/releases/latest"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t('ext.version.platformMac')}
+            </a>
+            <a
+              className="version-btn"
+              href="https://github.com/suiflex/companion/releases/latest"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t('ext.version.platformWindows')}
+            </a>
+            <a
+              className="version-btn"
+              href="https://github.com/suiflex/companion/releases/latest"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t('ext.version.platformLinux')}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="version-terminal-card">
+        <div className="version-terminal-head">
+          <span className="version-term-title">{t('ext.version.terminalTitle')}</span>
+          <span className="dim">{t('ext.version.terminalDesc')}</span>
+        </div>
+        <div className="version-code-box">
+          <code>{INSTALL_CMD}</code>
+          <button type="button" className="version-copy-btn" onClick={() => void copyTerminalCmd()}>
+            {t('ext.version.copy')}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

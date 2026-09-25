@@ -87,6 +87,7 @@ interface Props {
   titles: Record<string, string>
   now: number
   selectedId: string | null
+  activeView: 'meeting' | 'knowledge' | 'decisions' | 'settings'
   onSelect: (id: string) => void
   onSettings: () => void
   onDecisions: () => void
@@ -102,6 +103,7 @@ export function Sidebar({
   titles,
   now,
   selectedId,
+  activeView,
   onSelect,
   onSettings,
   onDecisions,
@@ -199,7 +201,6 @@ export function Sidebar({
           />
         )}
         <span className='spacer' />
-        <ThemeToggle />
         <button
           className='icon-btn'
           onClick={onSearch}
@@ -208,21 +209,22 @@ export function Sidebar({
           ⌕
         </button>
         <button
-          className='icon-btn'
+          className={`icon-btn ${activeView === 'knowledge' ? 'active' : ''}`}
           onClick={onKnowledge}
           aria-label={t('ext.sidebar.knowledge')}
           title={t('ext.sidebar.knowledge')}>
           ✦
         </button>
         <button
-          className='icon-btn'
+          className={`icon-btn ${activeView === 'decisions' ? 'active' : ''}`}
           onClick={onDecisions}
           aria-label={t('ext.sidebar.decisions')}
           title={t('ext.sidebar.decisions')}>
           ▤
         </button>
+        <ThemeToggle />
         <button
-          className='icon-btn'
+          className={`icon-btn ${activeView === 'settings' ? 'active' : ''}`}
           onClick={onSettings}
           aria-label={t('ext.sidebar.settings')}
           title={t('ext.sidebar.settings')}>
@@ -234,107 +236,118 @@ export function Sidebar({
 
   return (
     <aside className='sidebar'>
-      <div className='brand'>
-        <img className='brand-logo' src='icons/suiflex.svg' alt='Suiflex' />
-        <span className='brand-name'>Companion</span>
-        <button
-          className='icon-btn'
-          onClick={() => setOpen(false)}
-          aria-label={t('ext.sidebar.collapse')}
-          aria-expanded='true'
-          title={t('ext.sidebar.collapse')}>
-          «
-        </button>
-      </div>
-
-      {projects.length > 0 && (
-        <label className='sidebar-filter'>
-          <span className='section-label'>{t('ext.sidebar.project')}</span>
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label={t('ext.sidebar.projectFilter')}>
-            <option value=''>{t('ext.sidebar.allMeetings')}</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-
-      {loading ? (
-        <div aria-hidden='true'>
-          {[0, 1, 2].map((i) => (
-            <div key={i} className='skeleton skeleton-row' />
-          ))}
+      <div className='sidebar-top'>
+        <div className='brand'>
+          <img className='brand-logo' src='icons/suiflex.svg' alt='Suiflex' />
+          <span className='brand-name'>Companion</span>
+          <button
+            className='icon-btn collapse-btn'
+            onClick={() => setOpen(false)}
+            aria-label={t('ext.sidebar.collapse')}
+            aria-expanded='true'
+            title={t('ext.sidebar.collapse')}>
+            «
+          </button>
         </div>
-      ) : (
-        <>
-          {live.length > 0 && (
-            <section>
-              <h2 className='section-label'>{t('ext.sidebar.live')}</h2>
-              {live.map(item)}
-            </section>
-          )}
-          <section>
-            <h2 className='section-label'>{t('ext.sidebar.history')}</h2>
-            {past.length ? (
-              past.map(item)
-            ) : (
-              <p className='section-empty'>{t('ext.sidebar.historyEmpty')}</p>
-            )}
-          </section>
-        </>
-      )}
-      <div className='sidebar-foot'>
-        <ThemeToggle />
+
         <button
-          className='icon-btn'
+          className='sidebar-search-btn'
           onClick={onSearch}
           aria-label={t('ext.sidebar.searchAll')}
           title={t('ext.sidebar.searchAllShortcut')}>
-          ⌕
+          <span className='sidebar-search-icon'>⌕</span>
+          <span className='sidebar-search-text'>{t('ext.sidebar.searchAll')}</span>
+          <kbd className='sidebar-search-kbd'>⌘K</kbd>
         </button>
-        <button
-          className='icon-btn'
-          onClick={onKnowledge}
-          aria-label={t('ext.sidebar.knowledge')}
-          title={t('ext.sidebar.knowledge')}>
-          ✦
-        </button>
-        <button
-          className='icon-btn'
-          onClick={onDecisions}
-          aria-label={t('ext.sidebar.decisions')}
-          title={t('ext.sidebar.decisions')}>
-          ▤
-        </button>
-        <button
-          className='icon-btn'
-          onClick={onSettings}
-          aria-label={t('ext.sidebar.settings')}
-          title={t('ext.sidebar.settings')}>
-          ⚙
-        </button>
-        {/* One row of controls, not two footers: the links used to sit on a
-            line of their own between this row and the credit, which read as a
-            third footer stacked under the second. */}
-        {activeSponsorLinks().map((link) => (
-          <a
-            key={link.id}
-            className='icon-btn'
-            href={link.url}
-            target='_blank'
-            rel='noreferrer noopener'
-            aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
-            title={`${t('sponsor.title')} · ${t(link.label)}`}>
-            {link.icon}
-          </a>
-        ))}
+
+        <nav className='sidebar-nav' aria-label={t('ext.sidebar.knowledge')}>
+          <button
+            className={`sidebar-nav-btn ${activeView === 'knowledge' ? 'active' : ''}`}
+            onClick={onKnowledge}
+            title={t('ext.sidebar.knowledge')}>
+            <span className='sidebar-nav-icon'>✦</span>
+            <span className='sidebar-nav-label'>{t('ext.sidebar.knowledge')}</span>
+          </button>
+          <button
+            className={`sidebar-nav-btn ${activeView === 'decisions' ? 'active' : ''}`}
+            onClick={onDecisions}
+            title={t('ext.sidebar.decisions')}>
+            <span className='sidebar-nav-icon'>▤</span>
+            <span className='sidebar-nav-label'>{t('ext.sidebar.decisions')}</span>
+          </button>
+        </nav>
       </div>
-      <p className='sidebar-credit'>
-        <img className='credit-logo' src='icons/suiflex.svg' alt='' />
-        powered by suiflex
-      </p>
+
+      <div className='sidebar-scroll'>
+        {projects.length > 0 && (
+          <label className='sidebar-filter'>
+            <span className='section-label'>{t('ext.sidebar.project')}</span>
+            <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label={t('ext.sidebar.projectFilter')}>
+              <option value=''>{t('ext.sidebar.allMeetings')}</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {loading ? (
+          <div aria-hidden='true'>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className='skeleton skeleton-row' />
+            ))}
+          </div>
+        ) : (
+          <>
+            {live.length > 0 && (
+              <section className='meeting-section'>
+                <h2 className='section-label'>{t('ext.sidebar.live')}</h2>
+                {live.map(item)}
+              </section>
+            )}
+            <section className='meeting-section'>
+              <h2 className='section-label'>{t('ext.sidebar.history')}</h2>
+              {past.length ? (
+                past.map(item)
+              ) : (
+                <p className='section-empty'>{t('ext.sidebar.historyEmpty')}</p>
+              )}
+            </section>
+          </>
+        )}
+      </div>
+
+      <div className='sidebar-bottom'>
+        <div className='sidebar-foot'>
+          <ThemeToggle />
+          <button
+            className={`icon-btn ${activeView === 'settings' ? 'active' : ''}`}
+            onClick={onSettings}
+            aria-label={t('ext.sidebar.settings')}
+            title={t('ext.sidebar.settings')}>
+            ⚙
+          </button>
+          <span className='spacer' />
+          {activeSponsorLinks().map((link) => (
+            <a
+              key={link.id}
+              className='icon-btn'
+              href={link.url}
+              target='_blank'
+              rel='noreferrer noopener'
+              aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
+              title={`${t('sponsor.title')} · ${t(link.label)}`}>
+              {link.icon}
+            </a>
+          ))}
+        </div>
+        <p className='sidebar-credit'>
+          <img className='credit-logo' src='icons/suiflex.svg' alt='' />
+          powered by suiflex
+        </p>
+      </div>
     </aside>
   )
 }
