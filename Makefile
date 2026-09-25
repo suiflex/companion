@@ -2,7 +2,7 @@
 	check-all check-all-js ci ci-js ci-rust test test-coverage test-vault typecheck typecheck-desktop lint \
 	rust-fmt rust-fmt-fix rust-lint rust-check \
 	build build-extension build-desktop build-host build-mcp build-sync \
-	smoke smoke-mcp smoke-sync \
+	smoke smoke-desktop smoke-mcp smoke-sync \
 	pack pack-source sign-firefox lint-firefox sync-start \
 	dev dev-extension dev-desktop tauri tauri-dev tauri-bundle native-host-install
 
@@ -165,6 +165,10 @@ smoke: build-host ## Smoke the native host: two identical frames in one write
 
 rust-test: ## cargo test for the desktop crate
 	cd apps/desktop/src-tauri && cargo test
+
+smoke-desktop: build-desktop ## The desktop binary starts Tauri, opens a window, and exits cleanly
+	@cargo build --quiet --manifest-path apps/desktop/src-tauri/Cargo.toml
+	@./scripts/danger_desktop.sh
 
 smoke-host: ## The desktop binary answers native messaging in --native-host mode
 	@cd apps/desktop/src-tauri && cargo build --quiet

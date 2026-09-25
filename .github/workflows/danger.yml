@@ -1,0 +1,113 @@
+name: danger
+
+# Runs the app. Nothing else in CI does.
+#
+# `fmt`, `clippy`, `cargo build` and `cargo test` were all green through a crash
+# in rdb that aborted the app on a single click: a layout panic under `panic = "abort"`.
+# None of those checks ever start the event loop, so none of them could have seen it.
+#
+# In companion, standard CI only compiles the crate or tests headless stdio framing
+# (--native-host). This workflow boots the actual companion-desktop binary into its
+# window event loop, initializes Tauri plugins, config, and vault root, and fails on
+# any crash, abort, or panic.
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - apps/desktop/**
+      - packages/**
+      - package.json
+      - package-lock.json
+      - Makefile
+      - scripts/danger_desktop.sh
+      - .github/workflows/danger.yml
+  pull_request:
+    paths:
+      - apps/desktop/**
+      - packages/**
+      - package.json
+      - package-lock.json
+      - Makefile
+      - scripts/danger_desktop.sh
+      - .github/workflows/danger.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+          shared-key: companion-danger
+
+      - name: Install dependencies
+        run: npm ci
+
+      # webkit2gtk is the Linux WebView; Xvfb provides the virtual X11 display
+      - name: Install Linux WebView system deps and Xvfb
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            xvfb
+
+      - name: Build desktop frontend
+        run: npm run build -w @meetcc/desktop
+
+      - name: Build companion-desktop
+        run: cargo build --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+      # Inside Xvfb on Linux: window event loop runs in virtual display
+      - name: Run desktop smoke (Linux)
+        if: runner.os == 'Linux'
+        env:
+          DANGER_OUT: ${{ github.workspace }}/danger-out
+          COMPANION_SMOKE_DELAY_MS: 6000
+        run: xvfb-run -a scripts/danger_desktop.sh
+
+      # Default Quartz window server on macOS
+      - name: Run desktop smoke (macOS)
+        if: runner.os == 'macOS'
+        env:
+          DANGER_OUT: ${{ github.workspace }}/danger-out
+          COMPANION_SMOKE_DELAY_MS: 6000
+        run: scripts/danger_desktop.sh
+
+      - name: Upload smoke logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: danger-${{ matrix.os }}
+          path: |
+            danger-out/*.log
+          retention-days: 7
