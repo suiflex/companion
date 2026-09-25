@@ -1219,7 +1219,8 @@ body[data-theme='light'] .bubble-assistant {
    for what follows them; splitting either into a column breaks that. */
 .settings-body > .subbar,
 .settings-body > .checkbox-field,
-.settings-body > .bridge-status { grid-column: 1 / -1; }
+.settings-body > .bridge-status,
+.settings-body > .version-panel { grid-column: 1 / -1; }
 
 /* the grid supplies the rhythm now; the stacked-layout margin doubled it */
 .settings-body > .field-group { margin-bottom: 0; }
@@ -1917,6 +1918,7 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 14px;
+  align-items: stretch;
 }
 .version-card {
   display: flex;
@@ -1926,6 +1928,7 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
   background: var(--panel-2);
   border: 1px solid var(--hairline-2);
   border-radius: 8px;
+  height: 100%;
 }
 .version-card-head h3 {
   margin: 0;
