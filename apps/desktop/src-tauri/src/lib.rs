@@ -76,6 +76,20 @@ pub fn run() {
             }
             app.manage(vault::ConfigDir(config_dir));
             app.manage(vault::VaultState::new(root));
+
+            if std::env::var("COMPANION_DESKTOP_SMOKE").is_ok() {
+                let handle = app.handle().clone();
+                let delay = std::env::var("COMPANION_SMOKE_DELAY_MS")
+                    .ok()
+                    .and_then(|d| d.parse::<u64>().ok())
+                    .unwrap_or(2000);
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(delay));
+                    eprintln!("COMPANION_DESKTOP_SMOKE: window event loop running; exiting cleanly after {delay}ms");
+                    handle.exit(0);
+                });
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

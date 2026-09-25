@@ -23,6 +23,7 @@ make typecheck      # tsc --noEmit — the authority on types, not eslint
 make lint           # eslint
 make build          # bundle extension, MCP, sync-server
 make smoke          # Node host: framing + dedupe over stdio
+make smoke-desktop  # desktop binary window smoke: event loop + vault init
 make smoke-host     # desktop binary in --native-host mode: framing + spool
 make smoke-mcp      # built MCP bin answers over stdio
 make smoke-sync     # built sync bin answers over HTTP
@@ -35,6 +36,11 @@ make tauri-dev      # run the desktop app with a window
 `make ci` is `ci-js` plus `ci-rust`, split along the toolchain boundary so CI
 can run them on separate runners — only one half needs a Rust toolchain and
 the Linux WebView libraries. `make help` lists the rest.
+
+`danger.yml` runs the desktop app UI in CI under Xvfb (Linux) and Quartz (macOS).
+Standard CI verifies compilation and headless framing; `danger.yml` executes the
+built `companion-desktop` binary to verify that Tauri, its plugins, vault setup,
+and the window event loop start and exit cleanly without panicking or aborting.
 
 After every build: reload the extension at `chrome://extensions`, then refresh
 the meeting tab. Load unpacked from `apps/extension/dist/`.
