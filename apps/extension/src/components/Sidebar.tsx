@@ -87,6 +87,7 @@ interface Props {
   titles: Record<string, string>
   now: number
   selectedId: string | null
+  activeView: 'meeting' | 'knowledge' | 'decisions' | 'settings'
   onSelect: (id: string) => void
   onSettings: () => void
   onDecisions: () => void
@@ -102,6 +103,7 @@ export function Sidebar({
   titles,
   now,
   selectedId,
+  activeView,
   onSelect,
   onSettings,
   onDecisions,
@@ -207,14 +209,14 @@ export function Sidebar({
           ⌕
         </button>
         <button
-          className='icon-btn'
+          className={`icon-btn ${activeView === 'knowledge' ? 'active' : ''}`}
           onClick={onKnowledge}
           aria-label={t('ext.sidebar.knowledge')}
           title={t('ext.sidebar.knowledge')}>
           ✦
         </button>
         <button
-          className='icon-btn'
+          className={`icon-btn ${activeView === 'decisions' ? 'active' : ''}`}
           onClick={onDecisions}
           aria-label={t('ext.sidebar.decisions')}
           title={t('ext.sidebar.decisions')}>
@@ -222,7 +224,7 @@ export function Sidebar({
         </button>
         <ThemeToggle />
         <button
-          className='icon-btn'
+          className={`icon-btn ${activeView === 'settings' ? 'active' : ''}`}
           onClick={onSettings}
           aria-label={t('ext.sidebar.settings')}
           title={t('ext.sidebar.settings')}>
@@ -260,14 +262,14 @@ export function Sidebar({
 
         <nav className='sidebar-nav' aria-label={t('ext.sidebar.knowledge')}>
           <button
-            className='sidebar-nav-btn'
+            className={`sidebar-nav-btn ${activeView === 'knowledge' ? 'active' : ''}`}
             onClick={onKnowledge}
             title={t('ext.sidebar.knowledge')}>
             <span className='sidebar-nav-icon'>✦</span>
             <span className='sidebar-nav-label'>{t('ext.sidebar.knowledge')}</span>
           </button>
           <button
-            className='sidebar-nav-btn'
+            className={`sidebar-nav-btn ${activeView === 'decisions' ? 'active' : ''}`}
             onClick={onDecisions}
             title={t('ext.sidebar.decisions')}>
             <span className='sidebar-nav-icon'>▤</span>
@@ -321,7 +323,7 @@ export function Sidebar({
         <div className='sidebar-foot'>
           <ThemeToggle />
           <button
-            className='icon-btn'
+            className={`icon-btn ${activeView === 'settings' ? 'active' : ''}`}
             onClick={onSettings}
             aria-label={t('ext.sidebar.settings')}
             title={t('ext.sidebar.settings')}>

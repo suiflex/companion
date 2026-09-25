@@ -141,6 +141,13 @@ button:focus-visible, select:focus-visible, input:focus-visible, .meeting:focus-
   border-radius: 8px;
 }
 
+.sidebar.collapsed .icon-btn.active,
+.sidebar-foot .icon-btn.active {
+  background: var(--phosphor-dim);
+  border-color: var(--phosphor);
+  color: var(--phosphor);
+}
+
 .rail-live {
   width: 8px;
   height: 8px;
@@ -280,6 +287,18 @@ button:focus-visible, select:focus-visible, input:focus-visible, .meeting:focus-
 .sidebar-nav-btn:hover {
   background: var(--panel-2);
   color: var(--text);
+}
+
+.sidebar-nav-btn.active {
+  background: var(--panel-2);
+  border-color: var(--hairline-2);
+  box-shadow: inset 3px 0 0 var(--phosphor);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.sidebar-nav-btn.active .sidebar-nav-icon {
+  color: var(--phosphor);
 }
 
 .sidebar-nav-icon {
