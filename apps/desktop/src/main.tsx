@@ -1,11 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { ToastProvider } from './toast';
+import { ToastProvider } from '@meetcc/ui';
 import { applyTheme, loadThemePref } from './theme';
 import { applyLang, loadLangPref } from './lang';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { setFetch, setOAuthFetch } from '@meetcc/ai';
+import '@meetcc/ui/styles.css';
 import './styles.css';
 
 // Before first paint: a theme or language applied after mount is a flash of

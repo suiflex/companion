@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { t } from '@meetcc/shared/i18n'
-import { useToast } from './toast'
+import { Button, useToast } from '@meetcc/ui'
 
 interface Browser {
   name: string
@@ -73,14 +73,14 @@ export function InstallView() {
               {b.registered ? t('desktop.install.isRegistered') : t('desktop.install.notRegistered')}
             </p>
           </div>
-          <button
+          <Button
             type="button"
-            className={b.registered ? 'btn' : 'btn primary'}
+            variant={b.registered ? 'default' : 'primary'}
             disabled={busy !== ''}
             onClick={() => void toggle(b)}
           >
             {b.registered ? t('desktop.install.remove') : t('desktop.install.register')}
-          </button>
+          </Button>
         </section>
       ))}
 
@@ -91,13 +91,12 @@ export function InstallView() {
               silently: with no extension there is nothing to connect. */}
           <p className="hint">{t('desktop.install.extensionHint')}</p>
         </div>
-        <button
+        <Button
           type="button"
-          className="btn"
           onClick={() => void invoke('open_external', { url: EXTENSION_URL })}
         >
           {t('desktop.install.getExtension')}
-        </button>
+        </Button>
       </section>
 
       <section className="setting-row">

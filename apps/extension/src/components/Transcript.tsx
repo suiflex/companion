@@ -11,7 +11,7 @@ import {
   type Entry,
   type Meeting,
 } from '@meetcc/shared'
-import { useToast } from '../toast'
+import { Button, SegmentedControl, TextInput, useToast } from '@meetcc/ui'
 import { liveActions, speakerStats } from '@meetcc/meeting'
 import { db, listHighlights } from '../lib/db'
 
@@ -192,55 +192,45 @@ export function Transcript({ meeting, live, onClear }: Props) {
     <>
       <div className='subbar'>
         {cleaned && (
-          <div className='seg' role='tablist' aria-label={t('ext.transcript.versions')}>
-            <button
-              role='tab'
-              aria-selected={view === 'raw'}
-              className={`seg-btn ${view === 'raw' ? 'active' : ''}`}
-              onClick={() => setView('raw')}>
-              Asli
-            </button>
-            <button
-              role='tab'
-              aria-selected={view === 'clean'}
-              className={`seg-btn ${view === 'clean' ? 'active' : ''}`}
-              onClick={() => setView('clean')}>
-              Rapi
-            </button>
-          </div>
+          <SegmentedControl
+            ariaLabel={t('ext.transcript.versions')}
+            role="tablist"
+            options={[
+              { value: 'raw', label: 'Asli' },
+              { value: 'clean', label: 'Rapi' },
+            ]}
+            value={view}
+            onChange={(value) => setView(value as typeof view)}
+          />
         )}
-        <button
-          onClick={async () => {
-            await navigator.clipboard.writeText(toTxt(entries))
-            toast('success', t('ext.transcript.copied'))
-          }}>
-          Copy
-        </button>
-        <button
-          onClick={() => {
-            const url = URL.createObjectURL(
-              new Blob([toTxt(entries)], { type: 'text/plain' }),
-            )
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `${meeting.id}${view === 'clean' ? '-rapi' : ''}.txt`
-            a.click()
-            URL.revokeObjectURL(url)
-          }}>
-          TXT
-        </button>
+        <Button onClick={async () => {
+          await navigator.clipboard.writeText(toTxt(entries))
+          toast('success', t('ext.transcript.copied'))
+        }}>
+        Copy
+                </Button>
+        <Button onClick={() => {
+          const url = URL.createObjectURL(
+            new Blob([toTxt(entries)], { type: 'text/plain' }),
+          )
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `${meeting.id}${view === 'clean' ? '-rapi' : ''}.txt`
+          a.click()
+          URL.revokeObjectURL(url)
+        }}>
+        TXT
+                </Button>
         <span className='spacer' />
         {(cleaned || stalled) && (
-          <button
-            className='ghost'
+            <Button variant="ghost"
             onClick={() => void cleanUp(true)}
             disabled={running || live}
             title={t('ext.transcript.redoHint')}>
             ↻ Dari awal
-          </button>
+            </Button>
         )}
-        <button
-          className={running ? '' : 'primary'}
+        <Button variant={running ? 'default' : 'primary'}
           onClick={() => void cleanUp(false)}
           disabled={running || live || !meeting.entries.length}
           title={
@@ -255,26 +245,23 @@ export function Transcript({ meeting, live, onClear }: Props) {
               : cleaned
                 ? t('ext.transcript.recleanBtn')
                 : '✨ Rapikan'}
-        </button>
-        <button className='danger' onClick={onClear}>
+        </Button>
+        <Button variant="danger" onClick={onClear}>
           Clear
-        </button>
+        </Button>
       </div>
 
       {highlights.length > 0 && view === 'raw' && (
         <div className='hl-strip'>
           <span className='section-label'>{t('ext.transcript.highlights')}</span>
           {highlights.slice(-8).map((h) => (
-            <button
-              key={h.id}
-              className={`hl-chip hl-${h.kind}`}
-              title={h.text}
-              onClick={() => {
-                const el = ref.current?.querySelectorAll('.entry')[h.seq]
-                el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-              }}>
-              {HIGHLIGHT_LABEL[h.kind] ? t(HIGHLIGHT_LABEL[h.kind]) : h.kind}: {h.text.slice(0, 48)}
-            </button>
+            <Button key={h.id}
+            className={`hl-chip hl-${h.kind}`}
+            title={h.text}
+            onClick={() => {
+              const el = ref.current?.querySelectorAll('.entry')[h.seq]
+              el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }}>{HIGHLIGHT_LABEL[h.kind] ? t(HIGHLIGHT_LABEL[h.kind]) : h.kind}: {h.text.slice(0, 48)}</Button>
           ))}
         </div>
       )}
@@ -360,7 +347,7 @@ export function Transcript({ meeting, live, onClear }: Props) {
                 <div className='entry-body'>
                   <div className='entry-head'>
                     {renaming?.from === e.speaker ? (
-                      <input
+                      <TextInput
                         className='speaker-rename'
                         autoFocus
                         aria-label={`Ganti nama ${e.speaker}`}
@@ -375,12 +362,9 @@ export function Transcript({ meeting, live, onClear }: Props) {
                     ) : live ? (
                       <span className='speaker'>{e.speaker}</span>
                     ) : (
-                      <button
-                        className='speaker speaker-editable'
-                        title={t('ext.transcript.renameSpeaker')}
-                        onClick={() => setRenaming({ from: e.speaker, draft: e.speaker })}>
-                        {e.speaker}
-                      </button>
+                      <Button className='speaker speaker-editable'
+                      title={t('ext.transcript.renameSpeaker')}
+                      onClick={() => setRenaming({ from: e.speaker, draft: e.speaker })}>{e.speaker}</Button>
                     )}
                     <time className='stamp'>{fmtTime(e.time)}</time>
                     {flag && <span className={`hl-tag hl-${flag}`}>{HIGHLIGHT_LABEL[flag] ? t(HIGHLIGHT_LABEL[flag]) : flag}</span>}
@@ -394,11 +378,8 @@ export function Transcript({ meeting, live, onClear }: Props) {
                       <span className='clean-raw' title={t('ext.transcript.captured')}>
                         {changedAt.get(i)!.raw}
                       </span>
-                      <button
-                        className='clean-toggle'
-                        onClick={() => void keepOriginal(i, !changedAt.get(i)!.kept)}>
-                        {changedAt.get(i)!.kept ? t('ext.transcript.useAi') : t('ext.transcript.useOriginal')}
-                      </button>
+                      <Button className='clean-toggle'
+                      onClick={() => void keepOriginal(i, !changedAt.get(i)!.kept)}>{changedAt.get(i)!.kept ? t('ext.transcript.useAi') : t('ext.transcript.useOriginal')}</Button>
                     </div>
                   )}
                 </div>

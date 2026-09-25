@@ -14,7 +14,7 @@ import {
 } from '@meetcc/shared'
 import { lazyImport } from '../lib/lazy'
 import { db } from '../lib/db'
-import { useToast } from '../toast'
+import { Button, SegmentedControl, useToast } from '@meetcc/ui'
 
 const TYPES = Object.keys(DOC_META) as DocType[]
 
@@ -115,27 +115,28 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
   return (
     <div className="docgen">
       <div className="subbar">
-        <div className="seg" role="tablist" aria-label={t('ext.docs.kinds')}>
-          {TYPES.map((kind) => {
+        <SegmentedControl
+          ariaLabel={t('ext.docs.kinds')}
+          role="tablist"
+          options={TYPES.map((kind) => {
             const busy = prog?.type === kind && now - Date.parse(prog.updatedAt) <= 90_000
-            return (
-              <button
-                key={kind}
-                role="tab"
-                aria-selected={type === kind}
-                className={`seg-btn ${type === kind ? 'active' : ''}`}
-                onClick={() => setType(kind)}
-              >
-                {DOC_META[kind].label}
-                {busy ? (
-                  <span className="seg-busy" aria-label={t('ext.docs.generating')} />
-                ) : (
-                  docs[kind] && <span className="seg-dot" aria-label={t('ext.docs.generated')} />
-                )}
-              </button>
-            )
+            return {
+              value: kind,
+              label: (
+                <>
+                  {DOC_META[kind].label}
+                  {busy ? (
+                    <span className="seg-busy" aria-label={t('ext.docs.generating')} />
+                  ) : (
+                    docs[kind] && <span className="seg-dot" aria-label={t('ext.docs.generated')} />
+                  )}
+                </>
+              ),
+            }
           })}
-        </div>
+          value={type}
+          onChange={(value) => setType(value as DocType)}
+        />
         {templates.length > 0 && (
           <label className="doc-template">
             Template
@@ -157,17 +158,15 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
         <span className="spacer" />
         {current && !running && (
           <>
-            <button
-              className="ghost"
+            <Button variant="ghost"
               onClick={async () => {
                 await navigator.clipboard.writeText(current.content)
                 toast('success', t('ext.docs.markdownCopied'))
               }}
             >
               ⧉ Copy
-            </button>
-            <button
-              className="ghost"
+            </Button>
+            <Button variant="ghost"
               onClick={() =>
                 downloadBlob(
                   `${meeting.id}-${meta.filename}.md`,
@@ -176,14 +175,13 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
               }
             >
               ⬇ .md
-            </button>
-            <button className="ghost" onClick={exportPdf} disabled={pdfBusy}>
+            </Button>
+            <Button variant="ghost" onClick={exportPdf} disabled={pdfBusy}>
               {pdfBusy ? '…' : '⬇ PDF'}
-            </button>
+            </Button>
           </>
         )}
-        <button
-          className="primary"
+        <Button variant="primary"
           onClick={() => void generate(type)}
           disabled={running || (anyRunning && !active)}
         >
@@ -194,7 +192,7 @@ export function DocGen({ meeting }: { meeting: Meeting }) {
               : current
                 ? `↻ Regenerate ${meta.label}`
                 : `Generate ${meta.label}`}
-        </button>
+        </Button>
       </div>
 
       {running ? (

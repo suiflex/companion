@@ -13,7 +13,7 @@ import {
   watchStorage,
   type AnalysisRecord,
 } from '@meetcc/shared';
-import { useToast } from '../toast';
+import { Button, useToast } from '@meetcc/ui';
 
 interface Props {
   onClose: () => void;
@@ -64,9 +64,9 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
         <div className="toolbar-title">
           <h1>{t('ext.decisions.title')}</h1>
         </div>
-        <button onClick={onClose} aria-label={t('ext.decisions.close')}>
+        <Button onClick={onClose} aria-label={t('ext.decisions.close')}>
           ✕
-        </button>
+        </Button>
       </header>
 
       <div className="decisionlog-body">
@@ -75,20 +75,14 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
             <h2 className="section-label">{t('ext.decisions.heading', { count: decisions.length })}</h2>
             {topics.length > 0 && (
               <div className="dl-filters" role="group" aria-label="Filter topik">
-                <button
-                  className={`ask-chip ${topic === null ? 'active' : ''}`}
-                  onClick={() => setTopic(null)}
-                >
+                <Button className={`ask-chip ${topic === null ? 'active' : ''}`}
+                onClick={() => setTopic(null)}>
                   Semua
-                </button>
+                </Button>
                 {topics.map((t) => (
-                  <button
-                    key={t}
-                    className={`ask-chip ${topic === t ? 'active' : ''}`}
-                    onClick={() => setTopic(t)}
-                  >
-                    {t}
-                  </button>
+                  <Button key={t}
+                  className={`ask-chip ${topic === t ? 'active' : ''}`}
+                  onClick={() => setTopic(t)}>{t}</Button>
                 ))}
               </div>
             )}
@@ -106,9 +100,8 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
                   {d.rejected.length > 0 && (
                     <div className="decision-rejected">Ditolak: {d.rejected.join('; ')}</div>
                   )}
-                  <button className="dl-link" onClick={() => onOpenMeeting(d.meetingId)}>
-                    ↳ {d.meetingId} · {new Date(d.generatedAt).toLocaleDateString(locale())}
-                  </button>
+                  <Button className="dl-link" onClick={() => onOpenMeeting(d.meetingId)}>
+                    ↳ {d.meetingId} · {new Date(d.generatedAt).toLocaleDateString(locale())}</Button>
                 </li>
               ))}
             </ul>
@@ -122,9 +115,9 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
         <section>
           <div className="dl-head">
             <h2 className="section-label">{t('ext.decisions.carryHeading', { count: openCount })}</h2>
-            <button className="ghost" onClick={copyAgenda} disabled={!openCount}>
+            <Button variant="ghost" onClick={copyAgenda} disabled={!openCount}>
               ⧉ Copy agenda draft
-            </button>
+            </Button>
           </div>
 
           {questions.length ? (
@@ -139,9 +132,7 @@ export function DecisionLog({ onClose, onOpenMeeting }: Props) {
                     />
                     <span className="carry-q">{q.question}</span>
                   </label>
-                  <button className="dl-link" onClick={() => onOpenMeeting(q.meetingId)}>
-                    {q.meetingId}
-                  </button>
+                  <Button className="dl-link" onClick={() => onOpenMeeting(q.meetingId)}>{q.meetingId}</Button>
                 </li>
               ))}
             </ul>

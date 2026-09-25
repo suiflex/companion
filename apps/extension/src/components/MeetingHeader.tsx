@@ -10,6 +10,7 @@ import {
 } from '@meetcc/shared';
 import { locale, t } from '@meetcc/shared/i18n';
 
+import { Button, TextInput } from '@meetcc/ui';
 // P1.5 — a meeting is more than a room code: date, duration, participants and
 // platform (§21). P1.9/P2.3 ride along here because this is where they matter
 // to the user: what is still open from last time, and which project this
@@ -107,7 +108,7 @@ export function MeetingHeader({
           </span>
         )}
         <span className="spacer" />
-        <input
+        <TextInput
           className="mh-agenda"
           value={agenda}
           placeholder={t('ext.header.contextPlaceholder')}
@@ -147,9 +148,7 @@ export function MeetingHeader({
             <span className="dim">{t('ext.header.openQuestions', { count: carry!.openQuestions.length })}</span>
           )}
           {carry!.fromSessions.slice(0, 3).map((id) => (
-            <button key={id} className="ask-chip" onClick={() => onOpenMeeting(id)}>
-              {t('ext.header.openPrevious')}
-            </button>
+            <Button key={id} className="ask-chip" onClick={() => onOpenMeeting(id)}>{t('ext.header.openPrevious')}</Button>
           ))}
         </div>
       )}

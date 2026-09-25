@@ -17,7 +17,7 @@ import { GATE_EVENT } from '@meetcc/exporters/gate';
 import { datedCount, toChecklist, toIcs } from '@meetcc/exporters/tasks';
 import { lazyImport } from '../lib/lazy';
 import { classifyBridgeError } from '../lib/bridgeError';
-import { useToast } from '../toast';
+import { Button, TextArea, useToast } from '@meetcc/ui';
 
 function downloadBlob(name: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
@@ -53,17 +53,15 @@ function ActionItemsToolbar({ meeting, analysis }: { meeting: Meeting; analysis:
   const dated = datedCount(analysis);
   return (
     <div className="task-export">
-      <button
-        className="ghost"
+      <Button variant="ghost"
         onClick={async () => {
           await navigator.clipboard.writeText(toChecklist(analysis));
           toast('success', t('ext.summary.checklistCopied'));
         }}
       >
         ⧉ Copy checklist
-      </button>
-      <button
-        className="ghost"
+      </Button>
+      <Button variant="ghost"
         disabled={!dated}
         title={dated ? '' : t('ext.summary.noDatedActions')}
         onClick={() => {
@@ -72,7 +70,7 @@ function ActionItemsToolbar({ meeting, analysis }: { meeting: Meeting; analysis:
         }}
       >
         ⬇ .ics{dated ? ` (${dated})` : ''}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -270,26 +268,22 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
 
   return (
     <div className="summary-context-card">
-      <button
-        type="button"
-        className="summary-context-header"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-      >
-        <span className="summary-context-title">
-          {t('ext.summary.contextTitle')}
-          {hasContext && <span className="context-indicator" />}
-        </span>
-        <span className="summary-context-preview dim">
-          {hasContext
-            ? context.trim().slice(0, 45) + (context.trim().length > 45 ? '…' : '')
-            : t('ext.summary.contextHint')}
-        </span>
-        <span className="summary-context-arrow">{open ? '▲' : '▼'}</span>
-      </button>
+      <Button type="button"
+      className="summary-context-header"
+      onClick={() => setOpen((o) => !o)}
+      aria-expanded={open}><span className="summary-context-title">
+        {t('ext.summary.contextTitle')}
+        {hasContext && <span className="context-indicator" />}
+      </span>
+      <span className="summary-context-preview dim">
+        {hasContext
+          ? context.trim().slice(0, 45) + (context.trim().length > 45 ? '…' : '')
+          : t('ext.summary.contextHint')}
+      </span>
+      <span className="summary-context-arrow">{open ? '▲' : '▼'}</span></Button>
       {open && (
         <div className="summary-context-body">
-          <textarea
+          <TextArea
             className="summary-context-input"
             value={context}
             placeholder={t('ext.summary.contextPlaceholder')}
@@ -305,50 +299,39 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
               {uniqueTags.map((tg) => {
                 const count = tagCounts.get(tg) ?? 0;
                 return (
-                  <button
-                    key={tg}
-                    type="button"
-                    className="quick-insert-tag-btn"
-                    onClick={() => void insertTag(tg)}
-                    title={t('ext.header.insertAllWithTag', { tag: tg, count })}
-                  >
-                    + #{tg} <span className="tag-count">({count})</span>
-                  </button>
+                  <Button key={tg}
+                  type="button"
+                  className="quick-insert-tag-btn"
+                  onClick={() => void insertTag(tg)}
+                  title={t('ext.header.insertAllWithTag', { tag: tg, count })}>
+                    + #{tg} <span className="tag-count">({count})</span></Button>
                 );
               })}
               {availableContexts.length > 0 && (
                 <div className="quick-insert-single-wrap">
-                  <button
-                    type="button"
-                    className="quick-insert-single-btn"
-                    onClick={() => setPopoverOpen((v) => !v)}
-                  >
+                  <Button type="button"
+                  className="quick-insert-single-btn"
+                  onClick={() => setPopoverOpen((v) => !v)}>
                     ✦ {t('ext.header.insertSingle')} ▾
-                  </button>
+                  </Button>
                   {popoverOpen && (
                     <div className="summary-context-popover">
                       <div className="summary-popover-head">
                         <span className="summary-popover-title">{t('ext.header.contextPopoverTitle')}</span>
-                        <button
-                          type="button"
-                          className="summary-popover-close"
-                          onClick={() => setPopoverOpen(false)}
-                          aria-label={t('ext.header.close')}
-                        >
+                        <Button type="button"
+                        className="summary-popover-close"
+                        onClick={() => setPopoverOpen(false)}
+                        aria-label={t('ext.header.close')}>
                           ✕
-                        </button>
+                        </Button>
                       </div>
                       <div className="summary-popover-item-list">
                         {availableContexts.map((ctx) => (
-                          <button
-                            key={ctx.id}
-                            type="button"
-                            className="summary-ctx-item-btn"
-                            onClick={() => void insertSingle(ctx)}
-                          >
-                            <span className="ctx-item-term">{ctx.term}</span>
-                            <span className="dim ctx-item-def">{ctx.definition}</span>
-                          </button>
+                          <Button key={ctx.id}
+                          type="button"
+                          className="summary-ctx-item-btn"
+                          onClick={() => void insertSingle(ctx)}><span className="ctx-item-term">{ctx.term}</span>
+                          <span className="dim ctx-item-def">{ctx.definition}</span></Button>
                         ))}
                       </div>
                     </div>
@@ -366,9 +349,9 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
             <span className="dim" style={{ fontSize: 11 }}>
               {t('ext.summary.contextHint')}
             </span>
-            <button type="button" className="small primary" onClick={handleSave}>
+            <Button type="button" className="small" variant="primary" onClick={handleSave}>
               {saved ? t('ext.summary.contextSaved') : t('ext.summary.contextSave')}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -404,32 +387,28 @@ export function SummaryView({ meeting, record, live }: Props) {
 
   const actions = (analysis: Analysis) => (
     <div className="subbar">
-      <button
-        onClick={() => {
-          downloadBlob(
-            `${meeting.id}.md`,
-            new Blob([toMarkdown(meeting, analysis)], { type: 'text/markdown' }),
-          );
-          toast('success', t('ext.summary.markdownDownloaded'));
-        }}
-      >
+      <Button onClick={() => {
+        downloadBlob(
+          `${meeting.id}.md`,
+          new Blob([toMarkdown(meeting, analysis)], { type: 'text/markdown' }),
+        );
+        toast('success', t('ext.summary.markdownDownloaded'));
+      }}>
         ⬇ Markdown
-      </button>
-      <button
-        onClick={() => {
-          // §32.1 probe: Obsidian-friendly export + local audit event for the
-          // G1/G2 gate metrics. No telemetry — the event stays in the device ring.
-          downloadBlob(
-            obsidianPath(meeting).split('/').pop()!,
-            new Blob([toObsidian(meeting, analysis)], { type: 'text/markdown' }),
-          );
-          void appendAudit(GATE_EVENT, 'meetings=1').catch(() => undefined);
-          toast('success', t('ext.summary.obsidianDownloaded'));
-        }}
-      >
+      </Button>
+      <Button onClick={() => {
+        // §32.1 probe: Obsidian-friendly export + local audit event for the
+        // G1/G2 gate metrics. No telemetry — the event stays in the device ring.
+        downloadBlob(
+          obsidianPath(meeting).split('/').pop()!,
+          new Blob([toObsidian(meeting, analysis)], { type: 'text/markdown' }),
+        );
+        void appendAudit(GATE_EVENT, 'meetings=1').catch(() => undefined);
+        toast('success', t('ext.summary.obsidianDownloaded'));
+      }}>
         ⬇ Obsidian
-      </button>
-      <button
+      </Button>
+      <Button
         disabled={busy}
         onClick={async () => {
           setBusy(true);
@@ -463,40 +442,34 @@ export function SummaryView({ meeting, record, live }: Props) {
         }}
       >
         ⬇ PDF
-      </button>
-      <button
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            const res = (await chrome.runtime.sendMessage({
-              type: 'bridge-deliver-meeting',
-              meetingId: meeting.id,
-            })) as { ok?: boolean; error?: string };
-            if (res?.ok) {
-              toast('success', t('ext.summary.desktopSent'));
+      </Button>
+      <Button disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          const res = (await chrome.runtime.sendMessage({
+            type: 'bridge-deliver-meeting',
+            meetingId: meeting.id,
+          })) as { ok?: boolean; error?: string };
+          if (res?.ok) {
+            toast('success', t('ext.summary.desktopSent'));
+          } else {
+            const err = res?.error ?? '';
+            const classified = classifyBridgeError(err);
+            if (classified === 'not_found' || classified === 'not_registered') {
+              toast('error', t('ext.summary.desktopNotConnected'));
             } else {
-              const err = res?.error ?? '';
-              const classified = classifyBridgeError(err);
-              if (classified === 'not_found' || classified === 'not_registered') {
-                toast('error', t('ext.summary.desktopNotConnected'));
-              } else {
-                toast('error', t('ext.summary.desktopFailed', { error: err }));
-              }
+              toast('error', t('ext.summary.desktopFailed', { error: err }));
             }
-          } catch (e) {
-            toast('error', t('ext.summary.desktopFailed', { error: (e as Error).message }));
-          } finally {
-            setBusy(false);
           }
-        }}
-      >
-        {t('ext.summary.exportDesktop')}
-      </button>
+        } catch (e) {
+          toast('error', t('ext.summary.desktopFailed', { error: (e as Error).message }));
+        } finally {
+          setBusy(false);
+        }
+      }}>{t('ext.summary.exportDesktop')}</Button>
       <span className="spacer" />
-      <button onClick={regenerate} disabled={busy}>
-        {busy ? 'Memproses…' : live ? '↻ Perbarui MoM' : '↻ Regenerate'}
-      </button>
+      <Button onClick={regenerate} disabled={busy}>{busy ? 'Memproses…' : live ? '↻ Perbarui MoM' : '↻ Regenerate'}</Button>
     </div>
   );
 
@@ -535,9 +508,7 @@ export function SummaryView({ meeting, record, live }: Props) {
             <span className="dim" style={{ fontSize: 11 }}>
               Lama? Proses mungkin terhenti.
             </span>
-            <button onClick={regenerate} disabled={busy}>
-              {busy ? t('ext.summary.processing') : t('ext.summary.restart')}
-            </button>
+            <Button onClick={regenerate} disabled={busy}>{busy ? t('ext.summary.processing') : t('ext.summary.restart')}</Button>
           </div>
         )}
         {[0, 1, 2, 3].map((i) => (
@@ -554,9 +525,9 @@ export function SummaryView({ meeting, record, live }: Props) {
           <strong>{t('ext.summary.analysisFailed')}</strong>
           <p>{record.error}</p>
         </div>
-        <button className="primary" onClick={regenerate} disabled={busy}>
+        <Button variant="primary" onClick={regenerate} disabled={busy}>
           {busy ? t('ext.summary.processing') : t('ext.summary.retry')}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -571,13 +542,13 @@ export function SummaryView({ meeting, record, live }: Props) {
           : t('ext.summary.emptyHint')}
       </p>
       <ContextCard meeting={meeting} />
-      <button className="primary" onClick={regenerate} disabled={busy}>
+      <Button variant="primary" onClick={regenerate} disabled={busy}>
         {busy
           ? t('ext.summary.processing')
           : live
             ? t('ext.summary.makeMom')
             : t('ext.summary.generate')}
-      </button>
+      </Button>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import type { SearchHit } from '@meetcc/store';
 import { displayMeetingId } from '@meetcc/shared';
 import { locale, t } from '@meetcc/shared/i18n';
 import { search } from '../lib/db';
+import { Button, TextInput } from '@meetcc/ui';
 
 // P1.6 — ⌘K search over every meeting: transcript lines and the structured
 // memory (decisions, action items, open questions, documents), ranked by BM25
@@ -106,7 +107,7 @@ export function CommandPalette({
         aria-label={t('ext.palette.search')}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <input
+        <TextInput
           ref={input}
           className="palette-input"
           value={query}
@@ -164,8 +165,7 @@ export function CommandPalette({
         <div className="palette-foot">
           <span className="dim">{t('ext.palette.keys')}</span>
           <span className="spacer" />
-          <button
-            className="primary"
+          <Button variant="primary"
             disabled={query.trim().length < MIN_QUERY}
             onClick={() => {
               onAskAll(query.trim());
@@ -173,7 +173,7 @@ export function CommandPalette({
             }}
           >
             {t('ext.palette.askAi')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

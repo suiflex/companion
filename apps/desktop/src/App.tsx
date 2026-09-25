@@ -9,7 +9,6 @@ import { applyLang, loadLangPref, saveLangPref } from './lang'
 import { DateField } from './DateField'
 import { MeetingMeta } from './MeetingMeta'
 import { Select, type Option, type Tone } from './Select'
-import { useToast } from './toast'
 import { activeSponsorLinks } from './sponsor'
 import { NoteTree } from './NoteTree'
 import { saveTarget } from './saveTarget'
@@ -26,6 +25,7 @@ import {
 } from './theme'
 import { NoteEditor } from './NoteEditor'
 import UpdateBanner from './UpdateBanner'
+import { Button, SegmentedControl, TextInput, useToast } from '@meetcc/ui'
 
 /** Vault & bridge settings. Small on purpose: the only thing here that changes
  *  state is where the vault lives, and that is a decision worth making explicit
@@ -69,19 +69,16 @@ function Settings({
           <h2>{t('desktop.settings.language')}</h2>
           <p className="hint">{t('desktop.settings.languageHint')}</p>
         </div>
-        <div className="segmented" role="group" aria-label={t('desktop.settings.language')}>
-          {(['system', ...LANGS] as LangPref[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              className={langPref === p ? 'seg active' : 'seg'}
-              aria-pressed={langPref === p}
-              onClick={() => onLangChange(p)}
-            >
-              {langLabel(p)}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          role="group"
+          ariaLabel={t('desktop.settings.language')}
+          options={(['system', ...LANGS] as LangPref[]).map((p) => ({
+            value: p,
+            label: langLabel(p),
+          }))}
+          value={langPref}
+          onChange={(value) => onLangChange(value as LangPref)}
+        />
       </section>
 
       <section className="setting-row">
@@ -89,19 +86,16 @@ function Settings({
           <h2>{t('desktop.settings.theme')}</h2>
           <p className="hint">{t('desktop.settings.themeHint')}</p>
         </div>
-        <div className="segmented" role="group" aria-label={t('desktop.settings.theme')}>
-          {(['system', 'light', 'dark'] as ThemePref[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              className={themePref === p ? 'seg active' : 'seg'}
-              aria-pressed={themePref === p}
-              onClick={() => onThemeChange(p)}
-            >
-              {themeLabel(p)}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          role="group"
+          ariaLabel={t('desktop.settings.theme')}
+          options={(['system', 'light', 'dark'] as ThemePref[]).map((p) => ({
+            value: p,
+            label: themeLabel(p),
+          }))}
+          value={themePref}
+          onChange={(value) => onThemeChange(value as ThemePref)}
+        />
       </section>
 
       <section className="setting-row">
@@ -111,13 +105,13 @@ function Settings({
           <p className="hint">{t('desktop.settings.vaultHint', { count: noteCount })}</p>
         </div>
         <div className="setting-actions">
-          <button type="button" className="btn" onClick={onMove}>
+          <Button type="button" onClick={onMove}>
             {t('desktop.settings.moveVault')}
-          </button>
+          </Button>
           {!isDefaultRoot && (
-            <button type="button" className="btn" onClick={onReset}>
+            <Button type="button" onClick={onReset}>
               {t('desktop.settings.resetVault')}
-            </button>
+            </Button>
           )}
         </div>
       </section>
@@ -301,7 +295,7 @@ function TicketFields({
       {show('assignee') && (
       <label>
         <span>{t('desktop.field.assignee')}</span>
-        <input
+        <TextInput
           value={note.assignee ?? ''}
           placeholder={t('desktop.field.assigneePlaceholder')}
           onChange={(e) => onChange({ assignee: pick(e.target.value) })}
@@ -315,13 +309,9 @@ function TicketFields({
       </label>
       )}
       {anyEmpty && (
-        <button
-          type="button"
-          className="add-property"
-          onClick={() => setShowEmpty((v) => !v)}
-        >
-          {showEmpty ? t('desktop.field.hideEmpty') : t('desktop.field.addProperty')}
-        </button>
+        <Button type="button"
+        className="add-property"
+        onClick={() => setShowEmpty((v) => !v)}>{showEmpty ? t('desktop.field.hideEmpty') : t('desktop.field.addProperty')}</Button>
       )}
     </div>
   )
@@ -818,71 +808,55 @@ export default function App() {
       <UpdateBanner />
       <aside className="rail" aria-label="Navigasi utama">
         <BrandMark />
-        <button
-          type="button"
-          data-tip={t('desktop.nav.notes')} data-tip-side="right"
-          className={view === 'notes' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label={t('desktop.nav.notes')}
-          aria-current={view === 'notes' ? 'page' : undefined}
-          onClick={() => setView('notes')}
-        >
+        <Button type="button"
+        data-tip={t('desktop.nav.notes')} data-tip-side="right"
+        className={view === 'notes' ? 'rail-btn rail-active' : 'rail-btn'}
+        aria-label={t('desktop.nav.notes')}
+        aria-current={view === 'notes' ? 'page' : undefined}
+        onClick={() => setView('notes')}>
           ▤
-        </button>
-        <button
-          type="button"
-          data-tip={t('desktop.nav.inbox')} data-tip-side="right"
-          className={view === 'inbox' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label={t('desktop.nav.inbox')}
-          aria-current={view === 'inbox' ? 'page' : undefined}
-          onClick={() => setView('inbox')}
-        >
+        </Button>
+        <Button type="button"
+        data-tip={t('desktop.nav.inbox')} data-tip-side="right"
+        className={view === 'inbox' ? 'rail-btn rail-active' : 'rail-btn'}
+        aria-label={t('desktop.nav.inbox')}
+        aria-current={view === 'inbox' ? 'page' : undefined}
+        onClick={() => setView('inbox')}>
           ◈
-        </button>
+        </Button>
         <span className="rail-spacer" />
         {activeSponsorLinks().map((link) => (
-          <button
-            key={link.id}
-            type="button"
-            className="rail-btn"
-            data-tip={`${t('sponsor.title')} · ${t(link.label)}`}
-            data-tip-side="right"
-            aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
-            onClick={() => void invoke('open_external', { url: link.url })}
-          >
-            {link.icon}
-          </button>
-        ))}
-        <button
+          <Button key={link.id}
           type="button"
           className="rail-btn"
-          data-tip={t('desktop.nav.theme', { mode: themeLabel(themePref) })} data-tip-side="right"
-          aria-label={t('desktop.nav.theme', { mode: themeLabel(themePref) })}
-          onClick={() =>
-            setThemePref((p) => (p === 'system' ? 'light' : p === 'light' ? 'dark' : 'system'))
-          }
-        >
-          {themePref === 'system' ? '◐' : themePref === 'light' ? '☀' : '☾'}
-        </button>
-        <button
-          type="button"
-          data-tip={t('desktop.nav.install')} data-tip-side="right"
-          className={view === 'install' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label={t('desktop.nav.install')}
-          aria-current={view === 'install' ? 'page' : undefined}
-          onClick={() => setView('install')}
-        >
+          data-tip={`${t('sponsor.title')} · ${t(link.label)}`}
+          data-tip-side="right"
+          aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
+          onClick={() => void invoke('open_external', { url: link.url })}>{link.icon}</Button>
+        ))}
+        <Button type="button"
+        className="rail-btn"
+        data-tip={t('desktop.nav.theme', { mode: themeLabel(themePref) })} data-tip-side="right"
+        aria-label={t('desktop.nav.theme', { mode: themeLabel(themePref) })}
+        onClick={() =>
+          setThemePref((p) => (p === 'system' ? 'light' : p === 'light' ? 'dark' : 'system'))
+        }>{themePref === 'system' ? '◐' : themePref === 'light' ? '☀' : '☾'}</Button>
+        <Button type="button"
+        data-tip={t('desktop.nav.install')} data-tip-side="right"
+        className={view === 'install' ? 'rail-btn rail-active' : 'rail-btn'}
+        aria-label={t('desktop.nav.install')}
+        aria-current={view === 'install' ? 'page' : undefined}
+        onClick={() => setView('install')}>
           ⇄
-        </button>
-        <button
-          type="button"
-          data-tip={t('desktop.nav.settings')} data-tip-side="right"
-          className={view === 'settings' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label={t('desktop.nav.settings')}
-          aria-current={view === 'settings' ? 'page' : undefined}
-          onClick={() => setView('settings')}
-        >
+        </Button>
+        <Button type="button"
+        data-tip={t('desktop.nav.settings')} data-tip-side="right"
+        className={view === 'settings' ? 'rail-btn rail-active' : 'rail-btn'}
+        aria-label={t('desktop.nav.settings')}
+        aria-current={view === 'settings' ? 'page' : undefined}
+        onClick={() => setView('settings')}>
           ⚙
-        </button>
+        </Button>
       </aside>
 
       {view === 'notes' && (
@@ -896,33 +870,29 @@ export default function App() {
                 button receives no hover — which is exactly when it most needs
                 to say why it is disabled. */}
             <span className="tip-wrap" data-tip={t('desktop.vault.newFolder')}>
-              <button
-                type="button"
-                className="add-btn"
-                onClick={() => setNamingFolder('')}
-                aria-label={t('desktop.vault.newFolder')}
-                disabled={!vault}
-              >
+              <Button type="button"
+              className="add-btn"
+              onClick={() => setNamingFolder('')}
+              aria-label={t('desktop.vault.newFolder')}
+              disabled={!vault}>
                 ⊞
-              </button>
+              </Button>
             </span>
             <span
               className="tip-wrap"
               data-tip={vault ? t('desktop.vault.newNote') : t('desktop.vault.preparing')}
             >
-              <button
-                type="button"
-                className="add-btn"
-                onClick={() => guard(openNew)}
-                aria-label={t('desktop.vault.newNote')}
-                disabled={!vault}
-              >
+              <Button type="button"
+              className="add-btn"
+              onClick={() => guard(openNew)}
+              aria-label={t('desktop.vault.newNote')}
+              disabled={!vault}>
                 ＋
-              </button>
+              </Button>
             </span>
           </div>
           {namingFolder !== null && (
-            <input
+            <TextInput
               className="search"
               autoFocus
               placeholder={
@@ -938,7 +908,7 @@ export default function App() {
               }}
             />
           )}
-          <input
+          <TextInput
             className="search"
             placeholder={
               !vault
@@ -964,22 +934,18 @@ export default function App() {
             {filtered.map((n) => (
               <li key={n.rel || n.title}>
                 {n.rel ? (
-                  <button
-                    type="button"
-                    className={selected === n.rel ? 'note-item active' : 'note-item'}
-                    onClick={() => guard(() => open(n.rel))}
-                  >
-                    <span className="note-title">{n.title}</span>
-                    <span className="note-row-meta">
-                      {/* A delivered meeting stays in this list — it is still a
-                          note — but says where it came from, so the two views
-                          do not read as the same undifferentiated pile. */}
-                      {n.platform && n.platform !== 'manual' && (
-                        <span className="note-source">{platformLabel(n.platform)}</span>
-                      )}
-                      <span className="note-date">{dayOf(n.updatedAt)}</span>
-                    </span>
-                  </button>
+                  <Button type="button"
+                  className={selected === n.rel ? 'note-item active' : 'note-item'}
+                  onClick={() => guard(() => open(n.rel))}><span className="note-title">{n.title}</span>
+                  <span className="note-row-meta">
+                    {/* A delivered meeting stays in this list — it is still a
+                        note — but says where it came from, so the two views
+                        do not read as the same undifferentiated pile. */}
+                    {n.platform && n.platform !== 'manual' && (
+                      <span className="note-source">{platformLabel(n.platform)}</span>
+                    )}
+                    <span className="note-date">{dayOf(n.updatedAt)}</span>
+                  </span></Button>
                 ) : (
                   <span className="note-title muted" data-tip={t('desktop.vault.bodyHit')}>
                     {n.title}
@@ -1002,22 +968,18 @@ export default function App() {
           <ul className="note-list">
             {incoming.map((n) => (
               <li key={n.rel}>
-                <button
-                  type="button"
-                  className={selected === n.rel ? 'note-item active' : 'note-item'}
-                  onClick={() => guard(() => open(n.rel))}
-                >
-                  <span className="note-title">{n.title}</span>
-                  <span className="inbox-meta">
-                    <span>{platformLabel(n.platform)}</span>
-                    <span>{dayOf(n.startedAt) || dayOf(n.updatedAt)}</span>
-                    {n.participants > 0 && <span>{t('desktop.inbox.participants', { count: n.participants })}</span>}
-                    {/* A meeting arrives as captions first; the body only fills
-                        once the extension has a summary to send. Saying so beats
-                        an empty note looking like a failed delivery. */}
-                    {!n.hasBody && <span className="pending">{t('desktop.inbox.transcriptOnly')}</span>}
-                  </span>
-                </button>
+                <Button type="button"
+                className={selected === n.rel ? 'note-item active' : 'note-item'}
+                onClick={() => guard(() => open(n.rel))}><span className="note-title">{n.title}</span>
+                <span className="inbox-meta">
+                  <span>{platformLabel(n.platform)}</span>
+                  <span>{dayOf(n.startedAt) || dayOf(n.updatedAt)}</span>
+                  {n.participants > 0 && <span>{t('desktop.inbox.participants', { count: n.participants })}</span>}
+                  {/* A meeting arrives as captions first; the body only fills
+                      once the extension has a summary to send. Saying so beats
+                      an empty note looking like a failed delivery. */}
+                  {!n.hasBody && <span className="pending">{t('desktop.inbox.transcriptOnly')}</span>}
+                </span></Button>
               </li>
             ))}
             {incoming.length === 0 && (
@@ -1056,7 +1018,7 @@ export default function App() {
             />
           ) : note ? (
             <>
-              <input
+              <TextInput
                 ref={titleRef}
                 className="title-input"
                 value={note.title}
@@ -1103,43 +1065,38 @@ export default function App() {
                   ]}
                   onChange={(v) => (selected ? void moveNote(v) : setTarget(v))}
                 />
-                <button type="button" className="btn danger" onClick={trash}>
+                <Button type="button" variant="danger" onClick={trash}>
                   {t('desktop.editor.trash')}
-                </button>
+                </Button>
                 {/* The label says what the button does: for a delivered
                     meeting it never overwrites the archive, it makes the note
                     you go on editing. Removing Save here would leave no way to
                     act on a meeting at all. */}
-                <button type="button" className="btn primary" onClick={save}>
+                <Button type="button" variant="primary" onClick={save}>
                   {note.platform && note.platform !== 'manual'
                     ? t('desktop.editor.saveCopy')
                     : t('desktop.editor.save')}
-                </button>
+                </Button>
               </div>
             </>
           ) : (
             <div className="empty">
               <h1>{t('desktop.editor.emptyTitle')}</h1>
               <p>{t('desktop.editor.emptyBody')}</p>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => guard(openNew)}
-                disabled={!vault}
-              >
+              <Button type="button" variant="primary" onClick={() => guard(openNew)} disabled={!vault}>
                 {t('desktop.vault.newNote')}
-              </button>
+              </Button>
             </div>
           )}
           {confirm && (
             <div className="confirm-bar" role="alert">
               <span>{confirm.message}</span>
-              <button type="button" className="btn" onClick={() => setConfirm(null)}>
+              <Button type="button" onClick={() => setConfirm(null)}>
                 {t('desktop.settings.cancel')}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn primary"
+                variant="primary"
                 onClick={() => {
                   const action = confirm.run
                   setConfirm(null)
@@ -1147,18 +1104,18 @@ export default function App() {
                 }}
               >
                 {confirm.label}
-              </button>
+              </Button>
             </div>
           )}
           {pending && (
             <div className="confirm-bar" role="alert">
               <span>{t('desktop.editor.confirmUnsaved')}</span>
-              <button type="button" className="btn" onClick={() => void resume(true)}>
+              <Button type="button" onClick={() => void resume(true)}>
                 {t('desktop.editor.discard')}
-              </button>
-              <button type="button" className="btn primary" onClick={() => void resume(false)}>
+              </Button>
+              <Button type="button" variant="primary" onClick={() => void resume(false)}>
                 {t('desktop.editor.saveAndGo')}
-              </button>
+              </Button>
             </div>
           )}
           {error && <div className="error-bar">{error}</div>}

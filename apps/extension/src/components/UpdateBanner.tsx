@@ -6,7 +6,7 @@ import {
   watchStorage,
   type UpdateState,
 } from '@meetcc/shared';
-import { useToast } from '../toast';
+import { Button, useToast } from '@meetcc/ui';
 
 const COMMAND = 'companion update';
 
@@ -46,29 +46,25 @@ export function UpdateBanner() {
         Versi baru tersedia. Jalankan <code>{COMMAND}</code> di terminal, lalu restart
         browser Companion.
       </span>
-      <button
-        className="update-copy"
-        onClick={async () => {
-          await navigator.clipboard.writeText(COMMAND);
-          toast('success', 'Perintah update disalin.');
-        }}
-      >
+      <Button className="update-copy"
+      onClick={async () => {
+        await navigator.clipboard.writeText(COMMAND);
+        toast('success', 'Perintah update disalin.');
+      }}>
         Salin perintah
-      </button>
+      </Button>
       <a className="update-link" href={state?.url} target="_blank" rel="noreferrer">
         Catatan rilis
       </a>
-      <button
-        className="update-dismiss"
-        aria-label="Tutup pemberitahuan update"
-        title="Sembunyikan sampai rilis berikutnya"
-        onClick={() => {
-          // Per version, so the next release speaks up again.
-          void chrome.storage.local.set({ [UPDATE_DISMISSED_KEY]: state?.latest });
-        }}
-      >
+      <Button className="update-dismiss"
+      aria-label="Tutup pemberitahuan update"
+      title="Sembunyikan sampai rilis berikutnya"
+      onClick={() => {
+        // Per version, so the next release speaks up again.
+        void chrome.storage.local.set({ [UPDATE_DISMISSED_KEY]: state?.latest });
+      }}>
         ×
-      </button>
+      </Button>
     </div>
   );
 }

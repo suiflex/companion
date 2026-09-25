@@ -15,6 +15,7 @@ import {
   type AnalysisRecord,
   type Meeting,
 } from '@meetcc/shared';
+import { Button, SegmentedControl, TextInput, ToastProvider, useToast } from '@meetcc/ui';
 import { Sidebar } from './components/Sidebar';
 import { Transcript } from './components/Transcript';
 import { SummaryView } from './components/SummaryView';
@@ -27,7 +28,6 @@ import { MeetingHeader } from './components/MeetingHeader';
 import { DecisionLog } from './components/DecisionLog';
 import { SettingsView } from './components/SettingsView';
 import { UpdateBanner } from './components/UpdateBanner';
-import { ToastProvider, useToast } from './toast';
 
 type Tab = 'summary' | 'transcript' | 'diagram' | 'ask' | 'docs';
 
@@ -60,7 +60,7 @@ function MeetingTitle({ id, title }: { id: string; title: string }) {
       void saveTitle(id, draft);
     };
     return (
-      <input
+      <TextInput
         className="title-input"
         autoFocus
         value={draft}
@@ -81,9 +81,9 @@ function MeetingTitle({ id, title }: { id: string; title: string }) {
 
   return (
     <h1>
-      <button className="title-btn" title={t('ext.meeting.rename', { id })} onClick={() => setEditing(true)}>
+      <Button className="title-btn" title={t('ext.meeting.rename', { id })} onClick={() => setEditing(true)}>
         <span className="title-text">{title || displayMeetingId(id)}</span>
-      </button>
+      </Button>
     </h1>
   );
 }
@@ -250,18 +250,14 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
                   </span>
                 )}
               </div>
-              <nav className="tabs" role="tablist" aria-label={t('ext.meeting.views')}>
-                {TABS.map((id) => (
-                  <button
-                    key={id}
-                    role="tab"
-                    aria-selected={tab === id}
-                    className={`tab ${tab === id ? 'active' : ''}`}
-                    onClick={() => setTab(id)}
-                  >
-                    {t(TAB_LABELS[id])}
-                  </button>
-                ))}
+              <nav className="tabs">
+                <SegmentedControl
+                  ariaLabel={t('ext.meeting.views')}
+                  role="tablist"
+                  options={TABS.map((id) => ({ value: id, label: t(TAB_LABELS[id]) }))}
+                  value={tab}
+                  onChange={(value) => setTab(value as typeof tab)}
+                />
               </nav>
             </header>
             <MeetingHeader sessionId={selected.id} onOpenMeeting={openMeeting} />

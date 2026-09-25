@@ -12,7 +12,7 @@ import type { ActionRow } from '@meetcc/store';
 import { weeklyDigest, type Chronology } from '@meetcc/meeting';
 import { chronology, listActions, setActionStatus } from '../lib/db';
 import { db } from '../lib/db';
-import { useToast } from '../toast';
+import { Button, SegmentedControl, TextArea, TextInput, useToast } from '@meetcc/ui';
 
 // Knowledge base: Mini Context & Glossary manager (for quick meeting injection)
 // alongside cross-meeting thread, chronology, and action items.
@@ -60,9 +60,9 @@ function ActionRowView({
       {action.externalRef ? (
         <span className="kb-ref">{action.externalRef}</span>
       ) : (
-        <button className="kb-push" disabled={busy} onClick={onPush} title={t('ext.kb.pushToTracker')}>
+      <Button className="kb-push" disabled={busy} onClick={onPush} title={t('ext.kb.pushToTracker')}>
           Kirim ke tracker
-        </button>
+      </Button>
       )}
     </li>
   );
@@ -108,7 +108,7 @@ function ContextCardItem({
       </div>
       <p className="ctx-def">{ctx.definition}</p>
       <div className="ctx-card-actions">
-        <button
+        <Button
           type="button"
           className="ctx-btn"
           onClick={(e) => {
@@ -117,17 +117,18 @@ function ContextCardItem({
           }}
         >
           {t('ext.kb.edit')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="ctx-btn danger"
+          variant="danger"
+          className="ctx-btn"
           onClick={(e) => {
             e.stopPropagation();
             void onDelete(ctx.id);
           }}
         >
           {t('ext.kb.deleteContext')}
-        </button>
+        </Button>
       </div>
     </article>
   );
@@ -146,7 +147,7 @@ function RevisionTopicItem({
     <li className="kb-revision">
       <span className="kb-topic">{topic}</span>
       {decisions.map((d, i) => (
-        <button
+        <Button
           key={d.id}
           className={`kb-rev-step ${d.supersededBy ? 'superseded' : ''}`}
           onClick={() => onOpenMeeting(d.sessionId)}
@@ -155,7 +156,7 @@ function RevisionTopicItem({
           <span>{d.decision}</span>
           {d.reason && <em className="dim"> — {d.reason}</em>}
           {!d.supersededBy && <span className="kb-standing">{t('ext.kb.standing')}</span>}
-        </button>
+        </Button>
       ))}
     </li>
   );
@@ -436,30 +437,22 @@ export function KnowledgeView({
         <div className="toolbar-title">
           <h1>{t('ext.kb.contextTitle')}</h1>
         </div>
-        <nav className="tabs" role="tablist" aria-label={t('ext.kb.contextTitle')}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'contexts'}
-            className={`tab ${activeTab === 'contexts' ? 'active' : ''}`}
-            onClick={() => setActiveTab('contexts')}
-          >
-            {t('ext.kb.tabContexts')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'insights'}
-            className={`tab ${activeTab === 'insights' ? 'active' : ''}`}
-            onClick={() => setActiveTab('insights')}
-          >
-            {t('ext.kb.tabInsights')}
-          </button>
+        <nav className="tabs">
+          <SegmentedControl
+            ariaLabel={t('ext.kb.contextTitle')}
+            role="tablist"
+            options={[
+              { value: 'contexts', label: t('ext.kb.tabContexts') },
+              { value: 'insights', label: t('ext.kb.tabInsights') },
+            ]}
+            value={activeTab}
+            onChange={(value) => setActiveTab(value as typeof activeTab)}
+          />
         </nav>
         {onClose && (
-          <button type="button" onClick={onClose} aria-label={t('ext.header.close')}>
+          <Button type="button" onClick={onClose} aria-label={t('ext.header.close')}>
             ✕
-          </button>
+          </Button>
         )}
       </header>
 
@@ -467,9 +460,10 @@ export function KnowledgeView({
         <section className="kb-contexts-section">
           <div className="kb-contexts-header">
             <p className="hint">{t('ext.kb.contextDesc')}</p>
-            <button
+            <Button
               type="button"
-              className={isEditing ? 'kb-add-btn dim' : 'kb-add-btn primary'}
+              variant={isEditing ? 'default' : 'primary'}
+              className={isEditing ? 'kb-add-btn dim' : 'kb-add-btn'}
               onClick={() => {
                 if (isEditing) {
                   setIsEditing(false);
@@ -485,7 +479,7 @@ export function KnowledgeView({
               }}
             >
               {isEditing ? t('ext.kb.cancel') : t('ext.kb.addContext')}
-            </button>
+            </Button>
           </div>
 
           {isEditing && (
@@ -495,7 +489,7 @@ export function KnowledgeView({
               </h3>
               <label className="field">
                 <span>{t('ext.kb.term')}</span>
-                <input
+                <TextInput
                   type="text"
                   required
                   value={formTerm}
@@ -514,7 +508,7 @@ export function KnowledgeView({
                       {allTags.map((tag) => {
                         const selected = selectedTagSet.has(tag.toLowerCase());
                         return (
-                          <button
+                          <Button
                             key={tag}
                             type="button"
                             className={`ref-tag-pill ${selected ? 'selected' : ''}`}
@@ -522,7 +516,7 @@ export function KnowledgeView({
                           >
                             <span>#{tag}</span>
                             {selected && <span className="ref-tag-check">✓</span>}
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>
@@ -530,7 +524,7 @@ export function KnowledgeView({
                 )}
 
                 <div className="kb-tag-input-row">
-                  <input
+                  <TextInput
                     type="text"
                     className="kb-new-tag-input"
                     value={customTagInput}
@@ -543,13 +537,13 @@ export function KnowledgeView({
                       }
                     }}
                   />
-                  <button
+                  <Button
                     type="button"
                     className="kb-add-tag-btn"
                     onClick={addCustomTag}
                   >
                     {t('ext.kb.addTag')}
-                  </button>
+                  </Button>
                 </div>
 
                 {formSelectedTags.length > 0 && (
@@ -559,14 +553,14 @@ export function KnowledgeView({
                       {formSelectedTags.map((tag) => (
                         <span key={tag} className="selected-tag-pill">
                           #{tag}
-                          <button
+                          <Button
                             type="button"
                             className="remove-tag-btn"
                             onClick={() => removeTag(tag)}
                             aria-label={t('ext.kb.removeTag', { tag })}
                           >
                             ×
-                          </button>
+                          </Button>
                         </span>
                       ))}
                     </div>
@@ -576,7 +570,7 @@ export function KnowledgeView({
 
               <label className="field">
                 <span>{t('ext.kb.definition')}</span>
-                <textarea
+                <TextArea
                   required
                   rows={3}
                   value={formDef}
@@ -585,7 +579,7 @@ export function KnowledgeView({
                 />
               </label>
               <div className="subbar">
-                <button
+                <Button
                   type="button"
                   onClick={() => {
                     setIsEditing(false);
@@ -593,42 +587,40 @@ export function KnowledgeView({
                   }}
                 >
                   {t('ext.kb.cancel')}
-                </button>
-                <button className="primary" type="submit">
+                </Button>
+                <Button variant="primary" type="submit">
                   {t('ext.kb.saveContext')}
-                </button>
+                </Button>
               </div>
             </form>
           )}
 
-          <div className="kb-filter-row">
             <div className="kb-tag-pills">
-              <button
+              <Button
                 type="button"
                 className={`tag-pill ${activeTag === 'all' ? 'active' : ''}`}
                 onClick={() => setActiveTag('all')}
               >
                 #{t('ext.kb.allTags')}
-              </button>
+              </Button>
               {allTags.map((tag) => (
-                <button
+                <Button
                   key={tag}
                   type="button"
                   className={`tag-pill ${activeTag === tag ? 'active' : ''}`}
                   onClick={() => setActiveTag(activeTag === tag ? 'all' : tag)}
                 >
                   #{tag}
-                </button>
+                </Button>
               ))}
             </div>
-            <input
+            <TextInput
               type="search"
               className="kb-search-input"
               value={search}
               placeholder={t('ext.kb.searchContexts')}
               onChange={(e) => setSearch(e.target.value)}
             />
-          </div>
 
           {filteredContexts.length === 0 ? (
             <p className="section-empty">
@@ -657,7 +649,7 @@ export function KnowledgeView({
                 void ask(question);
               }}
             >
-              <textarea
+              <TextArea
                 className="ask-input"
                 rows={1}
                 value={question}
@@ -671,16 +663,14 @@ export function KnowledgeView({
                   }
                 }}
               />
-              <button className="primary" type="submit" disabled={asking || !question.trim()}>
+              <Button variant="primary" type="submit" disabled={asking || !question.trim()}>
                 {asking ? '…' : t('ext.kb.ask')}
-              </button>
+              </Button>
             </form>
 
             {answer && (
               <article className="kb-answer">
-                <p className="kb-answer-text">{answer.answer}</p>
                 <div className="ask-grades">
-                  <span className={`ask-grade ask-grade-${answer.answerability}`}>{answer.answerability}</span>
                   {answer.sessions.map((s) => (
                     <button key={s.id} className="ask-chip" onClick={() => onOpenMeeting(s.id)}>
                       {s.title || s.id} · {fmtDate(s.startedAt)}
@@ -702,7 +692,7 @@ export function KnowledgeView({
           </section>
 
           <div className="kb-digest">
-            <button
+            <Button
               className="kb-refresh"
               disabled={!story}
               title={t('ext.kb.copyDigest')}
@@ -713,7 +703,7 @@ export function KnowledgeView({
               }}
             >
               Salin digest mingguan
-            </button>
+            </Button>
           </div>
 
           <div className="kb-cols">
@@ -730,9 +720,9 @@ export function KnowledgeView({
                   {t('ext.kb.showDone')}
                 </label>
                 {actions.some((a) => a.externalRef) && (
-                  <button className="kb-refresh" disabled={syncingIssues} onClick={() => void refreshIssues()}>
+                  <Button className="kb-refresh" disabled={syncingIssues} onClick={() => void refreshIssues()}>
                     {syncingIssues ? t('ext.kb.checkingTracker') : t('ext.kb.pullTracker')}
-                  </button>
+                  </Button>
                 )}
               </div>
               {visibleActions.length ? (
@@ -774,13 +764,13 @@ export function KnowledgeView({
                 <ol className="kb-timeline">
                   {story.events.slice(-40).map((e, i) => (
                     <li key={`${e.kind}-${e.entityId}-${i}`}>
-                      <button className="kb-event" onClick={() => onOpenMeeting(e.sessionId)}>
+                      <Button className="kb-event" onClick={() => onOpenMeeting(e.sessionId)}>
                         <span className={`kb-event-kind kind-${e.kind}`}>{t(EVENT_LABEL[e.kind])}</span>
                         <span className="kb-event-text">{e.text}</span>
                         <span className="dim">
                           {e.sessionTitle} · {fmtDate(e.at)}
                         </span>
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ol>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { t } from '@meetcc/shared/i18n';
 import type { Diagram, Meeting } from '@meetcc/shared';
 import { lazyImport } from '../lib/lazy';
-import { useToast } from '../toast';
+import { Button, useToast } from '@meetcc/ui';
 
 type State =
   | { status: 'rendering' }
@@ -45,9 +45,9 @@ function DiagramCard({ diagram, index }: { diagram: Diagram; index: number }) {
         <span className="diagram-title">{diagram.title}</span>
         <span className="diagram-type">{diagram.type}</span>
         <span className="spacer" />
-        <button className="ghost" onClick={copy}>
+        <Button variant="ghost" onClick={copy}>
           ⧉ Copy source
-        </button>
+        </Button>
       </figcaption>
       <div className="diagram-plate">
         {state.status === 'rendering' && (
@@ -106,8 +106,7 @@ export function DiagramView({ meeting, diagrams, analysisReady }: Props) {
   };
 
   const genButton = (
-    <button
-      className="primary"
+    <Button variant="primary"
       onClick={generate}
       disabled={busy || !analysisReady}
       title={analysisReady ? '' : t('ext.diagram.needSummary')}
@@ -117,7 +116,7 @@ export function DiagramView({ meeting, diagrams, analysisReady }: Props) {
         : diagrams.length
           ? t('ext.diagram.regenerate')
           : t('ext.diagram.generate')}
-    </button>
+    </Button>
   );
 
   if (busy && !diagrams.length) {

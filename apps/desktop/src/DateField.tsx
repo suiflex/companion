@@ -9,6 +9,7 @@
 // display is localised.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { formatDate, locale, t } from '@meetcc/shared/i18n'
+import { Button } from '@meetcc/ui'
 
 /** Weekday initials and month names come from Intl, so they follow the
     language without a second list to keep in step with the catalogue. */
@@ -95,49 +96,45 @@ export function DateField({
 
   return (
     <div className="datefield" ref={wrap}>
-      <button
-        type="button"
-        className="datefield-button"
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-      >
-        <span className={value ? undefined : 'placeholder'}>{label(value) || t('desktop.date.pick')}</span>
-        {/* Clearing has to be reachable: a due date that cannot be removed is
-            worse than one that was never set. */}
-        {value && (
-          <span
-            role="button"
-            tabIndex={0}
-            className="datefield-clear"
-            aria-label={t('desktop.date.clear')}
-            onClick={(e) => {
+      <Button type="button"
+      className="datefield-button"
+      onClick={() => setOpen((o) => !o)}
+      aria-haspopup="dialog"
+      aria-expanded={open}><span className={value ? undefined : 'placeholder'}>{label(value) || t('desktop.date.pick')}</span>
+      {/* Clearing has to be reachable: a due date that cannot be removed is
+          worse than one that was never set. */}
+      {value && (
+        <span
+          role="button"
+          tabIndex={0}
+          className="datefield-clear"
+          aria-label={t('desktop.date.clear')}
+          onClick={(e) => {
+            e.stopPropagation()
+            onChange('')
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
               e.stopPropagation()
+              e.preventDefault()
               onChange('')
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.stopPropagation()
-                e.preventDefault()
-                onChange('')
-              }
-            }}
-          >
-            ×
-          </span>
-        )}
-      </button>
+            }
+          }}
+        >
+          ×
+        </span>
+      )}</Button>
 
       {open && (
         <div className="calendar" role="dialog" aria-label={t('desktop.date.dialog')}>
           <div className="calendar-head">
-            <button type="button" onClick={() => shift(-1)} aria-label={t('desktop.date.prevMonth')}>
+            <Button type="button" onClick={() => shift(-1)} aria-label={t('desktop.date.prevMonth')}>
               ‹
-            </button>
+            </Button>
             <strong>{monthName(month)}</strong>
-            <button type="button" onClick={() => shift(1)} aria-label={t('desktop.date.nextMonth')}>
+            <Button type="button" onClick={() => shift(1)} aria-label={t('desktop.date.nextMonth')}>
               ›
-            </button>
+            </Button>
           </div>
 
           <div className="calendar-grid">
@@ -172,9 +169,7 @@ export function DateField({
           </div>
 
           <div className="calendar-foot">
-            <button type="button" onClick={() => { onChange(today); setOpen(false) }}>
-              {t('desktop.date.today')}
-            </button>
+            <Button type="button" onClick={() => { onChange(today); setOpen(false) }}>{t('desktop.date.today')}</Button>
           </div>
         </div>
       )}

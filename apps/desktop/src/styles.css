@@ -4,18 +4,18 @@
    colour that cannot follow the theme. */
 :root {
   color-scheme: dark;
-  --bg: #0a0d12;
-  --bg-panel: #0f131b;
+  --bg: var(--ui-ink);
+  --bg-panel: var(--ui-panel);
   --bg-sunken: #0d1119;
-  --bg-raised: #131926;
-  --border: #1d2434;
-  --fg: #dbe2ee;
-  --fg-muted: #8b95a9;
-  --fg-on-accent: #0a0d12;
-  --accent: #46e394;
-  --danger: #ff6b74;
-  --warning: #e0b341;
-  --info: #6aa9f0;
+  --bg-raised: var(--ui-panel-2);
+  --border: var(--ui-hairline);
+  --fg: var(--ui-text);
+  --fg-muted: var(--ui-text-dim);
+  --fg-on-accent: var(--ui-fg-on-accent);
+  --accent: var(--ui-accent);
+  --danger: var(--ui-danger);
+  --warning: var(--ui-warning);
+  --info: var(--ui-info);
 }
 
 /* Light: the same structure on paper. The signal green darkens so it still
@@ -23,18 +23,18 @@
    sunken becomes lighter than the page, not darker. */
 body[data-theme='light'] {
   color-scheme: light;
-  --bg: #eef1f6;
-  --bg-panel: #ffffff;
+  --bg: var(--ui-ink);
+  --bg-panel: var(--ui-panel);
   --bg-sunken: #f7f9fc;
-  --bg-raised: #ffffff;
-  --border: #d2dae7;
-  --fg: #1c2433;
-  --fg-muted: #55617a;
-  --fg-on-accent: #ffffff;
-  --accent: #0c8f60;
-  --danger: #d43f49;
-  --warning: #a86f0c;
-  --info: #1663b0;
+  --bg-raised: var(--ui-panel-2);
+  --border: var(--ui-hairline-2);
+  --fg: var(--ui-text);
+  --fg-muted: var(--ui-text-dim);
+  --fg-on-accent: var(--ui-fg-on-accent);
+  --accent: var(--ui-accent);
+  --danger: var(--ui-danger);
+  --warning: var(--ui-warning);
+  --info: var(--ui-info);
 }
 
 * {
@@ -239,12 +239,6 @@ body {
 
 .search {
   margin: 10px;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-sunken);
-  color: var(--fg);
-  font-size: 13px;
 }
 
 .note-list {
@@ -470,34 +464,6 @@ body {
 
 /* Ticket metadata sits between the title and the body, the way an issue
    tracker puts it: visible without opening anything, out of the writing flow. */
-/* Three-way choice shown as one control, so the options read as alternatives
-   rather than three separate buttons. */
-.segmented {
-  display: inline-flex;
-  flex: none;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.segmented .seg {
-  border: 0;
-  border-right: 1px solid var(--border);
-  background: var(--bg-sunken);
-  color: var(--fg-muted);
-  padding: 7px 12px;
-  font: 12px 'Avenir Next', Avenir, sans-serif;
-  cursor: pointer;
-}
-
-.segmented .seg:last-child { border-right: 0; }
-.segmented .seg:hover { color: var(--fg); }
-
-.segmented .seg.active {
-  background: var(--accent);
-  color: var(--fg-on-accent);
-  font-weight: 600;
-}
 
 /* The meeting a note came from: who was there, when, and how to get back to
    it. Shown only for delivered notes — a hand-written one has none of this. */
@@ -562,12 +528,7 @@ body {
 .mm-url {
   flex: 1;
   min-width: 0;
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg-raised);
-  color: var(--fg-muted);
+  height: 34px;
   font: 11px ui-monospace, Menlo, monospace;
 }
 
@@ -632,7 +593,11 @@ body {
   color: var(--fg-muted);
 }
 
-.ticket-fields input,
+.ticket-fields input {
+  width: 100%;
+  height: 34px;
+}
+
 .ticket-fields select {
   width: 100%;
   height: 34px;
@@ -645,40 +610,6 @@ body {
   line-height: normal;
 }
 
-/* Transient feedback, bottom-right. Re-tokenised rather than copied from the
-   extension: the palettes use different variable names. */
-.toasts {
-  position: fixed;
-  bottom: 14px;
-  right: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 99;
-}
-
-.toast {
-  max-width: 320px;
-  padding: 9px 14px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--bg-panel);
-  font-size: 12.5px;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
-  animation: toast-rise 180ms ease-out;
-}
-
-.toast-success { border-color: var(--accent); color: var(--accent); }
-.toast-error { border-color: var(--danger); color: var(--danger); }
-
-@keyframes toast-rise {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .toast { animation: none; }
-}
 
 /* Tooltips, drawn by us.
    macOS renders this window in WKWebView, which does not surface the HTML
@@ -1117,36 +1048,6 @@ body {
   color: var(--fg-muted);
 }
 
-.btn {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg-panel);
-  color: var(--fg-muted);
-  font: 600 11px/1 'Avenir Next', Avenir, sans-serif;
-  cursor: pointer;
-}
-
-.btn:hover {
-  color: var(--fg);
-  border-color: var(--accent);
-}
-
-.btn.primary {
-  border-color: var(--accent);
-  background: rgba(70, 227, 148, 0.12);
-  color: var(--accent);
-}
-
-.btn.primary:hover {
-  background: var(--accent);
-  color: var(--fg-on-accent);
-}
-
-.btn.danger:hover {
-  border-color: var(--danger);
-  color: var(--danger);
-}
 
 .error-bar {
   margin-top: 12px;
@@ -1171,23 +1072,9 @@ body {
   gap: 8px;
 }
 
-/* The settings screen had no text field until the provider panel: everything
-   before it was a button, a toggle or a select. */
 .text-input {
   flex: none;
   width: 260px;
-  height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-sunken);
-  color: var(--fg);
-  font-size: 13px;
-}
-
-.text-input:focus {
-  outline: none;
-  border-color: var(--accent);
 }
 
 /* The loaded model names, when there are few enough to show whole. */
@@ -1269,7 +1156,7 @@ body {
 }
 
 /* The label is two words; letting it wrap made the button look broken. */
-.setting-row > .btn {
+.setting-row > .ui-button {
   flex: none;
   white-space: nowrap;
 }

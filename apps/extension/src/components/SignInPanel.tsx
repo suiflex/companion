@@ -15,8 +15,8 @@ import {
   type DeviceCode,
 } from '@meetcc/ai';
 import { DEFAULT_OAUTH, type OAuthSettings, type Settings } from '@meetcc/shared';
-import { useToast } from '../toast';
 
+import { Button, TextInput, useToast } from '@meetcc/ui';
 /** A device code stops being approvable after 15 minutes. */
 const DEVICE_TTL_MS = 15 * 60_000;
 
@@ -166,14 +166,12 @@ export function SignInPanel({
           {connected.projectId ? ` · project ${connected.projectId}` : ''}. Analisis memakai
           langganan akun ini, bukan tagihan API.
         </p>
-        <button
-          onClick={() => {
-            void store(DEFAULT_OAUTH);
-            toast('success', t('ext.signin.disconnected'));
-          }}
-        >
+        <Button onClick={() => {
+          void store(DEFAULT_OAUTH);
+          toast('success', t('ext.signin.disconnected'));
+        }}>
           Keluar
-        </button>
+        </Button>
       </div>
     );
   }
@@ -187,9 +185,7 @@ export function SignInPanel({
 
       {provider === 'chatgpt' ? (
         <>
-          <button onClick={() => void startChatGpt()} disabled={!!busy}>
-            {busy || t('ext.signin.withChatgpt')}
-          </button>
+          <Button onClick={() => void startChatGpt()} disabled={!!busy}>{busy || t('ext.signin.withChatgpt')}</Button>
           {device && (
             <p className="hint">
               {t('ext.signin.deviceCode', {
@@ -201,24 +197,20 @@ export function SignInPanel({
         </>
       ) : (
         <>
-          <button onClick={() => void startGoogle()} disabled={!!busy}>
-            {t('ext.signin.withGoogle')}
-          </button>
+          <Button onClick={() => void startGoogle()} disabled={!!busy}>{t('ext.signin.withGoogle')}</Button>
           <p className="hint">
             {t('ext.signin.googleHint', { address: '127.0.0.1' })}
           </p>
-          <input
-            type="url"
+          <TextInput type="url"
             value={pasted}
             placeholder="http://127.0.0.1:45789/?code=…"
             autoComplete="off"
             onChange={(e) => setPasted(e.target.value)}
           />
-          <button className="primary" onClick={() => void finishGoogle()} disabled={!!busy || !pasted}>
+          <Button variant="primary" onClick={() => void finishGoogle()} disabled={!!busy || !pasted}>
             {busy || t('ext.signin.finish')}
-          </button>
-          <input
-            type="text"
+          </Button>
+          <TextInput type="text"
             value={projectId}
             placeholder="Project ID Google Cloud (opsional)"
             autoComplete="off"
