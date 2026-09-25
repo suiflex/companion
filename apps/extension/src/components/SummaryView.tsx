@@ -163,6 +163,26 @@ function Result({ meeting, analysis }: { meeting: Meeting; analysis: Analysis })
   );
 }
 
+function appendContextTagsToMap(map: Map<string, MiniContext[]>, c: MiniContext): void {
+  for (let j = 0; j < c.tags.length; j++) {
+    const tg = c.tags[j].toLowerCase();
+    let list = map.get(tg);
+    if (!list) {
+      list = [];
+      map.set(tg, list);
+    }
+    list.push(c);
+  }
+}
+
+function buildTagToContextsMap(contexts: MiniContext[]): Map<string, MiniContext[]> {
+  const map = new Map<string, MiniContext[]>();
+  for (let i = 0; i < contexts.length; i++) {
+    appendContextTagsToMap(map, contexts[i]);
+  }
+  return map;
+}
+
 function ContextCard({ meeting }: { meeting: Meeting }) {
   const [context, setContext] = useState(meeting.context ?? '');
   const [open, setOpen] = useState(!meeting.context?.trim());
@@ -204,22 +224,7 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
     }, [CONTEXT_PREFIX + meeting.id]);
   }, [meeting.id]);
 
-  const tagToContexts = useMemo(() => {
-    const map = new Map<string, MiniContext[]>();
-    for (let i = 0; i < availableContexts.length; i++) {
-      const c = availableContexts[i];
-      for (let j = 0; j < c.tags.length; j++) {
-        const tg = c.tags[j].toLowerCase();
-        let list = map.get(tg);
-        if (!list) {
-          list = [];
-          map.set(tg, list);
-        }
-        list.push(c);
-      }
-    }
-    return map;
-  }, [availableContexts]);
+  const tagToContexts = useMemo(() => buildTagToContextsMap(availableContexts), [availableContexts]);
 
   const uniqueTags = useMemo(() => {
     return Array.from(tagToContexts.keys()).sort();

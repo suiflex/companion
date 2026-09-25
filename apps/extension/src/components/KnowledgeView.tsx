@@ -68,6 +68,144 @@ function ActionRowView({
   );
 }
 
+function ContextCardItem({
+  ctx,
+  onEdit,
+  onDelete,
+}: {
+  ctx: MiniContext;
+  onEdit: (ctx: MiniContext) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <article
+      className="kb-context-card"
+      role="button"
+      tabIndex={0}
+      onClick={() => onEdit(ctx)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onEdit(ctx);
+        }
+      }}
+    >
+      <div className="ctx-card-head">
+        <div className="ctx-term-wrap">
+          <span className="ctx-term">{ctx.term}</span>
+          <span className="ctx-hover-hint">
+            <span>✎</span>
+            <span>{t('ext.kb.clickToEdit')}</span>
+          </span>
+        </div>
+        <div className="ctx-tags">
+          {ctx.tags.map((tg) => (
+            <span key={tg} className="ctx-tag-pill">
+              #{tg}
+            </span>
+          ))}
+        </div>
+      </div>
+      <p className="ctx-def">{ctx.definition}</p>
+      <div className="ctx-card-actions">
+        <button
+          type="button"
+          className="ctx-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(ctx);
+          }}
+        >
+          {t('ext.kb.edit')}
+        </button>
+        <button
+          type="button"
+          className="ctx-btn danger"
+          onClick={(e) => {
+            e.stopPropagation();
+            void onDelete(ctx.id);
+          }}
+        >
+          {t('ext.kb.deleteContext')}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function RevisionTopicItem({
+  topic,
+  decisions,
+  onOpenMeeting,
+}: {
+  topic: string;
+  decisions: Chronology['revisions'][number]['decisions'];
+  onOpenMeeting: (id: string) => void;
+}) {
+  return (
+    <li className="kb-revision">
+      <span className="kb-topic">{topic}</span>
+      {decisions.map((d, i) => (
+        <button
+          key={d.id}
+          className={`kb-rev-step ${d.supersededBy ? 'superseded' : ''}`}
+          onClick={() => onOpenMeeting(d.sessionId)}
+        >
+          <span className="kb-rev-index">{i + 1}</span>
+          <span>{d.decision}</span>
+          {d.reason && <em className="dim"> — {d.reason}</em>}
+          {!d.supersededBy && <span className="kb-standing">{t('ext.kb.standing')}</span>}
+        </button>
+      ))}
+    </li>
+  );
+}
+
+function appendTagsToSet(set: Set<string>, tags: string[]): void {
+  for (let j = 0; j < tags.length; j++) {
+    set.add(tags[j].toLowerCase());
+  }
+}
+
+function extractAllTags(contexts: MiniContext[]): string[] {
+  const tagSet = new Set<string>();
+  for (let i = 0; i < contexts.length; i++) {
+    appendTagsToSet(tagSet, contexts[i].tags);
+  }
+  return Array.from(tagSet).sort();
+}
+
+function hasMatchingTag(tags: string[], target: string): boolean {
+  for (let j = 0; j < tags.length; j++) {
+    if (tags[j].toLowerCase() === target) return true;
+  }
+  return false;
+}
+
+function tagMatchesQuery(tags: string[], q: RegExp): boolean {
+  for (let j = 0; j < tags.length; j++) {
+    if (q.test(tags[j])) return true;
+  }
+  return false;
+}
+
+function contextMatchesSearch(c: MiniContext, q: RegExp): boolean {
+  if (q.test(c.term)) return true;
+  if (q.test(c.definition)) return true;
+  return tagMatchesQuery(c.tags, q);
+}
+
+function filterContexts(contexts: MiniContext[], tagFilter: string | null, q: RegExp | null): MiniContext[] {
+  const results: MiniContext[] = [];
+  for (let i = 0; i < contexts.length; i++) {
+    const c = contexts[i];
+    if (tagFilter && !hasMatchingTag(c.tags, tagFilter)) continue;
+    if (q && !contextMatchesSearch(c, q)) continue;
+    results.push(c);
+  }
+  return results;
+}
+
 export function KnowledgeView({
   onOpenMeeting,
   onClose,
@@ -118,53 +256,13 @@ export function KnowledgeView({
 
   useEffect(refreshInsights, [refreshInsights]);
 
-  const allTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    for (let i = 0; i < contexts.length; i++) {
-      const tags = contexts[i].tags;
-      for (let j = 0; j < tags.length; j++) {
-        tagSet.add(tags[j].toLowerCase());
-      }
-    }
-    return Array.from(tagSet).sort();
-  }, [contexts]);
+  const allTags = useMemo(() => extractAllTags(contexts), [contexts]);
 
   const filteredContexts = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const rawQ = search.trim();
+    const q = rawQ ? new RegExp(rawQ.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : null;
     const tagFilter = activeTag === 'all' ? null : activeTag.toLowerCase();
-    const results: MiniContext[] = [];
-
-    for (let i = 0; i < contexts.length; i++) {
-      const c = contexts[i];
-      if (tagFilter) {
-        let tagMatches = false;
-        for (let j = 0; j < c.tags.length; j++) {
-          if (c.tags[j].toLowerCase() === tagFilter) {
-            tagMatches = true;
-            break;
-          }
-        }
-        if (!tagMatches) continue;
-      }
-
-      if (q) {
-        const inTerm = c.term.toLowerCase().includes(q);
-        const inDef = c.definition.toLowerCase().includes(q);
-        let inTag = false;
-        if (!inTerm && !inDef) {
-          for (let j = 0; j < c.tags.length; j++) {
-            if (c.tags[j].toLowerCase().includes(q)) {
-              inTag = true;
-              break;
-            }
-          }
-        }
-        if (!inTerm && !inDef && !inTag) continue;
-      }
-
-      results.push(c);
-    }
-    return results;
+    return filterContexts(contexts, tagFilter, q);
   }, [contexts, activeTag, search]);
 
   const selectedTagSet = useMemo(() => {
@@ -557,59 +655,12 @@ export function KnowledgeView({
           ) : (
             <div className="kb-context-grid">
               {filteredContexts.map((ctx) => (
-                <article
+                <ContextCardItem
                   key={ctx.id}
-                  className="kb-context-card"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleEdit(ctx)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleEdit(ctx);
-                    }
-                  }}
-                >
-                  <div className="ctx-card-head">
-                    <div className="ctx-term-wrap">
-                      <span className="ctx-term">{ctx.term}</span>
-                      <span className="ctx-hover-hint">
-                        <span>✎</span>
-                        <span>{t('ext.kb.clickToEdit')}</span>
-                      </span>
-                    </div>
-                    <div className="ctx-tags">
-                      {ctx.tags.map((tg) => (
-                        <span key={tg} className="ctx-tag-pill">
-                          #{tg}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="ctx-def">{ctx.definition}</p>
-                  <div className="ctx-card-actions">
-                    <button
-                      type="button"
-                      className="ctx-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(ctx);
-                      }}
-                    >
-                      {t('ext.kb.edit')}
-                    </button>
-                    <button
-                      type="button"
-                      className="ctx-btn danger"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleDelete(ctx.id);
-                      }}
-                    >
-                      {t('ext.kb.deleteContext')}
-                    </button>
-                  </div>
-                </article>
+                  ctx={ctx}
+                  onEdit={handleEdit}
+                  onDelete={(id) => void handleDelete(id)}
+                />
               ))}
             </div>
           )}
@@ -724,21 +775,12 @@ export function KnowledgeView({
               {story?.revisions?.length ? (
                 <ul className="kb-list">
                   {story.revisions.map((r) => (
-                    <li key={r.topic} className="kb-revision">
-                      <span className="kb-topic">{r.topic}</span>
-                      {r.decisions.map((d, i) => (
-                        <button
-                          key={d.id}
-                          className={`kb-rev-step ${d.supersededBy ? 'superseded' : ''}`}
-                          onClick={() => onOpenMeeting(d.sessionId)}
-                        >
-                          <span className="kb-rev-index">{i + 1}</span>
-                          <span>{d.decision}</span>
-                          {d.reason && <em className="dim"> — {d.reason}</em>}
-                          {!d.supersededBy && <span className="kb-standing">{t('ext.kb.standing')}</span>}
-                        </button>
-                      ))}
-                    </li>
+                    <RevisionTopicItem
+                      key={r.topic}
+                      topic={r.topic}
+                      decisions={r.decisions}
+                      onOpenMeeting={onOpenMeeting}
+                    />
                   ))}
                 </ul>
               ) : (
