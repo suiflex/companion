@@ -2060,32 +2060,11 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
 
 /* ── knowledge base: mini contexts & navigation ── */
 
-.kb-header-nav {
+.kb {
+  flex: 1;
   display: flex;
-  gap: 8px;
-  border-bottom: 1px solid var(--hairline);
-  padding: 0 16px;
-  background: var(--panel);
-}
-
-.kb-tab-btn {
-  padding: 10px 14px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--text-dim);
-  font: 500 12px/1 var(--font-body);
-  cursor: pointer;
-  transition: all 120ms ease;
-}
-
-.kb-tab-btn:hover {
-  color: var(--text);
-}
-
-.kb-tab-btn.active {
-  color: var(--phosphor);
-  border-bottom-color: var(--phosphor);
+  flex-direction: column;
+  min-height: 0;
 }
 
 .kb-contexts-section {
@@ -2098,9 +2077,15 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
 
 .kb-contexts-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.kb-contexts-header .hint {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .kb-add-btn {

@@ -68,7 +68,15 @@ function ActionRowView({
   );
 }
 
-export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: (id: string) => void; seedQuestion?: string }) {
+export function KnowledgeView({
+  onOpenMeeting,
+  onClose,
+  seedQuestion,
+}: {
+  onOpenMeeting: (id: string) => void;
+  onClose?: () => void;
+  seedQuestion?: string;
+}) {
   const [activeTab, setActiveTab] = useState<'contexts' | 'insights'>('contexts');
 
   // Mini contexts state
@@ -344,30 +352,41 @@ export function KnowledgeView({ onOpenMeeting, seedQuestion }: { onOpenMeeting: 
 
   return (
     <div className="kb">
-      <nav className="kb-header-nav" aria-label={t('ext.kb.contextTitle')}>
-        <button
-          type="button"
-          className={`kb-tab-btn ${activeTab === 'contexts' ? 'active' : ''}`}
-          onClick={() => setActiveTab('contexts')}
-        >
-          {t('ext.kb.tabContexts')}
-        </button>
-        <button
-          type="button"
-          className={`kb-tab-btn ${activeTab === 'insights' ? 'active' : ''}`}
-          onClick={() => setActiveTab('insights')}
-        >
-          {t('ext.kb.tabInsights')}
-        </button>
-      </nav>
+      <header className="toolbar">
+        <div className="toolbar-title">
+          <h1>{t('ext.kb.contextTitle')}</h1>
+        </div>
+        <nav className="tabs" role="tablist" aria-label={t('ext.kb.contextTitle')}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'contexts'}
+            className={`tab ${activeTab === 'contexts' ? 'active' : ''}`}
+            onClick={() => setActiveTab('contexts')}
+          >
+            {t('ext.kb.tabContexts')}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'insights'}
+            className={`tab ${activeTab === 'insights' ? 'active' : ''}`}
+            onClick={() => setActiveTab('insights')}
+          >
+            {t('ext.kb.tabInsights')}
+          </button>
+        </nav>
+        {onClose && (
+          <button type="button" onClick={onClose} aria-label={t('ext.header.close')}>
+            ✕
+          </button>
+        )}
+      </header>
 
       {activeTab === 'contexts' ? (
         <section className="kb-contexts-section">
           <div className="kb-contexts-header">
-            <div>
-              <h2 className="section-label">{t('ext.kb.contextTitle')}</h2>
-              <p className="hint">{t('ext.kb.contextDesc')}</p>
-            </div>
+            <p className="hint">{t('ext.kb.contextDesc')}</p>
             <button
               type="button"
               className={isEditing ? 'kb-add-btn dim' : 'kb-add-btn primary'}

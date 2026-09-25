@@ -211,7 +211,11 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
       />
       <main className="main">
         {showKnowledge ? (
-          <KnowledgeView onOpenMeeting={openMeeting} seedQuestion={seedQuestion} />
+          <KnowledgeView
+            onOpenMeeting={openMeeting}
+            onClose={() => setShowKnowledge(false)}
+            seedQuestion={seedQuestion}
+          />
         ) : showSettings ? (
           <SettingsView onClose={() => setShowSettings(false)} selectedMeeting={selected?.id ?? null} />
         ) : showDecisions ? (
