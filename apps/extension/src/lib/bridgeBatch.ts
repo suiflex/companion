@@ -19,8 +19,11 @@ export function toBridgeBatch(
   meeting: Meeting,
   sent: number,
   analysis?: Analysis | null,
+  /** A manual export: carry the current summary even after the first delivery. */
+  resend = false,
 ): BridgeBatch {
   const roomId = roomIdOf(meeting.id);
+  const from = Math.max(0, sent);
   return {
     operationId: `${meeting.id}:${sent}-${meeting.entries.length}`,
     roomId,
@@ -29,10 +32,13 @@ export function toBridgeBatch(
     startedAt: startedAt(meeting) ?? '',
     participants: participants(meeting),
     entries: meeting.entries
-      .slice(Math.max(0, sent))
+      .slice(from)
       .map((e) => ({ speaker: e.speaker, text: e.text, time: e.time })),
-    // Only the first delivery carries a body; later ones must not overwrite
-    // whatever the user has since written in the note.
-    ...(sent === 0 && analysis ? { markdown: toMarkdown(meeting, analysis) } : {}),
+    // Only the first delivery carries a body on its own; a sweep must not
+    // overwrite the note. A manual export asks for the body to be replaced.
+    ...((from === 0 || resend) && analysis ? { markdown: toMarkdown(meeting, analysis) } : {}),
+    ...(resend && analysis ? { replaceBody: true } : {}),
+    ...(resend && from === 0 ? { snapshot: true } : {}),
+    ...(meeting.tags?.length ? { tags: meeting.tags } : {}),
   };
 }

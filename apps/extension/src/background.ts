@@ -543,7 +543,12 @@ async function deliverToDesktop(
   if (!force && sent >= meeting.entries.length) return { ok: true };
   const record = await getAnalysis(meeting.id);
   const fromSent = force && sent >= meeting.entries.length ? 0 : sent;
-  const batch = toBridgeBatch(meeting, fromSent, record?.status === 'done' ? record.analysis : null);
+  const batch = toBridgeBatch(
+    meeting,
+    fromSent,
+    record?.status === 'done' ? record.analysis : null,
+    force,
+  );
   if (force && sent >= meeting.entries.length) {
     batch.operationId = `${meeting.id}:manual-${Date.now()}`;
   }
