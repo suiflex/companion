@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { inboxSearchResults } from './sidebarResults'
+import { hideCopiedOriginals, inboxSearchResults } from './sidebarResults'
 
 type SearchResult = { rel: string; platform: string }
 
@@ -22,5 +22,20 @@ describe('inboxSearchResults', () => {
     ]
 
     expect(inboxSearchResults('budget', incoming, matches)).toEqual([matches[1]])
+  })
+})
+
+describe('hideCopiedOriginals', () => {
+  const meeting = { sessionKey: 'meet/abc#1', platform: 'google-meet' }
+  const copy = { sessionKey: 'nota/x', platform: 'manual', source: 'meet/abc#1' }
+  const other = { sessionKey: 'meet/def#2', platform: 'google-meet' }
+
+  it('lists the copy in place of the meeting it was made from', () => {
+    const all = [meeting, copy, other]
+    expect(hideCopiedOriginals(all, all)).toEqual([copy, other])
+  })
+
+  it('checks copies across the whole vault, not just the listed rows', () => {
+    expect(hideCopiedOriginals([meeting], [meeting, copy])).toEqual([])
   })
 })
