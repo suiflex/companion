@@ -825,7 +825,6 @@ export default function App() {
               )}
               {!query.trim() ? (
                 <>
-                  <h2 className="sidebar-section-label">{t('desktop.nav.notes')}</h2>
                   <NoteTree
                     root={tree}
                     selected={selected}

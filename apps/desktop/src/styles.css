@@ -341,18 +341,6 @@ body {
   margin: 0;
 }
 
-.sidebar-section-label {
-  flex: none;
-  margin: 0;
-  padding: 0 6px 6px;
-  color: var(--ui-text-faint);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
 .sidebar-tree-section {
   display: flex;
   flex: 1;
@@ -374,8 +362,12 @@ body {
 
 .note-tree .note-item {
   flex-direction: row;
-  align-items: flex-start;
-  gap: 7px;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
 }
 
 /* Which kind of note this is, at the start of the row where a scan lands.
@@ -383,16 +375,16 @@ body {
    so the difference has to be visible before the click, not after. */
 .note-kind {
   flex: none;
-  width: 11px;
-  margin-top: 4px;
-  text-align: center;
-  font-size: 10px;
-  color: var(--fg-muted);
-  opacity: 0.5;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--fg-muted);
+  opacity: 0.45;
 }
 
 .note-kind.delivered {
-  color: var(--accent);
+  background: var(--accent);
+  box-shadow: none;
   opacity: 1;
 }
 
@@ -439,9 +431,16 @@ body {
 .note-title {
   overflow: hidden;
   color: var(--fg);
-  font: 600 12px/1.4 var(--ui-font-mono);
+  font: 500 13px/1.35 var(--ui-font-body);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.note-tree .note-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--fg-muted);
+  font-weight: 450;
 }
 
 /* One type scale for the whole sidebar.
@@ -472,20 +471,21 @@ body {
   padding: 0;
 }
 
-.note-tree > .tree-list > li + li {
-  border-top: 1px solid var(--ui-hairline);
-  padding-top: 8px;
-  margin-top: 8px;
-}
-
+/* One guide line per level, aligned under the parent's chevron, the way an
+   outline reads. Past four levels the lines stop stepping right, so a deep
+   path keeps room for its titles. */
 .note-tree .tree-list .tree-list {
+  margin-left: 11px;
+  padding-left: 6px;
   border-left: 1px solid var(--ui-hairline);
-  margin-left: 8px;
+  transition: border-color 150ms ease;
 }
 
-.note-tree .tree-list .tree-list .tree-folder {
-  color: var(--fg-muted);
-  font-weight: 500;
+.note-tree li:hover > .tree-list { border-left-color: var(--border); }
+
+.note-tree .tree-list .tree-list .tree-list .tree-list .tree-list {
+  margin-left: 0;
+  padding-left: 0;
 }
 
 .note-tree li { min-width: 0; }
@@ -501,25 +501,25 @@ body {
   display: flex;
   flex: 1;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   min-width: 0;
-  padding: 5px 8px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  min-height: 28px;
+  padding: 4px 8px 4px 2px;
+  border: 0;
+  border-radius: 6px;
   background: transparent;
   color: var(--fg);
-  font-weight: 600;
-  font-size: 12px;
-  line-height: 1.4;
+  font-weight: 550;
+  font-size: 13px;
+  line-height: 1.35;
   text-align: left;
   cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
 }
 
 .tree-folder:hover:not(:disabled) {
-  border-color: var(--border);
   background: var(--bg-raised);
-  color: var(--accent);
 }
 
 /* The folder a dragged note would land in. Without a visible target the
@@ -536,15 +536,18 @@ body {
 
 .tree-caret {
   flex: none;
-  width: 0;
-  height: 0;
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-  border-left: 5px solid currentColor;
-  transition: transform 120ms ease;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--fg-muted);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1), stroke 120ms ease;
 }
 
-.tree-caret.open { transform: rotate(90deg) translateX(-1px); }
+.tree-caret.open { transform: rotate(90deg); }
+.tree-folder:hover .tree-caret { stroke: var(--accent); }
 
 /* The per-folder add button. Hidden until the row is touched, so a sidebar
    of folders is not a wall of icons. */
@@ -575,6 +578,7 @@ body {
 .tree-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .tree-count {
+  flex: none;
   font-weight: 400;
   font-size: 11px;
   line-height: 1;
@@ -583,7 +587,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tree-caret { transition: none; }
+  .tree-caret,
+  .note-tree .tree-list .tree-list { transition: none; }
 }
 
 .note-row-meta {
@@ -612,6 +617,23 @@ body {
 }
 
 .note-item.active .note-source { border-color: var(--accent); color: var(--accent); }
+
+/* In the tree a row is one line: the date sits at the end, and where the
+   note came from only appears once the row is pointed at or open — the dot
+   already says it is a meeting. */
+.note-tree .note-row-meta { flex: none; max-width: 45%; }
+.note-tree .note-source { display: none; }
+.note-tree .note-item:hover .note-source,
+.note-tree .note-item.active .note-source { display: inline; }
+.note-tree .note-item:hover:not(:disabled) { border-color: transparent; }
+.note-tree .note-item:hover .note-title { color: var(--fg); }
+.note-tree .note-item.active,
+.note-tree .note-item.active:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.note-tree .note-item.active .note-title { color: var(--fg); font-weight: 550; }
+.note-tree .note-date { flex: none; font-size: 11px; font-variant-numeric: tabular-nums; }
 
 .note-date {
   flex: 1;
