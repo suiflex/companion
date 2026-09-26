@@ -4,10 +4,20 @@
 // what is on disk. Expanded state is a per-viewer convenience and lives in
 // localStorage, the way the theme and language preferences do.
 import { useState } from 'react'
-import { t } from '@meetcc/shared/i18n'
-import type { TreeFolder } from './tree'
+import { formatDate, t } from '@meetcc/shared/i18n'
+import type { TreeFolder, TreeNote } from './tree'
+import { Button } from '@meetcc/ui'
 
 const KEY = 'companion:collapsed-folders'
+
+/** The whole row as one line, for a title the tree had to truncate. */
+function rowTooltip(n: TreeNote): string {
+  const date = n.updatedAt ? formatDate(n.updatedAt) : ''
+  let tip = n.title
+  if (n.source) tip += ` · ${n.source}`
+  if (date) tip += ` · ${date}`
+  return tip
+}
 
 function loadCollapsed(): Set<string> {
   try {
@@ -59,93 +69,89 @@ export function NoteTree({
   const countNotes = (folder: TreeFolder): number =>
     folder.notes.length + folder.folders.reduce((n, f) => n + countNotes(f), 0)
 
-  const renderFolder = (folder: TreeFolder, depth: number) => {
+  const renderFolder = (folder: TreeFolder) => {
     const isCollapsed = collapsed.has(folder.path)
     const total = countNotes(folder)
     return (
       <li key={folder.path}>
-        <button
-          type="button"
-          className={over === folder.path ? 'tree-folder drop-over' : 'tree-folder'}
-          style={{ paddingLeft: `${8 + depth * 12}px` }}
-          aria-expanded={!isCollapsed}
-          onClick={() => toggle(folder.path)}
-          onDragOver={(e) => {
-            // preventDefault is what marks this a valid drop target; without
-            // it the browser refuses the drop and the gesture does nothing.
-            e.preventDefault()
-            e.stopPropagation()
-            setOver(folder.path)
-          }}
-          onDragLeave={() => setOver((p) => (p === folder.path ? null : p))}
-          onDrop={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            setOver(null)
-            const rel = e.dataTransfer.getData('text/plain')
-            if (rel) onMove(rel, folder.path)
-          }}
-        >
-          <span className={isCollapsed ? 'tree-caret' : 'tree-caret open'} aria-hidden="true" />
-          <span className="tree-name">{folder.name}</span>
-          {/* Nesting is what makes folders worth having, and the only place to
-              say which folder a new one belongs to is the folder itself —
-              asking afterwards is a second question for something the click
-              already answered. */}
-          <span
-            role="button"
-            tabIndex={0}
+        <div className="tree-folder-row">
+          <Button
+            type="button"
+            className={over === folder.path ? 'tree-folder drop-over' : 'tree-folder'}
+            aria-expanded={!isCollapsed}
+            onClick={() => toggle(folder.path)}
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setOver(folder.path)
+            }}
+            onDragLeave={() => setOver((path) => (path === folder.path ? null : path))}
+            onDrop={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setOver(null)
+              const rel = e.dataTransfer.getData('text/plain')
+              if (rel) onMove(rel, folder.path)
+            }}
+          >
+            <svg
+              className={isCollapsed ? 'tree-caret' : 'tree-caret open'}
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+            >
+              <path d="M6 4l4 4-4 4" />
+            </svg>
+            <span className="tree-name">{folder.name}</span>
+            {total > 0 && <span className="tree-count">{total}</span>}
+          </Button>
+          <Button
+            type="button"
             className="tree-add"
             aria-label={t('desktop.vault.newFolderIn', { folder: folder.name })}
             data-tip={t('desktop.vault.newFolderIn', { folder: folder.name })}
-            onClick={(e) => {
-              // The row toggles; only the inner control adds.
-              e.stopPropagation()
-              onAddFolder(folder.path)
-            }}
-            onKeyDown={(e) => {
-              if (e.key !== 'Enter' && e.key !== ' ') return
-              e.preventDefault()
-              e.stopPropagation()
-              onAddFolder(folder.path)
-            }}
+            onClick={() => onAddFolder(folder.path)}
           >
             ⊞
-          </span>
-          <span className="tree-count">{total}</span>
-        </button>
-        {!isCollapsed && renderChildren(folder, depth + 1)}
+          </Button>
+        </div>
+        {!isCollapsed && renderChildren(folder)}
       </li>
     )
   }
 
-  const renderChildren = (folder: TreeFolder, depth: number) => (
+  // Indentation comes from the nested lists, each drawing its own guide line;
+  // the stylesheet stops indenting past a few levels so deep paths stay legible.
+  const renderChildren = (folder: TreeFolder) => (
     <ul className="tree-list">
-      {folder.folders.map((f) => renderFolder(f, depth))}
+      {folder.folders.map((f) => renderFolder(f))}
       {folder.notes.map((n) => {
         const delivered = Boolean(n.platform && n.platform !== 'manual')
         return (
           <li key={n.rel}>
-            <button
+            <Button
               type="button"
               draggable
               className={selected === n.rel ? 'note-item active' : 'note-item'}
-              style={{ paddingLeft: `${8 + depth * 12}px` }}
+              title={rowTooltip(n)}
               onClick={() => onOpen(n.rel)}
               onDragStart={(e) => {
                 e.dataTransfer.setData('text/plain', n.rel)
                 e.dataTransfer.effectAllowed = 'move'
               }}
             >
-              {/* Two kinds of note share this list, and which is which decides
-                  whether editing it rewrites an archive. A badge at the end of
-                  the row was too quiet to separate them while scanning, so the
-                  mark leads. */}
-              <span className={delivered ? 'note-kind delivered' : 'note-kind'} aria-hidden="true">
-                {delivered ? '▤' : '·'}
-              </span>
+              {/* A delivered meeting is an archive — editing copies it — so it
+                  is marked before the click, not after. */}
+              <span className={delivered ? 'note-kind delivered' : 'note-kind'} aria-hidden="true" />
               <span className="note-title">{n.title}</span>
-            </button>
+              <span className="note-row-meta">
+                {n.source && <span className="note-source">{n.source}</span>}
+                {n.updatedAt && (
+                  <span className="note-date">
+                    {formatDate(n.updatedAt, { day: 'numeric', month: 'short' })}
+                  </span>
+                )}
+              </span>
+            </Button>
           </li>
         )
       })}
@@ -172,7 +178,7 @@ export function NoteTree({
         if (rel) onMove(rel, '')
       }}
     >
-      {renderChildren(root, 0)}
+      {renderChildren(root)}
     </div>
   )
 }

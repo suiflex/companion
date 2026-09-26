@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { resolveTheme } from './lib/theme';
 import { applyLang, loadLangPref } from './lib/lang';
+import '@meetcc/ui/styles.css';
 import './styles.css';
 
 // always opened as a detached window by background.js (?meeting=<id> selects

@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { BackupFile, IntegrationSettings, Settings } from '@meetcc/shared';
 import { db } from '../lib/db';
 import { sendMessage } from '../lib/sendMessage';
-import { useToast } from '../toast';
 import { t } from '@meetcc/shared/i18n';
 import chromeBadge from '../../../../assets/badges/chrome-web-store.svg';
 import firefoxBadge from '../../../../assets/badges/firefox-addon.svg';
+import { Button, TextArea, TextInput, useToast } from '@meetcc/ui';
 
 // The panels behind the Settings tabs: optional integrations (P2.5-P2.10),
 // custom templates (P2.1) and the data tools (snapshot export for the MCP
@@ -60,9 +60,9 @@ function BridgeStatus() {
   return (
     <div className="field bridge-status">
       <div className="subbar">
-        <button type="button" onClick={() => void test()} disabled={state === 'testing'}>
+        <Button type="button" onClick={() => void test()} disabled={state === 'testing'}>
           {state === 'testing' ? t('ext.bridge.testing') : t('ext.bridge.test')}
-        </button>
+        </Button>
         {state === 'ok' && <span className="ok">{t('ext.bridge.connected')}</span>}
         {state === 'fail' && <span className="warn">{t('ext.bridge.notConnected')}</span>}
       </div>
@@ -151,7 +151,7 @@ export function IntegrationsPanel({
         {i.tracker.provider === 'jira' && (
           <label className="field">
             <span>{t('ext.tracker.baseUrl')}</span>
-            <input
+            <TextInput
               type="url"
               value={i.tracker.baseUrl}
               placeholder="https://org.atlassian.net"
@@ -161,8 +161,7 @@ export function IntegrationsPanel({
         )}
         <label className="field">
           <span>{t('ext.tracker.token')}</span>
-          <input
-            type="password"
+          <TextInput type="password"
             autoComplete="off"
             value={i.tracker.token}
             placeholder={i.tracker.provider === 'jira' ? 'email@org.com:api-token' : 'API key'}
@@ -178,8 +177,7 @@ export function IntegrationsPanel({
                 ? t('ext.tracker.teamId')
                 : t('ext.tracker.databaseId')}
           </span>
-          <input
-            type="text"
+          <TextInput type="text"
             value={i.tracker.target}
             onChange={(e) => patch({ tracker: { ...i.tracker, target: e.target.value } })}
           />
@@ -205,8 +203,7 @@ export function IntegrationsPanel({
         </label>
         <label className="field">
           <span>{t('ext.sync.endpoint')}</span>
-          <input
-            type="url"
+          <TextInput type="url"
             value={i.sync.endpoint}
             placeholder="http://localhost:8787"
             onChange={(e) => patch({ sync: { ...i.sync, endpoint: e.target.value } })}
@@ -214,8 +211,7 @@ export function IntegrationsPanel({
         </label>
         <label className="field">
           <span>{t('ext.sync.token')}</span>
-          <input
-            type="password"
+          <TextInput type="password"
             autoComplete="off"
             value={i.sync.token}
             onChange={(e) => patch({ sync: { ...i.sync, token: e.target.value } })}
@@ -223,8 +219,7 @@ export function IntegrationsPanel({
         </label>
         <label className="field">
           <span>{t('ext.sync.workspace')}</span>
-          <input
-            type="text"
+          <TextInput type="text"
             value={i.sync.workspaceId}
             placeholder="tim-platform"
             onChange={(e) => patch({ sync: { ...i.sync, workspaceId: e.target.value } })}
@@ -233,8 +228,7 @@ export function IntegrationsPanel({
         </label>
         <label className="field">
           <span>{t('ext.sync.passphrase')}</span>
-          <input
-            type="password"
+          <TextInput type="password"
             autoComplete="off"
             value={i.sync.passphrase}
             onChange={(e) => patch({ sync: { ...i.sync, passphrase: e.target.value } })}
@@ -242,9 +236,9 @@ export function IntegrationsPanel({
           <span className="hint">{t('ext.sync.passphraseHint')}</span>
         </label>
         <div className="subbar">
-          <button onClick={() => void syncNow()} disabled={syncing || !i.sync.enabled}>
+          <Button onClick={() => void syncNow()} disabled={syncing || !i.sync.enabled}>
             {syncing ? t('ext.sync.syncing') : t('ext.sync.now')}
-          </button>
+          </Button>
           <span className="hint">{t('ext.sync.saveFirst')}</span>
         </div>
       </fieldset>
@@ -253,8 +247,7 @@ export function IntegrationsPanel({
         <legend>{t('ext.transcription.legend')}</legend>
         <label className="field">
           <span>{t('ext.transcription.endpoint')}</span>
-          <input
-            type="url"
+          <TextInput type="url"
             value={i.transcription.endpoint}
             placeholder="https://api.openai.com/v1/audio/transcriptions"
             onChange={(e) => patch({ transcription: { ...i.transcription, endpoint: e.target.value } })}
@@ -263,8 +256,7 @@ export function IntegrationsPanel({
         </label>
         <label className="field">
           <span>{t('ext.transcription.apiKey')}</span>
-          <input
-            type="password"
+          <TextInput type="password"
             autoComplete="off"
             value={i.transcription.apiKey}
             onChange={(e) => patch({ transcription: { ...i.transcription, apiKey: e.target.value } })}
@@ -272,16 +264,14 @@ export function IntegrationsPanel({
         </label>
         <label className="field">
           <span>Model</span>
-          <input
-            type="text"
+          <TextInput type="text"
             value={i.transcription.model}
             onChange={(e) => patch({ transcription: { ...i.transcription, model: e.target.value } })}
           />
         </label>
         <label className="field">
           <span>{t('ext.integrations.calendarClientId')}</span>
-          <input
-            type="text"
+          <TextInput type="text"
             value={i.calendarClientId}
             placeholder="xxxx.apps.googleusercontent.com"
             onChange={(e) => patch({ calendarClientId: e.target.value })}
@@ -289,7 +279,7 @@ export function IntegrationsPanel({
           <span className="hint">{t('ext.calendar.clientIdHint')}</span>
         </label>
         <div className="subbar">
-          <button
+          <Button
             disabled={!i.calendarClientId.trim()}
             onClick={() =>
               void (async () => {
@@ -303,7 +293,7 @@ export function IntegrationsPanel({
             }
           >
             {t('ext.calendar.connect')}
-          </button>
+          </Button>
           <span className="hint">{t('ext.calendar.saveFirst')}</span>
         </div>
       </fieldset>
@@ -348,8 +338,7 @@ export function TemplatesPanel() {
 
       <label className="field">
         <span>{t('ext.templates.name')}</span>
-        <input
-          type="text"
+        <TextInput type="text"
           value={draft.name}
           placeholder="Notulen retro tim"
           onChange={(e) => setDraft({ ...draft, name: e.target.value })}
@@ -364,8 +353,7 @@ export function TemplatesPanel() {
       </label>
       <label className="field">
         <span>{t('ext.templates.instructions')}</span>
-        <textarea
-          rows={4}
+        <TextArea rows={4}
           value={draft.instructions}
           placeholder={t('ext.templates.instructionsPlaceholder')}
           onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
@@ -373,17 +361,16 @@ export function TemplatesPanel() {
       </label>
       <label className="field">
         <span>{t('ext.templates.sections')}</span>
-        <textarea
-          rows={3}
+        <TextArea rows={3}
           value={draft.sections.join('\n')}
           onChange={(e) => setDraft({ ...draft, sections: e.target.value.split('\n').filter(Boolean) })}
         />
       </label>
       <div className="subbar">
         <span className="spacer" />
-        <button className="primary" onClick={() => void save()}>
+        <Button variant="primary" onClick={() => void save()}>
           {draft.id ? 'Perbarui template' : 'Tambah template'}
-        </button>
+        </Button>
       </div>
 
       <ul className="tpl-list">
@@ -392,15 +379,14 @@ export function TemplatesPanel() {
             <span className="tpl-name">{tpl.name}</span>
             <span className="dim">{tpl.kind}</span>
             <span className="spacer" />
-            <button onClick={() => setDraft(tpl)}>Edit</button>
-            <button
-              className="danger"
+            <Button onClick={() => setDraft(tpl)}>Edit</Button>
+            <Button variant="danger"
               onClick={async () => {
                 setTemplates(await db<Template[]>('delete-template', { id: tpl.id }));
               }}
             >
               {t('ext.templates.delete')}
-            </button>
+            </Button>
           </li>
         ))}
         {!templates.length && <li className="section-empty">{t('ext.templates.empty')}</li>}
@@ -440,59 +426,51 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
           accept=".vtt,.srt,.txt,text/plain,audio/*,video/mp4"
           aria-label={t('ext.data.transcriptOrAudio')}
         />
-        <button
-          disabled={!!busy}
-          onClick={() =>
-            void run('import', async () => {
-              const file = transcriptFile.current?.files?.[0];
-              if (!file) return toast('error', t('ext.data.pickFile'));
-              const common = {
-                title: file.name.replace(/\.[^.]+$/, ''),
-                startedAt: new Date(file.lastModified).toISOString(),
-              };
-              const isAudio = /^(audio|video)\//.test(file.type);
-              const res = isAudio
-                ? await db<{ sessionId: string; entries: number }>('transcribe-audio', {
-                    ...common,
-                    name: file.name,
-                    mime: file.type,
-                    base64: await toBase64(file),
-                  })
-                : await db<{ sessionId: string; entries: number }>('import-transcript', {
-                    ...common,
-                    text: await file.text(),
-                  });
-              toast('success', t('ext.data.imported', { count: res.entries, id: res.sessionId }));
-            })
-          }
-        >
-          {busy === 'import' ? t('ext.data.importing') : t('ext.data.importAction')}
-        </button>
+        <Button disabled={!!busy}
+        onClick={() =>
+          void run('import', async () => {
+            const file = transcriptFile.current?.files?.[0];
+            if (!file) return toast('error', t('ext.data.pickFile'));
+            const common = {
+              title: file.name.replace(/\.[^.]+$/, ''),
+              startedAt: new Date(file.lastModified).toISOString(),
+            };
+            const isAudio = /^(audio|video)\//.test(file.type);
+            const res = isAudio
+              ? await db<{ sessionId: string; entries: number }>('transcribe-audio', {
+                  ...common,
+                  name: file.name,
+                  mime: file.type,
+                  base64: await toBase64(file),
+                })
+              : await db<{ sessionId: string; entries: number }>('import-transcript', {
+                  ...common,
+                  text: await file.text(),
+                });
+            toast('success', t('ext.data.imported', { count: res.entries, id: res.sessionId }));
+          })
+        }>{busy === 'import' ? t('ext.data.importing') : t('ext.data.importAction')}</Button>
       </fieldset>
 
       <fieldset className="field-group">
         <legend>{t('ext.data.calendar')}</legend>
         <input ref={icsFile} type="file" accept=".ics,text/calendar" aria-label={t('ext.data.calendarFile')} />
-        <button
-          disabled={!!busy}
-          onClick={() =>
-            void run('ics', async () => {
-              const file = icsFile.current?.files?.[0];
-              if (!file) return toast('error', t('ext.data.pickIcs'));
-              const res = await db<{ matched: unknown[] }>('match-calendar', { ics: await file.text() });
-              toast('success', t('ext.data.matched', { count: res.matched.length }));
-            })
-          }
-        >
-          {busy === 'ics' ? t('ext.data.matching') : t('ext.data.match')}
-        </button>
+        <Button disabled={!!busy}
+        onClick={() =>
+          void run('ics', async () => {
+            const file = icsFile.current?.files?.[0];
+            if (!file) return toast('error', t('ext.data.pickIcs'));
+            const res = await db<{ matched: unknown[] }>('match-calendar', { ics: await file.text() });
+            toast('success', t('ext.data.matched', { count: res.matched.length }));
+          })
+        }>{busy === 'ics' ? t('ext.data.matching') : t('ext.data.match')}</Button>
       </fieldset>
 
       <fieldset className="field-group">
         <legend>{t('ext.data.share')}</legend>
         <label className="field">
           <span>{t('ext.data.passphrase')}</span>
-          <input
+          <TextInput
             type="password"
             autoComplete="off"
             value={passphrase}
@@ -501,39 +479,31 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
           <span className="hint">{t('ext.data.sharePassphraseHint')}</span>
         </label>
         <div className="subbar">
-          <button
-            disabled={!!busy || !selectedMeeting}
-            title={selectedMeeting ? '' : t('ext.data.pickMeetingFirst')}
-            onClick={() =>
-              void run('share', async () => {
-                const res = await db<{ payload: string }>('export-share', {
-                  sessionId: selectedMeeting,
-                  passphrase,
-                });
-                downloadText(`${selectedMeeting}.companion-share`, res.payload, 'text/plain');
-                toast('success', t('ext.data.shareDownloaded'));
-              })
-            }
-          >
-            {t('ext.data.exportSelected')}
-          </button>
+          <Button disabled={!!busy || !selectedMeeting}
+          title={selectedMeeting ? '' : t('ext.data.pickMeetingFirst')}
+          onClick={() =>
+            void run('share', async () => {
+              const res = await db<{ payload: string }>('export-share', {
+                sessionId: selectedMeeting,
+                passphrase,
+              });
+              downloadText(`${selectedMeeting}.companion-share`, res.payload, 'text/plain');
+              toast('success', t('ext.data.shareDownloaded'));
+            })
+          }>{t('ext.data.exportSelected')}</Button>
           <input ref={shareFile} type="file" accept=".companion-share" aria-label={t('ext.data.shareFile')} />
-          <button
-            disabled={!!busy}
-            onClick={() =>
-              void run('unshare', async () => {
-                const file = shareFile.current?.files?.[0];
-                if (!file) return toast('error', t('ext.data.pickShareFirst'));
-                const res = await db<{ sessionId: string }>('import-share', {
-                  payload: await file.text(),
-                  passphrase,
-                });
-                toast('success', t('ext.data.shareImported', { id: res.sessionId }));
-              })
-            }
-          >
-            {t('ext.data.importShare')}
-          </button>
+          <Button disabled={!!busy}
+          onClick={() =>
+            void run('unshare', async () => {
+              const file = shareFile.current?.files?.[0];
+              if (!file) return toast('error', t('ext.data.pickShareFirst'));
+              const res = await db<{ sessionId: string }>('import-share', {
+                payload: await file.text(),
+                passphrase,
+              });
+              toast('success', t('ext.data.shareImported', { id: res.sessionId }));
+            })
+          }>{t('ext.data.importShare')}</Button>
         </div>
       </fieldset>
 
@@ -551,42 +521,34 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
         </p>
         <p className="hint">{t('ext.data.restoreHint')}</p>
         <div className="subbar">
-          <button
-            disabled={!!busy}
-            onClick={() =>
-              void run('backup', async () => {
-                const res = await db<{ backup: BackupFile }>('export-backup');
-                const stamp = new Date().toISOString().slice(0, 10);
-                downloadText(`companion-backup-${stamp}.json`, JSON.stringify(res.backup));
-                toast('success', t('ext.data.backupDownloaded', { count: res.backup.meetings }));
-              })
-            }
-          >
-            {t('ext.data.downloadBackup')}
-          </button>
+          <Button disabled={!!busy}
+          onClick={() =>
+            void run('backup', async () => {
+              const res = await db<{ backup: BackupFile }>('export-backup');
+              const stamp = new Date().toISOString().slice(0, 10);
+              downloadText(`companion-backup-${stamp}.json`, JSON.stringify(res.backup));
+              toast('success', t('ext.data.backupDownloaded', { count: res.backup.meetings }));
+            })
+          }>{t('ext.data.downloadBackup')}</Button>
           <input ref={backupFile} type="file" accept=".json" aria-label={t('ext.data.backupFile')} />
-          <button
-            disabled={!!busy}
-            onClick={() =>
-              void run('restore', async () => {
-                const file = backupFile.current?.files?.[0];
-                if (!file) return toast('error', t('ext.data.pickBackupFirst'));
-                const res = await db<{ added: number; skipped: number; meetings: number }>(
-                  'import-backup',
-                  { text: await file.text() },
-                );
-                toast(
-                  'success',
-                  res.added
-                    ? t('ext.data.restored', { added: res.added, meetings: res.meetings }) +
-                      (res.skipped ? t('ext.data.restoredSkipped', { count: res.skipped }) : '')
-                    : t('ext.data.restoredNothing'),
-                );
-              })
-            }
-          >
-            {t('ext.data.restore')}
-          </button>
+          <Button disabled={!!busy}
+          onClick={() =>
+            void run('restore', async () => {
+              const file = backupFile.current?.files?.[0];
+              if (!file) return toast('error', t('ext.data.pickBackupFirst'));
+              const res = await db<{ added: number; skipped: number; meetings: number }>(
+                'import-backup',
+                { text: await file.text() },
+              );
+              toast(
+                'success',
+                res.added
+                  ? t('ext.data.restored', { added: res.added, meetings: res.meetings }) +
+                    (res.skipped ? t('ext.data.restoredSkipped', { count: res.skipped }) : '')
+                  : t('ext.data.restoredNothing'),
+              );
+            })
+          }>{t('ext.data.restore')}</Button>
         </div>
       </fieldset>
 
@@ -600,35 +562,27 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
             )}
         </p>
         <div className="subbar">
-          <button
-            disabled={!!busy}
-            onClick={() =>
-              void run('snapshot', async () => {
-                const res = await db<{ snapshot: Record<string, unknown> }>('export-snapshot');
-                downloadText('companion-snapshot.json', JSON.stringify(res.snapshot));
-                toast('success', t('ext.mcp.snapshotDownloaded'));
-              })
-            }
-          >
-            {t('ext.mcp.exportSnapshot')}
-          </button>
-          <button
-            disabled={!!busy}
-            onClick={() =>
-              void run('reindex', async () => {
-                const r = await db<{ sessions: number; entries: number; mismatched: string[] }>('sync-index');
-                toast(
-                  r.mismatched.length ? 'error' : 'success',
-                  t('ext.mcp.reindexed', { sessions: r.sessions, entries: r.entries }) +
-                    (r.mismatched.length
-                      ? t('ext.mcp.mismatched', { count: r.mismatched.length })
-                      : ''),
-                );
-              })
-            }
-          >
-            {t('ext.mcp.rebuildIndex')}
-          </button>
+          <Button disabled={!!busy}
+          onClick={() =>
+            void run('snapshot', async () => {
+              const res = await db<{ snapshot: Record<string, unknown> }>('export-snapshot');
+              downloadText('companion-snapshot.json', JSON.stringify(res.snapshot));
+              toast('success', t('ext.mcp.snapshotDownloaded'));
+            })
+          }>{t('ext.mcp.exportSnapshot')}</Button>
+          <Button disabled={!!busy}
+          onClick={() =>
+            void run('reindex', async () => {
+              const r = await db<{ sessions: number; entries: number; mismatched: string[] }>('sync-index');
+              toast(
+                r.mismatched.length ? 'error' : 'success',
+                t('ext.mcp.reindexed', { sessions: r.sessions, entries: r.entries }) +
+                  (r.mismatched.length
+                    ? t('ext.mcp.mismatched', { count: r.mismatched.length })
+                    : ''),
+              );
+            })
+          }>{t('ext.mcp.rebuildIndex')}</Button>
         </div>
       </fieldset>
 
@@ -638,33 +592,25 @@ export function DataPanel({ selectedMeeting }: { selectedMeeting: string | null 
           {t('ext.export.hint')}
         </p>
         <div className="subbar">
-          <button
-            disabled={!!busy}
-            onClick={() =>
-              void run('obsidian', async () => {
-                const res = await sendMessage<{ count: number; base64: string; name: string }>({
-                  type: 'export-obsidian',
-                });
-                const bytes = Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0));
-                downloadText(res.name, new Blob([bytes], { type: 'application/zip' }));
-                toast('success', t('ext.export.obsidianDone', { count: res.count, name: res.name }));
-              })
-            }
-          >
-            {busy === 'obsidian' ? t('ext.export.exporting') : t('ext.export.obsidian')}
-          </button>
-          <button
-            disabled={!!busy}
-            onClick={() =>
-              void run('audit', async () => {
-                const res = await sendMessage<{ count: number; json: string }>({ type: 'export-audit' });
-                downloadText(`companion-audit-${new Date().toISOString().slice(0, 10)}.json`, res.json);
-                toast('success', t('ext.export.auditDone', { count: res.count }));
-              })
-            }
-          >
-            {t('ext.data.exportAudit')}
-          </button>
+          <Button disabled={!!busy}
+          onClick={() =>
+            void run('obsidian', async () => {
+              const res = await sendMessage<{ count: number; base64: string; name: string }>({
+                type: 'export-obsidian',
+              });
+              const bytes = Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0));
+              downloadText(res.name, new Blob([bytes], { type: 'application/zip' }));
+              toast('success', t('ext.export.obsidianDone', { count: res.count, name: res.name }));
+            })
+          }>{busy === 'obsidian' ? t('ext.export.exporting') : t('ext.export.obsidian')}</Button>
+          <Button disabled={!!busy}
+          onClick={() =>
+            void run('audit', async () => {
+              const res = await sendMessage<{ count: number; json: string }>({ type: 'export-audit' });
+              downloadText(`companion-audit-${new Date().toISOString().slice(0, 10)}.json`, res.json);
+              toast('success', t('ext.export.auditDone', { count: res.count }));
+            })
+          }>{t('ext.data.exportAudit')}</Button>
         </div>
       </fieldset>
     </>
@@ -803,9 +749,7 @@ export function VersionPanel() {
         </div>
         <div className="version-code-box">
           <code>{INSTALL_CMD}</code>
-          <button type="button" className="version-copy-btn" onClick={() => void copyTerminalCmd()}>
-            {t('ext.version.copy')}
-          </button>
+          <Button type="button" className="version-copy-btn" onClick={() => void copyTerminalCmd()}>{t('ext.version.copy')}</Button>
         </div>
       </div>
     </div>

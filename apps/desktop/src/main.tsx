@@ -1,11 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { ToastProvider } from './toast';
+import { ToastProvider } from '@meetcc/ui';
+import { SettingsWindow } from './SettingsWindow';
 import { applyTheme, loadThemePref } from './theme';
 import { applyLang, loadLangPref } from './lang';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { setFetch, setOAuthFetch } from '@meetcc/ai';
+import '@meetcc/ui/styles.css';
 import './styles.css';
 
 // Before first paint: a theme or language applied after mount is a flash of
@@ -19,11 +21,14 @@ applyLang(loadLangPref());
 // a provider; the extension keeps the global fetch and is untouched.
 setFetch((url, init) => tauriFetch(url, init));
 setOAuthFetch((url, init) => tauriFetch(url, init));
+const Root = new URLSearchParams(location.search).get('window') === 'settings'
+  ? SettingsWindow
+  : App;
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <ToastProvider>
-      <App />
+      <Root />
     </ToastProvider>
   </React.StrictMode>,
 );

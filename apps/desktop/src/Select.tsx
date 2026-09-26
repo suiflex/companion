@@ -8,6 +8,7 @@
 // keyboard-operable for free, so this one is too: Up/Down move, Enter and
 // Space choose, Escape closes without changing anything, Home/End jump.
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Button } from '@meetcc/ui'
 
 /** The five the palette already has; anything unmapped stays neutral. */
 export type Tone = 'neutral' | 'info' | 'warning' | 'danger' | 'success'
@@ -132,21 +133,17 @@ export function Select({
 
   return (
     <div className="select" ref={wrap}>
-      <button
-        type="button"
-        className="select-button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={label}
-        onClick={() => setOpen((o) => !o)}
-        onKeyDown={onKeyDown}
-      >
-        {current && <Dot option={current} />}
-        <span className={`tone-label tone-${current?.value === '' ? 'neutral' : (current?.tone ?? 'neutral')}`}>
-          {current?.label ?? ''}
-        </span>
-        <span className="select-chevron" aria-hidden="true" />
-      </button>
+      <Button type="button"
+      className="select-button"
+      aria-haspopup="listbox"
+      aria-expanded={open}
+      aria-label={label}
+      onClick={() => setOpen((o) => !o)}
+      onKeyDown={onKeyDown}>{current && <Dot option={current} />}
+      <span className={`tone-label tone-${current?.value === '' ? 'neutral' : (current?.tone ?? 'neutral')}`}>
+        {current?.label ?? ''}
+      </span>
+      <span className="select-chevron" aria-hidden="true" /></Button>
 
       {open && (
         <div className={up ? 'select-list up' : 'select-list'} role="listbox" aria-label={label} ref={list}>

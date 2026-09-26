@@ -12,9 +12,9 @@ export const en = {
   // -- desktop: shell -------------------------------------------------------
   'desktop.nav.notes': 'Notes',
   'desktop.nav.inbox': 'Incoming meetings',
-  'desktop.nav.settings': 'Vault & bridge',
-  'desktop.nav.install': 'Connect a browser',
+  'desktop.nav.settings': 'Settings',
   'desktop.nav.theme': 'Theme: {mode}',
+  'desktop.sidebar.tabs': 'Sidebar views',
   'desktop.badge.local': 'Saved locally, never synced',
 
   // -- desktop: note list ---------------------------------------------------
@@ -25,19 +25,23 @@ export const en = {
   'desktop.vault.search': 'Search notes…',
   'desktop.vault.searchTitlesOnly': 'Search titles (index unavailable)…',
   'desktop.vault.empty': 'No notes yet.',
+  'desktop.vault.noMatches': 'No notes match this search.',
   'desktop.vault.bodyHit': 'matched inside the note body',
 
   // -- desktop: inbox -------------------------------------------------------
   'desktop.inbox.kicker': 'Incoming meetings',
   'desktop.inbox.count': '{count} meetings',
+  'desktop.inbox.search': 'Search incoming meetings…',
   'desktop.inbox.participants': '{count} participants',
   'desktop.inbox.transcriptOnly': 'transcript only',
   'desktop.inbox.empty':
     'No meetings have arrived yet. Turn on “Send finished meetings to Companion Desktop” in the extension settings, then press “Test connection” there.',
+  'desktop.inbox.noMatches': 'No incoming meetings match this search.',
 
   // -- desktop: editor ------------------------------------------------------
   'desktop.editor.titlePlaceholder': 'Note title',
   'desktop.editor.unsaved': 'unsaved',
+  'desktop.editor.saving': 'saving…',
   'desktop.editor.updated': 'updated {date}',
   'desktop.editor.trash': 'Move to trash',
   'desktop.editor.save': 'Save',
@@ -75,13 +79,22 @@ export const en = {
   'desktop.date.today': 'Today',
 
   // -- desktop: settings ----------------------------------------------------
-  'desktop.settings.title': 'Vault & bridge',
+  'desktop.settings.title': 'Settings',
   'desktop.settings.theme': 'Theme',
   'desktop.settings.themeHint':
     '“Follow system” matches macOS or Windows and changes on its own when the system switches between light and dark.',
   'desktop.settings.language': 'Language',
   'desktop.settings.languageHint':
     '“Follow system” uses your operating system’s language. This changes the interface only — meeting notes keep the language they were spoken in.',
+  'desktop.settings.autosave': 'Autosave',
+  'desktop.settings.autosaveHint':
+    'Save edits a moment after you stop typing. Off: save with the Save button, and leaving a note with unsaved edits asks first.',
+  'desktop.settings.section.general': 'General',
+  'desktop.settings.section.editor': 'Editor',
+  'desktop.settings.section.vault': 'Vault',
+  'desktop.settings.section.browsers': 'Browsers',
+  'desktop.settings.section.ai': 'AI provider',
+  'desktop.settings.section.version': 'Version',
   'desktop.settings.vaultLocation': 'Vault location',
   'desktop.settings.vaultHint':
     '{count} notes. All ordinary .md files — openable in any editor, and safe to copy or back up like any other folder.',
@@ -98,6 +111,8 @@ export const en = {
   'pref.system': 'Follow system',
   'pref.light': 'Light',
   'pref.dark': 'Dark',
+  'pref.on': 'On',
+  'pref.off': 'Off',
   'lang.en': 'English',
   'lang.id': 'Indonesian',
   'meetingLang.keep': 'Don’t change (auto-detect)',
@@ -356,7 +371,9 @@ export const en = {
   'ext.header.insertByTag': 'Insert by Tag',
   'ext.header.insertAllWithTag': 'Insert all #{tag} ({count})',
   'ext.header.insertSingle': 'Insert Individual',
-  'ext.header.contextInserted': 'Context inserted into meeting.',
+  'ext.header.tagAttached': 'Tag #{tag} attached to meeting.',
+  'ext.header.tagDetached': 'Tag #{tag} removed from meeting.',
+  'ext.header.activeTags': 'Active Tags',
   'ext.header.noContextsAvailable': 'No contexts available. Add them in Knowledge Base first.',
   'ext.header.close': 'Close',
   'ext.kb.pushToTracker': 'Send to the issue tracker',
@@ -755,12 +772,17 @@ export const en = {
   'desktop.install.removed': 'Disconnected from {browser}.',
   'desktop.install.extension': 'The extension',
   'desktop.install.extensionHint':
-    'Connecting is only half of it: with no extension installed there is nothing to deliver. Load the unpacked extension from the release, then turn on \u201cSend finished meetings\u201d in its settings.',
-  'desktop.install.getExtension': 'Get the extension',
-  'desktop.install.firefox': 'Firefox',
-  'desktop.install.firefoxHint':
-    'Firefox is not connected from here. A signed add-on cannot be side-loaded, so there is nothing to register until the listing on addons.mozilla.org is published \u2014 that is coming.',
+    'Connecting is only half of it: with no extension installed there is nothing to deliver. Install it from your browser\u2019s store, then turn on \u201cSend finished meetings\u201d in its settings.',
+  'desktop.install.downloadZip': 'Download extension (ZIP)',
 
   // -- desktop: updater -----------------------------------------------------
+  'desktop.version.current': 'Companion Desktop',
+  'desktop.version.hint': 'Updates are also checked each time the app starts.',
+  'desktop.version.check': 'Check for updates',
+  'desktop.version.checking': 'Checking for updates…',
+  'desktop.version.upToDate': 'You have the latest version.',
+  'desktop.version.releases': 'Release notes',
+  'desktop.version.releasesHint': 'Every version, with what changed and the downloads for each platform.',
+  'desktop.version.openReleases': 'GitHub Releases',
   'desktop.update.available': 'Version {version} is available.',
 } as const;

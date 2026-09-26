@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { t } from "@meetcc/shared/i18n";
+import { Button } from '@meetcc/ui';
 
 /** Tells you a newer build exists and installs it on request.
  *
@@ -54,26 +55,16 @@ export default function UpdateBanner() {
           ? t('desktop.update.failed')
           : t('desktop.update.available', { version: update.version })}
       </span>
-      <button
-        type="button"
-        className="btn primary"
-        onClick={() => void install()}
-        disabled={busy}
-      >
+      <Button variant="primary" onClick={() => void install()} disabled={busy}>
         {busy
           ? t('desktop.update.installing')
           : failed
             ? t('desktop.update.retry')
             : t('desktop.update.restart')}
-      </button>
-      <button
-        type="button"
-        className="btn"
-        onClick={() => setUpdate(null)}
-        disabled={busy}
-      >
+      </Button>
+      <Button onClick={() => setUpdate(null)} disabled={busy}>
         Nanti
-      </button>
+      </Button>
     </div>
   );
 }

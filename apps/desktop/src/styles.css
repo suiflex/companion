@@ -4,18 +4,18 @@
    colour that cannot follow the theme. */
 :root {
   color-scheme: dark;
-  --bg: #0a0d12;
-  --bg-panel: #0f131b;
+  --bg: var(--ui-ink);
+  --bg-panel: var(--ui-panel);
   --bg-sunken: #0d1119;
-  --bg-raised: #131926;
-  --border: #1d2434;
-  --fg: #dbe2ee;
-  --fg-muted: #8b95a9;
-  --fg-on-accent: #0a0d12;
-  --accent: #46e394;
-  --danger: #ff6b74;
-  --warning: #e0b341;
-  --info: #6aa9f0;
+  --bg-raised: var(--ui-panel-2);
+  --border: var(--ui-hairline);
+  --fg: var(--ui-text);
+  --fg-muted: var(--ui-text-dim);
+  --fg-on-accent: var(--ui-fg-on-accent);
+  --accent: var(--ui-accent);
+  --danger: var(--ui-danger);
+  --warning: var(--ui-warning);
+  --info: var(--ui-info);
 }
 
 /* Light: the same structure on paper. The signal green darkens so it still
@@ -23,18 +23,18 @@
    sunken becomes lighter than the page, not darker. */
 body[data-theme='light'] {
   color-scheme: light;
-  --bg: #eef1f6;
-  --bg-panel: #ffffff;
+  --bg: var(--ui-ink);
+  --bg-panel: var(--ui-panel);
   --bg-sunken: #f7f9fc;
-  --bg-raised: #ffffff;
-  --border: #d2dae7;
-  --fg: #1c2433;
-  --fg-muted: #55617a;
-  --fg-on-accent: #ffffff;
-  --accent: #0c8f60;
-  --danger: #d43f49;
-  --warning: #a86f0c;
-  --info: #1663b0;
+  --bg-raised: var(--ui-panel-2);
+  --border: var(--ui-hairline-2);
+  --fg: var(--ui-text);
+  --fg-muted: var(--ui-text-dim);
+  --fg-on-accent: var(--ui-fg-on-accent);
+  --accent: var(--ui-accent);
+  --danger: var(--ui-danger);
+  --warning: var(--ui-warning);
+  --info: var(--ui-info);
 }
 
 * {
@@ -48,6 +48,15 @@ body,
   margin: 0;
 }
 
+/* Every pane scrolls on its own; the page itself never does. Without this a
+   child a few pixels too wide let the whole window slide sideways. `clip`
+   rather than `hidden`: a hidden box can still be scrolled by focus or
+   scrollIntoView, which is exactly how the window got shifted. */
+html,
+body {
+  overflow: clip;
+}
+
 body {
   background: var(--bg);
   color: var(--fg);
@@ -59,61 +68,16 @@ body {
 .shell {
   display: flex;
   height: 100%;
-}
-
-.rail {
-  width: 52px;
-  flex: none;
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 0;
-  border-right: 1px solid var(--border);
-  background: var(--bg-sunken);
-}
-
-.rail .brand {
-  width: 26px;
-  height: 26px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-}
-
-.rail-btn {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--fg-muted);
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.rail-btn:hover:not(:disabled) {
-  background: var(--bg-raised);
-  color: var(--fg);
-}
-
-/* A disabled rail button must not invite a click it will not answer. */
-.rail-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
+  min-width: 0;
 }
 
 .add-btn:disabled,
-.search:disabled {
+.search:disabled,
+.sidebar-search-input:disabled {
   opacity: 0.45;
   cursor: default;
 }
 
-.rail-spacer {
-  margin-top: auto;
-}
 
 .content {
   flex: 1;
@@ -177,18 +141,12 @@ body {
   max-width: 46ch;
 }
 
-.rail-active {
-  background: var(--bg-raised);
-  color: var(--fg);
-}
 
-/* ponytail: the CSS `resize` grabber rather than a drag handle of our own —
-   the platform already draws one. It does not persist across launches; add a
-   stored width if that turns out to matter. */
+/* Match the extension's default width while keeping resize bounded beside the editor. */
 .sidebar {
-  width: 300px;
+  width: 276px;
   min-width: 240px;
-  max-width: 520px;
+  max-width: 340px;
   resize: horizontal;
   overflow: hidden;
   flex: none;
@@ -199,12 +157,40 @@ body {
   min-height: 0;
 }
 
-.sidebar-head {
+.sidebar-top {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 12px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border-bottom: 1px solid var(--border);
+  gap: 9px;
+  padding: 0 2px 2px;
+}
+
+.sidebar-brand .brand {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  margin: 0;
+}
+
+.sidebar-brand-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .kicker {
@@ -219,14 +205,101 @@ body {
 .count {
   margin-left: auto;
   font-weight: 400;
-  font-size: 11px;
-  line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--fg-muted);
 }
+.sidebar-tabs { width: 100%; }
+
+.sidebar-tabs .ui-segmented {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  width: 100%;
+  padding: 3px;
+  border: 1px solid var(--ui-hairline-2);
+  border-radius: 9px;
+  background: var(--ui-ink);
+}
+
+.sidebar-tabs .ui-segmented-option {
+  min-width: 0;
+  padding: 7px 5px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.sidebar-tabs .ui-segmented-option.is-active {
+  border-color: var(--ui-accent);
+  background: var(--ui-accent-dim);
+}
+
+.sidebar-scroll {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  padding: 12px 10px;
+}
+
+.sidebar-list-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-list-head .kicker {
+  margin: 0;
+}
+
+.sidebar-bottom {
+  flex: none;
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  padding: 10px 12px 12px;
+}
+
+.sidebar-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-foot-spacer { flex: 1; }
+
+
+.sidebar-support-btn {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-muted);
+  padding: 0;
+}
+
+.sidebar-support-btn:hover:not(:disabled) {
+  border-color: var(--border);
+  background: var(--bg-raised);
+  color: var(--fg);
+}
+
 
 .add-btn {
+  display: grid;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  place-items: center;
   border: 0;
+  padding: 0;
   background: transparent;
   color: var(--fg-muted);
   font-size: 14px;
@@ -237,20 +310,60 @@ body {
   color: var(--accent);
 }
 
-.search {
-  margin: 10px;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
+.sidebar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid var(--ui-hairline);
   border-radius: 8px;
-  background: var(--bg-sunken);
-  color: var(--fg);
-  font-size: 13px;
+  background: var(--ui-panel-2);
+}
+
+.sidebar-search:focus-within {
+  border-color: var(--ui-accent);
+}
+
+.sidebar-search-icon {
+  flex: none;
+  color: var(--ui-text-faint);
+  font-size: 14px;
+}
+
+.sidebar-search-input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 7px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.sidebar-search-input:focus-visible {
+  outline: none;
+}
+
+.search {
+  margin: 0;
+}
+
+.sidebar-tree-section {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
 }
 
 .note-list {
   list-style: none;
+  min-width: 0;
   margin: 0;
   padding: 0 8px 12px;
+  overflow-x: hidden;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -258,8 +371,12 @@ body {
 
 .note-tree .note-item {
   flex-direction: row;
-  align-items: baseline;
-  gap: 7px;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
 }
 
 /* Which kind of note this is, at the start of the row where a scan lands.
@@ -267,87 +384,152 @@ body {
    so the difference has to be visible before the click, not after. */
 .note-kind {
   flex: none;
-  width: 11px;
-  text-align: center;
-  font-size: 10px;
-  color: var(--fg-muted);
-  opacity: 0.5;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--fg-muted);
+  opacity: 0.45;
 }
 
 .note-kind.delivered {
-  color: var(--accent);
+  background: var(--accent);
+  box-shadow: none;
   opacity: 1;
 }
 
 .note-item {
   width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
   text-align: left;
   padding: 8px 10px;
-  border: 0;
-  border-radius: 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
+  font: inherit;
   cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
 }
 
-.note-item:hover {
+.note-item:hover:not(:disabled) {
+  border-color: var(--border);
   background: var(--bg-raised);
 }
 
-.note-item.active {
+.note-item.active,
+.note-item.active:hover:not(:disabled) {
+  border-color: var(--ui-hairline-2);
   background: var(--bg-raised);
-  box-shadow: inset 2px 0 0 var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .note-item:hover .note-title,
 .note-item.active .note-title { color: var(--fg); }
 
-/* A leaf sits below its folder in weight as well as in the tree: same face,
-   one step lighter, so the structure is legible without reading the words. */
+/* Keep title and metadata readable inside a bounded tree row. */
+.note-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
 .note-title {
-  font-weight: 400;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--fg-muted);
   overflow: hidden;
+  color: var(--fg);
+  font: 500 13px/1.35 var(--ui-font-body);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.note-tree .note-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--fg-muted);
+  font-weight: 450;
+}
+
 /* One type scale for the whole sidebar.
-   It had three: monospace for the counts and the kicker, 600-weight Avenir for
-   the folders, and the body face for the notes — in a 300px column that reads
-   as three unrelated lists stacked on top of each other rather than one tree.
-   Everything below is the body face at two sizes; the counts keep tabular
-   figures so the column of numbers stays straight, which is the one thing the
-   monospace was actually buying. */
+   It had three: monospace for the counts and kicker, 600-weight Avenir for
+   folders, and the body face for notes — a narrow tree made them read as
+   unrelated lists. Two sizes keep hierarchy; tabular figures keep counts
+   aligned without giving them another face.
+*/
 
 /* The folder tree. Indentation is applied per row rather than by nesting
    padding, so a deep note still starts its hit area at the sidebar edge. */
-.note-tree { padding: 4px 0; overflow-y: auto; }
+.note-tree {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 6px 10px 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
 
-.note-tree .tree-list { list-style: none; margin: 0; padding: 0; }
+.note-tree .tree-list {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* One guide line per level, aligned under the parent's chevron, the way an
+   outline reads. Past four levels the lines stop stepping right, so a deep
+   path keeps room for its titles. */
+.note-tree .tree-list .tree-list {
+  margin-left: 11px;
+  padding-left: 6px;
+  border-left: 1px solid var(--ui-hairline);
+  transition: border-color 150ms ease;
+}
+
+.note-tree li:hover > .tree-list { border-left-color: var(--border); }
+
+.note-tree .tree-list .tree-list .tree-list .tree-list .tree-list {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.note-tree li { min-width: 0; }
+
+.tree-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
 
 .tree-folder {
   display: flex;
+  flex: 1;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
-  padding: 5px 8px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 4px 8px 4px 2px;
   border: 0;
+  border-radius: 6px;
   background: transparent;
   color: var(--fg);
-  font-weight: 600;
-  font-size: 12.5px;
-  line-height: 1.5;
+  font-weight: 550;
+  font-size: 13px;
+  line-height: 1.35;
   text-align: left;
   cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
 }
 
-.tree-folder:hover .tree-name { color: var(--accent); }
+.tree-folder:hover:not(:disabled) {
+  background: var(--bg-raised);
+}
 
 /* The folder a dragged note would land in. Without a visible target the
    gesture is a guess. */
@@ -363,22 +545,29 @@ body {
 
 .tree-caret {
   flex: none;
-  width: 0;
-  height: 0;
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-  border-left: 5px solid currentColor;
-  transition: transform 120ms ease;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--fg-muted);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1), stroke 120ms ease;
 }
 
-.tree-caret.open { transform: rotate(90deg) translateX(-1px); }
+.tree-caret.open { transform: rotate(90deg); }
+.tree-folder:hover .tree-caret { stroke: var(--accent); }
 
 /* The per-folder add button. Hidden until the row is touched, so a sidebar
    of folders is not a wall of icons. */
 .tree-add {
+  display: grid;
   flex: none;
+  width: 26px;
+  height: 28px;
+  place-items: center;
   border: 0;
-  padding: 0 2px;
+  padding: 0;
   background: transparent;
   color: var(--fg-muted);
   font-size: 12px;
@@ -387,13 +576,18 @@ body {
   opacity: 0;
 }
 
-.tree-folder:hover .tree-add,
+.tree-folder-row:hover .tree-add,
 .tree-add:focus-visible { opacity: 1; }
-.tree-add:hover { color: var(--accent); }
+.tree-add:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--bg-raised);
+  color: var(--accent);
+}
 
 .tree-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .tree-count {
+  flex: none;
   font-weight: 400;
   font-size: 11px;
   line-height: 1;
@@ -402,17 +596,24 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tree-caret { transition: none; }
+  .tree-caret,
+  .note-tree .tree-list .tree-list { transition: none; }
 }
 
 .note-row-meta {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* Where a note came from, when it did not come from here. */
 .note-source {
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 1px 5px;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -426,9 +627,33 @@ body {
 
 .note-item.active .note-source { border-color: var(--accent); color: var(--accent); }
 
+/* In the tree a row is one line: the date sits at the end, and where the
+   note came from only appears once the row is pointed at or open — the dot
+   already says it is a meeting. */
+.note-tree .note-row-meta { flex: none; max-width: 45%; }
+.note-tree .note-source { display: none; }
+.note-tree .note-item:hover .note-source,
+.note-tree .note-item.active .note-source { display: inline; }
+.note-tree .note-item:hover:not(:disabled) { border-color: transparent; }
+.note-tree .note-item:hover .note-title { color: var(--fg); }
+.note-tree .note-item.active,
+.note-tree .note-item.active:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.note-tree .note-item.active .note-title { color: var(--fg); font-weight: 550; }
+.note-tree .note-date { flex: none; font-size: 11px; font-variant-numeric: tabular-nums; }
+
 .note-date {
-  font: 400 9.5px/1 ui-monospace, Menlo, monospace;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  margin-left: auto;
   color: var(--fg-muted);
+  font: 400 11px/1.3 var(--ui-font-body);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* One row per delivered meeting: where it came from, when, how many people,
@@ -453,6 +678,7 @@ body {
 .editor-wrap {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   padding: 28px 40px;
@@ -470,34 +696,6 @@ body {
 
 /* Ticket metadata sits between the title and the body, the way an issue
    tracker puts it: visible without opening anything, out of the writing flow. */
-/* Three-way choice shown as one control, so the options read as alternatives
-   rather than three separate buttons. */
-.segmented {
-  display: inline-flex;
-  flex: none;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.segmented .seg {
-  border: 0;
-  border-right: 1px solid var(--border);
-  background: var(--bg-sunken);
-  color: var(--fg-muted);
-  padding: 7px 12px;
-  font: 12px 'Avenir Next', Avenir, sans-serif;
-  cursor: pointer;
-}
-
-.segmented .seg:last-child { border-right: 0; }
-.segmented .seg:hover { color: var(--fg); }
-
-.segmented .seg.active {
-  background: var(--accent);
-  color: var(--fg-on-accent);
-  font-weight: 600;
-}
 
 /* The meeting a note came from: who was there, when, and how to get back to
    it. Shown only for delivered notes — a hand-written one has none of this. */
@@ -562,12 +760,7 @@ body {
 .mm-url {
   flex: 1;
   min-width: 0;
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg-raised);
-  color: var(--fg-muted);
+  height: 34px;
   font: 11px ui-monospace, Menlo, monospace;
 }
 
@@ -632,7 +825,11 @@ body {
   color: var(--fg-muted);
 }
 
-.ticket-fields input,
+.ticket-fields input {
+  width: 100%;
+  height: 34px;
+}
+
 .ticket-fields select {
   width: 100%;
   height: 34px;
@@ -645,40 +842,6 @@ body {
   line-height: normal;
 }
 
-/* Transient feedback, bottom-right. Re-tokenised rather than copied from the
-   extension: the palettes use different variable names. */
-.toasts {
-  position: fixed;
-  bottom: 14px;
-  right: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 99;
-}
-
-.toast {
-  max-width: 320px;
-  padding: 9px 14px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--bg-panel);
-  font-size: 12.5px;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
-  animation: toast-rise 180ms ease-out;
-}
-
-.toast-success { border-color: var(--accent); color: var(--accent); }
-.toast-error { border-color: var(--danger); color: var(--danger); }
-
-@keyframes toast-rise {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .toast { animation: none; }
-}
 
 /* Tooltips, drawn by us.
    macOS renders this window in WKWebView, which does not surface the HTML
@@ -715,12 +878,17 @@ body {
 [data-tip]:hover::after,
 [data-tip]:focus-visible::after { opacity: 1; }
 
-/* The rail is a narrow left edge; a tooltip below it would be clipped by the
-   next button, so those sit beside it instead. */
-[data-tip-side='right']::after {
-  top: 50%;
-  left: calc(100% + 8px);
-  transform: translateY(-50%);
+/* Footer icons sit against the window edge; keep labels inside the sidebar. */
+.sidebar-foot [data-tip]::after {
+  top: auto;
+  bottom: calc(100% + 6px);
+  left: 0;
+  transform: none;
+}
+
+.sidebar-foot [data-tip]:nth-last-child(-n+2)::after {
+  left: auto;
+  right: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1117,36 +1285,6 @@ body {
   color: var(--fg-muted);
 }
 
-.btn {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg-panel);
-  color: var(--fg-muted);
-  font: 600 11px/1 'Avenir Next', Avenir, sans-serif;
-  cursor: pointer;
-}
-
-.btn:hover {
-  color: var(--fg);
-  border-color: var(--accent);
-}
-
-.btn.primary {
-  border-color: var(--accent);
-  background: rgba(70, 227, 148, 0.12);
-  color: var(--accent);
-}
-
-.btn.primary:hover {
-  background: var(--accent);
-  color: var(--fg-on-accent);
-}
-
-.btn.danger:hover {
-  border-color: var(--danger);
-  color: var(--danger);
-}
 
 .error-bar {
   margin-top: 12px;
@@ -1171,23 +1309,9 @@ body {
   gap: 8px;
 }
 
-/* The settings screen had no text field until the provider panel: everything
-   before it was a button, a toggle or a select. */
 .text-input {
   flex: none;
   width: 260px;
-  height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-sunken);
-  color: var(--fg);
-  font-size: 13px;
-}
-
-.text-input:focus {
-  outline: none;
-  border-color: var(--accent);
 }
 
 /* The loaded model names, when there are few enough to show whole. */
@@ -1237,9 +1361,80 @@ body {
   flex: 1;
 }
 
+.settings-window {
+  box-sizing: border-box;
+  height: 100%;
+  min-width: 0;
+  background: var(--bg);
+}
+
+/* System-settings layout: sections on the left, one at a time on the right,
+   each scrolling on its own so the nav never scrolls away. */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  height: 100%;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 28px 12px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.settings-nav-item {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: 500 13px/1.3 var(--ui-font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.settings-nav-item:hover { background: var(--bg-raised); color: var(--fg); }
+
+.settings-nav-item.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.settings-nav-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.settings-window .settings {
+  box-sizing: border-box;
+  max-width: none;
+  overflow-y: auto;
+  padding: 28px 36px 40px;
+}
+
+.settings-window .settings > * { max-width: 640px; }
+
 .settings {
   max-width: 640px;
   padding: 8px 4px;
+}
+
+/* A choice's labels stay on one line; the hint beside it wraps instead. */
+.setting-row .ui-segmented { flex: none; white-space: nowrap; }
+
+@media (max-width: 860px) {
+  .setting-row { flex-wrap: wrap; }
+}
+
+.install-settings-section {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
 }
 
 .settings h1 {
@@ -1269,7 +1464,7 @@ body {
 }
 
 /* The label is two words; letting it wrap made the button look broken. */
-.setting-row > .btn {
+.setting-row > .ui-button {
   flex: none;
   white-space: nowrap;
 }
@@ -1279,6 +1474,40 @@ body {
   font-size: 12px;
   line-height: 1.5;
   color: var(--fg-muted);
+}
+
+/* Store badges for the extension, the same artwork the extension's own
+   Version panel uses, so the two apps point at one listing the same way. */
+.store-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 16px;
+}
+
+.store-badge {
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.store-badge img { height: 40px; border-radius: 6px; }
+.store-badge:hover { transform: translateY(-1px); opacity: 0.9; }
+.store-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.version-pill {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font: 600 11px/1.4 ui-monospace, Menlo, monospace;
+  vertical-align: middle;
 }
 
 /* A path is the one thing here a user may need to copy exactly. */

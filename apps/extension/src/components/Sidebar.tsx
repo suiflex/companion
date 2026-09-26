@@ -11,6 +11,7 @@ import { listProjects, listSessions } from '../lib/db'
 import { activeSponsorLinks } from '../lib/sponsor'
 import { resolveTheme, watchSystemTheme, type ThemePref } from '../lib/theme'
 import { locale, t } from '@meetcc/shared/i18n'
+import { Button } from '@meetcc/ui'
 
 const themeLabel = (p: ThemePref): string =>
   t('ext.sidebar.theme', {
@@ -60,13 +61,10 @@ function ThemeToggle() {
   }, [pref])
 
   return (
-    <button
-      className='icon-btn'
-      onClick={() => setPref((p) => NEXT[p])}
-      aria-label={themeLabel(pref)}
-      title={themeLabel(pref)}>
-      {THEME_ICON[pref]}
-    </button>
+    <Button className='icon-btn'
+    onClick={() => setPref((p) => NEXT[p])}
+    aria-label={themeLabel(pref)}
+    title={themeLabel(pref)}>{THEME_ICON[pref]}</Button>
   )
 }
 
@@ -157,26 +155,22 @@ export function Sidebar({
     const label = titles[m.id] || displayMeetingId(m.id)
     return (
     <div key={m.id} className='meeting-row'>
-      <button
-        className={`meeting ${m.id === selectedId ? 'selected' : ''}`}
-        title={m.id}
-        onClick={() => onSelect(m.id)}>
-        <span className={`status ${isLive(m, now) ? 'on' : ''}`} />
-        <span className='meeting-body'>
-          <span className='meeting-id'>{label}</span>
-          <span className='meeting-sub'>
-            {fmtDate(startedAt(m))} · {t('ext.sidebar.lines', { count: m.entries.length })}
-          </span>
+      <Button className={`meeting ${m.id === selectedId ? 'selected' : ''}`}
+      title={m.id}
+      onClick={() => onSelect(m.id)}><span className={`status ${isLive(m, now) ? 'on' : ''}`} />
+      <span className='meeting-body'>
+        <span className='meeting-id'>{label}</span>
+        <span className='meeting-sub'>
+          {fmtDate(startedAt(m))} · {t('ext.sidebar.lines', { count: m.entries.length })}
         </span>
-        {badge(m)}
-      </button>
-      <button
-        className='meeting-del'
-        aria-label={t('ext.sidebar.deleteMeeting', { label })}
-        title={t('ext.sidebar.deleteMeetingHint')}
-        onClick={() => onDelete(m.id)}>
-        🗑
-      </button>
+      </span>
+      {badge(m)}</Button>
+      <Button className='meeting-del'
+      aria-label={t('ext.sidebar.deleteMeeting', { label })}
+      title={t('ext.sidebar.deleteMeetingHint')}
+      onClick={() => onDelete(m.id)}>
+      🗑
+            </Button>
     </div>
     )
   }
@@ -185,14 +179,13 @@ export function Sidebar({
   if (!open) {
     return (
       <aside className='sidebar collapsed'>
-        <button
-          className='icon-btn'
-          onClick={() => setOpen(true)}
-          aria-label={t('ext.sidebar.expand')}
-          aria-expanded='false'
-          title={t('ext.sidebar.expand')}>
-          »
-        </button>
+        <Button className='icon-btn'
+        onClick={() => setOpen(true)}
+        aria-label={t('ext.sidebar.expand')}
+        aria-expanded='false'
+        title={t('ext.sidebar.expand')}>
+        »
+                </Button>
         <img className='brand-logo' src='icons/suiflex.svg' alt='Suiflex' />
         {live.length > 0 && (
           <span
@@ -201,35 +194,31 @@ export function Sidebar({
           />
         )}
         <span className='spacer' />
-        <button
-          className='icon-btn'
-          onClick={onSearch}
-          aria-label={t('ext.sidebar.searchAll')}
-          title={t('ext.sidebar.searchAllShortcut')}>
-          ⌕
-        </button>
-        <button
-          className={`icon-btn ${activeView === 'knowledge' ? 'active' : ''}`}
-          onClick={onKnowledge}
-          aria-label={t('ext.sidebar.knowledge')}
-          title={t('ext.sidebar.knowledge')}>
-          ✦
-        </button>
-        <button
-          className={`icon-btn ${activeView === 'decisions' ? 'active' : ''}`}
-          onClick={onDecisions}
-          aria-label={t('ext.sidebar.decisions')}
-          title={t('ext.sidebar.decisions')}>
-          ▤
-        </button>
+        <Button className='icon-btn'
+        onClick={onSearch}
+        aria-label={t('ext.sidebar.searchAll')}
+        title={t('ext.sidebar.searchAllShortcut')}>
+        ⌕
+                </Button>
+        <Button className={`icon-btn ${activeView === 'knowledge' ? 'active' : ''}`}
+        onClick={onKnowledge}
+        aria-label={t('ext.sidebar.knowledge')}
+        title={t('ext.sidebar.knowledge')}>
+        ✦
+                </Button>
+        <Button className={`icon-btn ${activeView === 'decisions' ? 'active' : ''}`}
+        onClick={onDecisions}
+        aria-label={t('ext.sidebar.decisions')}
+        title={t('ext.sidebar.decisions')}>
+        ▤
+                </Button>
         <ThemeToggle />
-        <button
-          className={`icon-btn ${activeView === 'settings' ? 'active' : ''}`}
-          onClick={onSettings}
-          aria-label={t('ext.sidebar.settings')}
-          title={t('ext.sidebar.settings')}>
-          ⚙
-        </button>
+        <Button className={`icon-btn ${activeView === 'settings' ? 'active' : ''}`}
+        onClick={onSettings}
+        aria-label={t('ext.sidebar.settings')}
+        title={t('ext.sidebar.settings')}>
+        ⚙
+                </Button>
       </aside>
     )
   }
@@ -240,41 +229,31 @@ export function Sidebar({
         <div className='brand'>
           <img className='brand-logo' src='icons/suiflex.svg' alt='Suiflex' />
           <span className='brand-name'>Companion</span>
-          <button
-            className='icon-btn collapse-btn'
-            onClick={() => setOpen(false)}
-            aria-label={t('ext.sidebar.collapse')}
-            aria-expanded='true'
-            title={t('ext.sidebar.collapse')}>
-            «
-          </button>
+          <Button className='icon-btn collapse-btn'
+          onClick={() => setOpen(false)}
+          aria-label={t('ext.sidebar.collapse')}
+          aria-expanded='true'
+          title={t('ext.sidebar.collapse')}>
+          «
+                    </Button>
         </div>
 
-        <button
-          className='sidebar-search-btn'
-          onClick={onSearch}
-          aria-label={t('ext.sidebar.searchAll')}
-          title={t('ext.sidebar.searchAllShortcut')}>
-          <span className='sidebar-search-icon'>⌕</span>
-          <span className='sidebar-search-text'>{t('ext.sidebar.searchAll')}</span>
-          <kbd className='sidebar-search-kbd'>⌘K</kbd>
-        </button>
+        <Button className='sidebar-search-btn'
+        onClick={onSearch}
+        aria-label={t('ext.sidebar.searchAll')}
+        title={t('ext.sidebar.searchAllShortcut')}><span className='sidebar-search-icon'>⌕</span>
+        <span className='sidebar-search-text'>{t('ext.sidebar.searchAll')}</span>
+        <kbd className='sidebar-search-kbd'>⌘K</kbd></Button>
 
         <nav className='sidebar-nav' aria-label={t('ext.sidebar.knowledge')}>
-          <button
-            className={`sidebar-nav-btn ${activeView === 'knowledge' ? 'active' : ''}`}
-            onClick={onKnowledge}
-            title={t('ext.sidebar.knowledge')}>
-            <span className='sidebar-nav-icon'>✦</span>
-            <span className='sidebar-nav-label'>{t('ext.sidebar.knowledge')}</span>
-          </button>
-          <button
-            className={`sidebar-nav-btn ${activeView === 'decisions' ? 'active' : ''}`}
-            onClick={onDecisions}
-            title={t('ext.sidebar.decisions')}>
-            <span className='sidebar-nav-icon'>▤</span>
-            <span className='sidebar-nav-label'>{t('ext.sidebar.decisions')}</span>
-          </button>
+          <Button className={`sidebar-nav-btn ${activeView === 'knowledge' ? 'active' : ''}`}
+          onClick={onKnowledge}
+          title={t('ext.sidebar.knowledge')}><span className='sidebar-nav-icon'>✦</span>
+          <span className='sidebar-nav-label'>{t('ext.sidebar.knowledge')}</span></Button>
+          <Button className={`sidebar-nav-btn ${activeView === 'decisions' ? 'active' : ''}`}
+          onClick={onDecisions}
+          title={t('ext.sidebar.decisions')}><span className='sidebar-nav-icon'>▤</span>
+          <span className='sidebar-nav-label'>{t('ext.sidebar.decisions')}</span></Button>
         </nav>
       </div>
 
@@ -322,13 +301,12 @@ export function Sidebar({
       <div className='sidebar-bottom'>
         <div className='sidebar-foot'>
           <ThemeToggle />
-          <button
-            className={`icon-btn ${activeView === 'settings' ? 'active' : ''}`}
-            onClick={onSettings}
-            aria-label={t('ext.sidebar.settings')}
-            title={t('ext.sidebar.settings')}>
-            ⚙
-          </button>
+          <Button className={`icon-btn ${activeView === 'settings' ? 'active' : ''}`}
+          onClick={onSettings}
+          aria-label={t('ext.sidebar.settings')}
+          title={t('ext.sidebar.settings')}>
+          ⚙
+                    </Button>
           <span className='spacer' />
           {activeSponsorLinks().map((link) => (
             <a

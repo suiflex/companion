@@ -66,6 +66,7 @@ packages/ai/                       provider adapters, prompts, rate limit
 packages/meeting/                  pipeline, Ask, continuity, import, trackers
 packages/store/                    SQLite + FTS5 for meetings (wasm or native)
 packages/vault/                    .md vault: note format, bridge, vault FTS
+packages/ui/                       cross-app React components, styled from extension
 packages/mcp/  packages/sync-server/  packages/exporters/
 scripts/                           the installer CLI and its helpers
 ```
@@ -78,9 +79,8 @@ Inside `apps/desktop/src-tauri/src/`, one module per concern: `vault.rs` file
 I/O, `settings.rs` the settings file and the OS keychain, `host.rs` the native
 -messaging mode, `install.rs` browser registration, `lib.rs` the command list.
 
-React lives only in the `apps/*` frontends. Capture, orchestration and every
-`packages/*` module stay framework-free — do not pull React or DOM libraries
-into them.
+React UI lives in `apps/*`; components shared by both apps live in
+`packages/ui`. Every other `packages/*` module stays framework-free.
 
 **Rust owns no domain logic.** It is file I/O, IPC, the keychain and the HTTP
 transport; vault logic is TypeScript in `packages/vault` so the host and the
@@ -98,8 +98,11 @@ Where to go:
 | host registration, from the app | `apps/desktop/src-tauri/src/install.rs` + `InstallView.tsx` |
 | note file format | `packages/vault/src/note.ts` (see Conventions) |
 | desktop UI | `apps/desktop/src/App.tsx`, editor in `NoteEditor.tsx` |
+| shared UI components, variants and palette | `packages/ui/src/` and `packages/ui/src/styles.css` |
 | where a save lands | `apps/desktop/src/saveTarget.ts` — pure, and tested |
 | the desktop sidebar tree | `apps/desktop/src/{NoteTree.tsx,tree.ts}` |
+| desktop Settings window and vault switch | `apps/desktop/src/{SettingsWindow.tsx,SettingsPage.tsx,openSettingsWindow.ts,settingsEvents.ts}`, then `App.tsx` for dirty-note confirmation |
+| desktop autosave | `apps/desktop/src/editorPrefs.ts`, `save`/`writeOpenNote` in `App.tsx`, `settleSaved` in `saveTarget.ts` |
 | desktop AI settings | `apps/desktop/src/{AIProviderPanel.tsx,aiSettings.ts}` |
 | extension settings UI | `apps/extension/src/components/SettingsPanels.tsx` |
 | an AI provider | `packages/ai/src/providers.ts` + `PROVIDER_PRESETS` in `client.ts` |
@@ -238,6 +241,10 @@ key prefix and the `rapat` tag are data, not copy.
   adding a platform needs no migration, but it is derived from the meeting-id
   prefix in `store.ts`, not from a URL.
 - Prefer the existing dependency set. New deps need a reason.
+- **Cross-app UI starts in the extension.** When a component is used by both
+  apps, put its reusable behavior and styling in `packages/ui` and use the
+  extension as the visual reference. Keep page- and feature-specific components
+  in their app; only share controls whose behavior and contract match.
 - **The desktop WebView cannot reach the network.** Its CSP is
   `connect-src 'self' ipc:` and cannot be widened to a host list, because
   provider base URLs are typed by the user. Outbound calls leave through Rust:
@@ -258,12 +265,10 @@ key prefix and the `rapat` tag are data, not copy.
   in `PROVIDER_PRESETS`, which lives in `packages/ai/src/client.ts` — two files,
   not one. `packages/ai/src/oauth.ts` is pure protocol and must stay free of
   `chrome.*` and storage calls.
-- **Four modules are hand-synced between the two apps**, not shared:
-  `theme.ts`, `lang.ts`, `toast.tsx` and `sponsor.ts` each exist in both
-  `apps/extension/src/` and `apps/desktop/src/`. The apps share no runtime, so
-  a shared module would need a build boundary for thirty lines. The cost is
-  real and has been paid twice: an icon added to one `sponsor.ts` left the
-  other showing two identical hearts. Change one, change the other.
+- **Three app helpers remain hand-synced**, not shared: `theme.ts`, `lang.ts`
+  and `sponsor.ts` exist in both apps because they depend on app-specific
+  storage or platform APIs. Cross-app React controls, toast feedback, and the
+  extension-led design tokens belong in `packages/ui`.
 - **A vault frontmatter key lives in four places** in
   `packages/vault/src/note.ts`: the `VaultNote` interface, `QUOTED` (or
   `LISTS`), `ORDER`, and the return literal of `noteFromMarkdown`. Miss any one
@@ -284,6 +289,9 @@ key prefix and the `rapat` tag are data, not copy.
 - **A delivered meeting is an archive and is never rewritten.** Saving an edit
   of one produces a new note (new id, own session key, `manual`, `source`
   pointing back at the meeting) and leaves the delivered file untouched. The
+  Notes tab then lists the copy in place of the meeting
+  (`hideCopiedOriginals` in `sidebarResults.ts`); the meeting stays under
+  Incoming meetings. The
   rule lives in `apps/desktop/src/saveTarget.ts`, which is pure and tested for
   a reason: it was three nested ternaries inside `App.tsx` and was wrong twice
   — once writing a second file for a note that already had one, once making a

@@ -6,9 +6,9 @@
 // the note told you nothing about who they were.
 import { useState } from 'react'
 import { formatDateTime, t } from '@meetcc/shared/i18n'
-import { useToast } from './toast'
 import { copyText } from './clipboard'
 import type { Vault, VaultNote } from '@meetcc/vault'
+import { Button, TextInput, useToast } from '@meetcc/ui'
 
 /**
  * The id Chromium loads the shipped extension under.
@@ -105,9 +105,7 @@ export function MeetingMeta({ note, vault }: { note: VaultNote; vault: Vault | n
         <span className="mm-platform">{PLATFORM_LABELS[note.platform] ?? note.platform}</span>
         {note.startedAt && <span className="mm-when">{formatDateTime(note.startedAt)}</span>}
         {note.transcript && (
-          <button type="button" className="mm-link" onClick={() => void toggle()}>
-            {open ? t('desktop.meeting.hideTranscript') : t('desktop.meeting.showTranscript')}
-          </button>
+          <Button type="button" className="mm-link" onClick={() => void toggle()}>{open ? t('desktop.meeting.hideTranscript') : t('desktop.meeting.showTranscript')}</Button>
         )}
       </div>
 
@@ -128,10 +126,10 @@ export function MeetingMeta({ note, vault }: { note: VaultNote; vault: Vault | n
           actually works, so the field says what it is. */}
       <div className="mm-link-row">
         <span className="mm-label">{t('desktop.meeting.openInExtension')}</span>
-        <input className="mm-url" readOnly value={url} onFocus={(e) => e.target.select()} />
-        <button type="button" className="btn" onClick={copy}>
+        <TextInput className="mm-url" readOnly value={url} onFocus={(e) => e.target.select()} />
+        <Button type="button" onClick={copy}>
           {t('desktop.meeting.copyLink')}
-        </button>
+        </Button>
       </div>
 
       {open && (

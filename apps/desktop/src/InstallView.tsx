@@ -12,7 +12,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { t } from '@meetcc/shared/i18n'
-import { useToast } from './toast'
+import { Button, useToast } from '@meetcc/ui'
+import chromeBadge from '../../../assets/badges/chrome-web-store.svg'
+import firefoxBadge from '../../../assets/badges/firefox-addon.svg'
 
 interface Browser {
   name: string
@@ -27,7 +29,15 @@ interface RawBrowser {
   registered: boolean
 }
 
-const EXTENSION_URL = 'https://github.com/suiflex/companion/releases/latest'
+// The same listings the extension's own Version panel links to.
+const CHROME_STORE_URL =
+  'https://chromewebstore.google.com/detail/meet-companion/neeapigpheabagekbdfjdekgdicfckpn'
+const FIREFOX_ADDON_URL = 'https://addons.mozilla.org/en-US/firefox/addon/meet-companion/'
+const EXTENSION_ZIP_URL =
+  'https://github.com/suiflex/companion/releases/latest/download/meetcc-extension.zip'
+
+/** Links leave through Rust: an anchor would navigate the WebView itself. */
+const openExternal = (url: string): void => void invoke('open_external', { url })
 
 export function InstallView() {
   const toast = useToast()
@@ -58,8 +68,8 @@ export function InstallView() {
   }
 
   return (
-    <div className="settings">
-      <h1>{t('desktop.install.title')}</h1>
+    <section className="install-settings-section">
+      <h2>{t('desktop.install.title')}</h2>
       <p className="hint">{t('desktop.install.intro')}</p>
 
       {browsers === null && <p className="hint">{t('desktop.install.looking')}</p>}
@@ -73,14 +83,14 @@ export function InstallView() {
               {b.registered ? t('desktop.install.isRegistered') : t('desktop.install.notRegistered')}
             </p>
           </div>
-          <button
+          <Button
             type="button"
-            className={b.registered ? 'btn' : 'btn primary'}
+            variant={b.registered ? 'default' : 'primary'}
             disabled={busy !== ''}
             onClick={() => void toggle(b)}
           >
             {b.registered ? t('desktop.install.remove') : t('desktop.install.register')}
-          </button>
+          </Button>
         </section>
       ))}
 
@@ -91,24 +101,18 @@ export function InstallView() {
               silently: with no extension there is nothing to connect. */}
           <p className="hint">{t('desktop.install.extensionHint')}</p>
         </div>
-        <button
-          type="button"
-          className="btn"
-          onClick={() => void invoke('open_external', { url: EXTENSION_URL })}
-        >
-          {t('desktop.install.getExtension')}
+      </section>
+      <div className="store-badges">
+        <button type="button" className="store-badge" onClick={() => openExternal(CHROME_STORE_URL)}>
+          <img src={chromeBadge} alt="Chrome Web Store" />
         </button>
-      </section>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.install.firefox')}</h2>
-          {/* Not automated, and not a gap to be filled later by this screen: a
-              signed add-on cannot be side-loaded, so there is nothing to
-              register until the listing exists. */}
-          <p className="hint">{t('desktop.install.firefoxHint')}</p>
-        </div>
-      </section>
-    </div>
+        <button type="button" className="store-badge" onClick={() => openExternal(FIREFOX_ADDON_URL)}>
+          <img src={firefoxBadge} alt="Firefox Browser Add-on" />
+        </button>
+        <Button type="button" onClick={() => openExternal(EXTENSION_ZIP_URL)}>
+          {t('desktop.install.downloadZip')}
+        </Button>
+      </div>
+    </section>
   )
 }

@@ -5,49 +5,41 @@
 
 :root {
   color-scheme: dark;
-
-  --ink: #0a0d12;
-  --panel: #0f131b;
-  --panel-2: #131926;
-  --hairline: #1d2434;
-  --hairline-2: #273043;
-
-  --text: #dbe2ee;
-  --text-dim: #8b95a9;
-  --text-faint: #5c6579;
-
-  --phosphor: #46e394;
-  --phosphor-dim: rgba(70, 227, 148, 0.14);
-  --amber: #eec26a;
-  --danger: #ff6b74;
-  --danger-dim: rgba(255, 107, 116, 0.12);
-
-  --font-body: "Avenir Next", Avenir, Futura, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
-
-  --r: 10px;
+  --ink: var(--ui-ink);
+  --panel: var(--ui-panel);
+  --panel-2: var(--ui-panel-2);
+  --hairline: var(--ui-hairline);
+  --hairline-2: var(--ui-hairline-2);
+  --text: var(--ui-text);
+  --text-dim: var(--ui-text-dim);
+  --text-faint: var(--ui-text-faint);
+  --phosphor: var(--ui-accent);
+  --phosphor-dim: var(--ui-accent-dim);
+  --amber: var(--ui-warning);
+  --danger: var(--ui-danger);
+  --danger-dim: var(--ui-danger-dim);
+  --font-body: var(--ui-font-body);
+  --font-mono: var(--ui-font-mono);
+  --r: var(--ui-radius);
 }
 
 /* light theme: same phosphor-console structure on paper — accents darkened
    for contrast on white, hairlines cooled, signal green kept as the brand */
 body[data-theme='light'] {
   color-scheme: light;
-
-  --ink: #eef1f6;
-  --panel: #ffffff;
-  --panel-2: #f1f4f9;
-  --hairline: #e3e8f1;
-  --hairline-2: #d2dae7;
-
-  --text: #1c2433;
-  --text-dim: #55617a;
-  --text-faint: #8a93a8;
-
-  --phosphor: #0c8f60;
-  --phosphor-dim: rgba(12, 143, 96, 0.12);
-  --amber: #a86f0c;
-  --danger: #d43f49;
-  --danger-dim: rgba(212, 63, 73, 0.1);
+  --ink: var(--ui-ink);
+  --panel: var(--ui-panel);
+  --panel-2: var(--ui-panel-2);
+  --hairline: var(--ui-hairline);
+  --hairline-2: var(--ui-hairline-2);
+  --text: var(--ui-text);
+  --text-dim: var(--ui-text-dim);
+  --text-faint: var(--ui-text-faint);
+  --phosphor: var(--ui-accent);
+  --phosphor-dim: var(--ui-accent-dim);
+  --amber: var(--ui-warning);
+  --danger: var(--ui-danger);
+  --danger-dim: var(--ui-danger-dim);
 }
 
 * { box-sizing: border-box; }
@@ -71,40 +63,8 @@ body.windowed { width: 100vw; height: 100vh; }
     var(--ink);
 }
 
-button {
-  font: 600 12px/1 var(--font-body);
-  padding: 6px 11px;
-  border: 1px solid var(--hairline-2);
-  border-radius: 8px;
-  background: var(--panel);
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: color 120ms, border-color 120ms, background 120ms;
-}
-
-button:hover:not(:disabled) {
-  color: var(--text);
-  border-color: var(--phosphor);
-  background: var(--phosphor-dim);
-}
-
-button:disabled { opacity: 0.5; cursor: default; }
-
-button.danger:hover:not(:disabled) {
-  color: var(--danger);
-  border-color: var(--danger);
-  background: var(--danger-dim);
-}
-
-button.primary {
-  background: var(--phosphor-dim);
-  border-color: var(--phosphor);
-  color: var(--phosphor);
-}
-
-button.primary:hover:not(:disabled) { color: var(--ink); background: var(--phosphor); }
-
-button:focus-visible, select:focus-visible, input:focus-visible, .meeting:focus-visible {
+select:focus-visible,
+input:focus-visible {
   outline: 2px solid var(--phosphor);
   outline-offset: 1px;
 }
@@ -606,13 +566,6 @@ button:focus-visible, select:focus-visible, input:focus-visible, .meeting:focus-
 
 .tabs { display: flex; gap: 4px; }
 
-.tab { border-radius: 99px; padding: 6px 14px; }
-
-.tab.active {
-  color: var(--phosphor);
-  border-color: var(--phosphor);
-  background: var(--phosphor-dim);
-}
 
 .subbar {
   display: flex;
@@ -881,12 +834,6 @@ button:focus-visible, select:focus-visible, input:focus-visible, .meeting:focus-
   border-radius: 6px;
 }
 
-button.ghost {
-  border-color: transparent;
-  background: transparent;
-  padding: 4px 8px;
-  font-size: 11px;
-}
 
 /* diagrams render in Mermaid's light 'neutral' theme — give them a paper
    plate so dark-on-dark never happens, a deliberate light island in the
@@ -1136,21 +1083,6 @@ body[data-theme='light'] .bubble-assistant {
 
 .docgen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
-.seg { display: inline-flex; border: 1px solid var(--hairline-2); border-radius: 8px; overflow: hidden; }
-
-.seg-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border: 0;
-  border-radius: 0;
-  border-right: 1px solid var(--hairline-2);
-  padding: 6px 12px;
-  background: transparent;
-}
-.seg-btn:last-child { border-right: 0; }
-.seg-btn:hover:not(:disabled) { background: var(--panel-2); border-color: var(--hairline-2); }
-.seg-btn.active { color: var(--phosphor); background: var(--phosphor-dim); }
 
 .seg-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--phosphor); }
 
@@ -1281,7 +1213,7 @@ body[data-theme='light'] .bubble-assistant {
   color: var(--text-faint);
 }
 
-.field input, .field select {
+.field :is(input, .ui-input), .field select {
   background: var(--panel-2);
   color: var(--text);
   border: 1px solid var(--hairline-2);
@@ -1292,7 +1224,7 @@ body[data-theme='light'] .bubble-assistant {
 
 /* input + its action button on one line; the input takes what is left */
 .field-row { display: flex; gap: 6px; align-items: stretch; }
-.field-row input { flex: 1; min-width: 0; }
+.field-row :is(input, .ui-input) { flex: 1; min-width: 0; }
 
 /* A datalist field looks like plain text until you happen to click it. Chrome
    draws a picker arrow for it, but the glyph is near-black and disappears into
@@ -1317,7 +1249,7 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
 .bridge-status .warn { font-size: 11px; color: var(--amber); }
 .bridge-status .hint { margin-top: 4px; }
 
-/* ── states / toasts ── */
+/* ── states ── */
 
 .empty-state {
   flex: 1;
@@ -1354,29 +1286,6 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
 .error-box strong { color: var(--danger); display: block; margin-bottom: 4px; }
 .error-box p { margin: 0; font-size: 12px; overflow-wrap: break-word; }
 
-.toasts {
-  position: fixed;
-  bottom: 14px;
-  right: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 99;
-}
-
-.toast {
-  padding: 9px 14px;
-  border-radius: 9px;
-  font-size: 12.5px;
-  border: 1px solid var(--hairline-2);
-  background: var(--panel-2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  animation: rise 180ms ease-out;
-  max-width: 320px;
-}
-
-.toast-success { border-color: var(--phosphor); color: var(--phosphor); }
-.toast-error { border-color: var(--danger); color: var(--danger); }
 
 /* ── scrollbar / a11y ── */
 
@@ -1385,7 +1294,7 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
 ::-webkit-scrollbar-thumb:hover { background: #33405c; }
 
 @media (prefers-reduced-motion: reduce) {
-  .entry, .status.on, .live-dot, .caret, .skeleton, .step.active .step-dot, .toast,
+  .entry, .status.on, .live-dot, .caret, .skeleton, .step.active .step-dot,
   .diagram-card, .diagram-spinner, .bubble, .typing span, .seg-busy, .rail-live {
     animation: none;
   }
@@ -2437,9 +2346,9 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
   color: var(--text);
 }
 
-.ctx-btn.danger:hover {
-  border-color: var(--warn);
-  color: var(--warn);
+.ctx-btn.ui-button--danger:hover {
+  border-color: var(--ui-danger);
+  color: var(--ui-danger);
 }
 
 /* ── meeting context: quick insert mini-contexts & tags ── */
@@ -2490,6 +2399,79 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
   background: var(--hairline);
   border-color: var(--phosphor);
   color: var(--phosphor);
+}
+
+.quick-insert-tag-btn.active {
+  background: rgba(64, 219, 150, 0.15);
+  border-color: var(--phosphor);
+  color: var(--phosphor);
+  font-weight: 600;
+}
+
+.quick-insert-tag-btn.active .tag-count {
+  color: var(--phosphor);
+}
+
+.summary-active-tags-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.summary-active-tags-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--phosphor);
+}
+
+.summary-active-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.summary-active-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--phosphor);
+  background: var(--panel);
+  border: 1px solid var(--hairline-2);
+  border-radius: 99px;
+}
+
+.summary-active-tag-remove {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.summary-active-tag-remove:hover {
+  color: var(--err, #ff5c5c);
+}
+
+.summary-ctx-item-btn.active {
+  background: var(--hairline);
+  border-color: var(--phosphor);
 }
 
 .quick-insert-tag-btn .tag-count {

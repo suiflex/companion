@@ -11,7 +11,7 @@ import {
   type ChatMessage,
   type Meeting,
 } from '@meetcc/shared';
-import { useToast } from '../toast';
+import { Button, TextArea, useToast } from '@meetcc/ui';
 
 /** Keys, not text: the chips are both the label and the question sent, so both
     have to be in the reader's language. */
@@ -82,9 +82,7 @@ function ResultMeta({ result, onAsk }: { result: AskResult; onAsk: (q: string) =
       {result.followUps.length > 0 && (
         <div className="ask-followups">
           {result.followUps.map((q, i) => (
-            <button key={i} className="ask-chip" onClick={() => onAsk(q)}>
-              {q}
-            </button>
+            <Button key={i} className="ask-chip" onClick={() => onAsk(q)}>{q}</Button>
           ))}
         </div>
       )}
@@ -150,9 +148,9 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
       <div className="subbar">
         <span className="ask-hint dim">{t('ext.ask.hint')}</span>
         <span className="spacer" />
-        <button className="danger" onClick={clear} disabled={empty || busy}>
+        <Button variant="danger" onClick={clear} disabled={empty || busy}>
           Clear
-        </button>
+        </Button>
       </div>
 
       <div className="ask-scroll" ref={scroller}>
@@ -165,14 +163,10 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
             </p>
             <div className="ask-suggest">
               {SUGGESTIONS.map((key) => (
-                <button
-                  key={key}
-                  className="ask-chip"
-                  onClick={() => void send(t(key))}
-                  disabled={busy}
-                >
-                  {t(key)}
-                </button>
+                <Button key={key}
+                className="ask-chip"
+                onClick={() => void send(t(key))}
+                disabled={busy}>{t(key)}</Button>
               ))}
             </div>
           </div>
@@ -205,7 +199,7 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
           void send(input);
         }}
       >
-        <textarea
+        <TextArea
           className="ask-input"
           value={input}
           rows={1}
@@ -219,9 +213,9 @@ export function AskView({ meeting, live }: { meeting: Meeting; live: boolean }) 
           }}
           aria-label={t('ext.ask.question')}
         />
-        <button className="primary" type="submit" disabled={busy || !input.trim()}>
+        <Button variant="primary" type="submit" disabled={busy || !input.trim()}>
           {busy ? '…' : t('ext.ask.send')}
-        </button>
+        </Button>
       </form>
     </div>
   );

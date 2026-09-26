@@ -15,7 +15,7 @@ import type { ProviderId, Settings } from '@meetcc/shared/types'
 import { t } from '@meetcc/shared/i18n'
 import { Select } from './Select'
 import { loadAiSettings, saveAiSettings } from './aiSettings'
-import { useToast } from './toast'
+import { Button, TextInput, useToast } from '@meetcc/ui'
 
 const PROVIDERS = Object.entries(PROVIDER_PRESETS) as [ProviderId, (typeof PROVIDER_PRESETS)[ProviderId]][]
 
@@ -109,13 +109,12 @@ export function AIProviderPanel() {
                 one piece of work with its own testing. */}
             <p className="hint">{t('desktop.ai.signInUnavailable')}</p>
           </div>
-          <button
+          <Button
             type="button"
-            className="btn"
             onClick={() => void invoke('open_external', { url: 'https://github.com/suiflex/companion' })}
           >
             {t('desktop.ai.readMore')}
-          </button>
+          </Button>
         </section>
       )}
 
@@ -125,7 +124,7 @@ export function AIProviderPanel() {
             <h2>{preset.needsKey ? t('desktop.ai.apiKey') : t('desktop.ai.apiKeyOptional')}</h2>
             <p className="hint">{t('desktop.ai.keychainHint')}</p>
           </div>
-          <input
+          <TextInput
             className="text-input"
             type="password"
             autoComplete="off"
@@ -142,7 +141,7 @@ export function AIProviderPanel() {
             <h2>{t('desktop.ai.baseUrl')}</h2>
             <p className="hint">{preset.baseUrl || 'https://your-endpoint/v1'}</p>
           </div>
-          <input
+          <TextInput
             className="text-input"
             type="url"
             value={settings.baseUrl}
@@ -178,7 +177,7 @@ export function AIProviderPanel() {
             )}
           </div>
           <div className="setting-actions">
-            <input
+            <TextInput
               className="text-input"
               list="desktop-model-options"
               value={settings.model}
@@ -190,9 +189,9 @@ export function AIProviderPanel() {
                 <option key={m} value={m} />
               ))}
             </datalist>
-            <button type="button" className="btn" disabled={busy !== ''} onClick={() => void loadModelList()}>
+            <Button type="button" disabled={busy !== ''} onClick={() => void loadModelList()}>
               {busy === 'models' ? t('desktop.ai.loadingModels') : t('desktop.ai.loadModels')}
-            </button>
+            </Button>
           </div>
         </section>
       )}
@@ -203,12 +202,12 @@ export function AIProviderPanel() {
           <p className="hint">{t('desktop.ai.checkHint')}</p>
         </div>
         <div className="setting-actions">
-          <button type="button" className="btn" disabled={busy !== ''} onClick={() => void test()}>
+          <Button type="button" disabled={busy !== ''} onClick={() => void test()}>
             {busy === 'test' ? t('desktop.ai.testing') : t('desktop.ai.test')}
-          </button>
-          <button type="button" className="btn primary" disabled={busy !== ''} onClick={() => void save()}>
+          </Button>
+          <Button type="button" variant="primary" disabled={busy !== ''} onClick={() => void save()}>
             {t('desktop.ai.save')}
-          </button>
+          </Button>
         </div>
       </section>
     </>

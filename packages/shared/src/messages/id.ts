@@ -8,9 +8,9 @@ export const id: Record<keyof typeof en, string> = {
   // -- desktop: shell -------------------------------------------------------
   'desktop.nav.notes': 'Catatan',
   'desktop.nav.inbox': 'Rapat masuk',
-  'desktop.nav.settings': 'Vault & jembatan',
-  'desktop.nav.install': 'Sambungkan browser',
+  'desktop.nav.settings': 'Pengaturan',
   'desktop.nav.theme': 'Tema: {mode}',
+  'desktop.sidebar.tabs': 'Tampilan panel',
   'desktop.badge.local': 'Tersimpan lokal, tanpa sinkron',
 
   // -- desktop: note list ---------------------------------------------------
@@ -21,19 +21,23 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.vault.search': 'Cari nota…',
   'desktop.vault.searchTitlesOnly': 'Cari judul (indeks mati)…',
   'desktop.vault.empty': 'Belum ada nota.',
+  'desktop.vault.noMatches': 'Tidak ada nota yang cocok dengan pencarian ini.',
   'desktop.vault.bodyHit': 'cocok di dalam isi nota',
 
   // -- desktop: inbox -------------------------------------------------------
   'desktop.inbox.kicker': 'Rapat masuk',
   'desktop.inbox.count': '{count} rapat',
+  'desktop.inbox.search': 'Cari rapat masuk…',
   'desktop.inbox.participants': '{count} peserta',
   'desktop.inbox.transcriptOnly': 'transkrip saja',
   'desktop.inbox.empty':
     'Belum ada rapat yang masuk. Nyalakan “Kirim rapat selesai ke Companion Desktop” di setelan extension, lalu tekan “Tes koneksi” di sana.',
+  'desktop.inbox.noMatches': 'Tidak ada rapat masuk yang cocok dengan pencarian ini.',
 
   // -- desktop: editor ------------------------------------------------------
   'desktop.editor.titlePlaceholder': 'Judul nota',
   'desktop.editor.unsaved': 'belum disimpan',
+  'desktop.editor.saving': 'menyimpan…',
   'desktop.editor.updated': 'diperbarui {date}',
   'desktop.editor.trash': 'Pindah ke sampah',
   'desktop.editor.save': 'Simpan',
@@ -71,13 +75,22 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.date.today': 'Hari ini',
 
   // -- desktop: settings ----------------------------------------------------
-  'desktop.settings.title': 'Vault & jembatan',
+  'desktop.settings.title': 'Pengaturan',
   'desktop.settings.theme': 'Tema',
   'desktop.settings.themeHint':
     '“Ikut sistem” mengikuti tampilan macOS atau Windows dan berubah sendiri saat sistem berganti terang atau gelap.',
   'desktop.settings.language': 'Bahasa',
   'desktop.settings.languageHint':
     '“Ikut sistem” memakai bahasa sistem operasi. Ini hanya mengubah antarmuka — notulen rapat tetap memakai bahasa yang dipakai saat rapat.',
+  'desktop.settings.autosave': 'Simpan otomatis',
+  'desktop.settings.autosaveHint':
+    'Simpan perubahan sesaat setelah berhenti mengetik. Mati: simpan lewat tombol Simpan, dan meninggalkan nota yang belum disimpan akan ditanya dulu.',
+  'desktop.settings.section.general': 'Umum',
+  'desktop.settings.section.editor': 'Editor',
+  'desktop.settings.section.vault': 'Vault',
+  'desktop.settings.section.browsers': 'Browser',
+  'desktop.settings.section.ai': 'Penyedia AI',
+  'desktop.settings.section.version': 'Versi',
   'desktop.settings.vaultLocation': 'Lokasi vault',
   'desktop.settings.vaultHint':
     '{count} nota. Semua berkas .md biasa — bisa dibuka editor apa pun, dan aman disalin atau di-backup seperti folder lain.',
@@ -94,6 +107,8 @@ export const id: Record<keyof typeof en, string> = {
   'pref.system': 'Ikut sistem',
   'pref.light': 'Terang',
   'pref.dark': 'Gelap',
+  'pref.on': 'Aktif',
+  'pref.off': 'Mati',
   'lang.en': 'Inggris',
   'lang.id': 'Indonesia',
   'meetingLang.keep': 'Jangan diubah (deteksi otomatis)',
@@ -353,7 +368,9 @@ export const id: Record<keyof typeof en, string> = {
   'ext.header.insertByTag': 'Sisipkan Berdasarkan Tag',
   'ext.header.insertAllWithTag': 'Sisipkan semua #{tag} ({count})',
   'ext.header.insertSingle': 'Sisipkan Satuan',
-  'ext.header.contextInserted': 'Konteks berhasil disisipkan ke rapat.',
+  'ext.header.tagAttached': 'Tag #{tag} dipasang ke rapat.',
+  'ext.header.tagDetached': 'Tag #{tag} dicopot dari rapat.',
+  'ext.header.activeTags': 'Tag Aktif',
   'ext.header.noContextsAvailable': 'Belum ada konteks. Tambahkan di menu Knowledge Base terlebih dahulu.',
   'ext.header.close': 'Tutup',
   'ext.kb.pushToTracker': 'Kirim ke issue tracker',
@@ -752,12 +769,17 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.install.removed': 'Diputus dari {browser}.',
   'desktop.install.extension': 'Extension-nya',
   'desktop.install.extensionHint':
-    'Menyambungkan baru separuhnya: kalau extension-nya belum terpasang, tidak ada yang dikirim. Muat extension dari rilis sebagai unpacked, lalu nyalakan \u201cKirim rapat yang selesai\u201d di setelannya.',
-  'desktop.install.getExtension': 'Ambil extension',
-  'desktop.install.firefox': 'Firefox',
-  'desktop.install.firefoxHint':
-    'Firefox belum bisa disambungkan dari sini. Add-on yang sudah ditandatangani tidak bisa dipasang manual, jadi belum ada yang bisa didaftarkan sampai listing di addons.mozilla.org terbit \u2014 itu sedang menyusul.',
+    'Menyambungkan baru separuhnya: tanpa ekstensi terpasang, tidak ada yang bisa dikirim. Pasang dari toko browser kamu, lalu nyalakan \u201cKirim rapat selesai ke Companion Desktop\u201d di pengaturannya.',
+  'desktop.install.downloadZip': 'Unduh ekstensi (ZIP)',
 
   // -- desktop: updater -----------------------------------------------------
+  'desktop.version.current': 'Companion Desktop',
+  'desktop.version.hint': 'Pembaruan juga dicek setiap kali aplikasi dibuka.',
+  'desktop.version.check': 'Cek pembaruan',
+  'desktop.version.checking': 'Mengecek pembaruan…',
+  'desktop.version.upToDate': 'Kamu sudah memakai versi terbaru.',
+  'desktop.version.releases': 'Catatan rilis',
+  'desktop.version.releasesHint': 'Semua versi, lengkap dengan perubahannya dan unduhan untuk tiap platform.',
+  'desktop.version.openReleases': 'GitHub Releases',
   'desktop.update.available': 'Versi {version} tersedia.',
 };

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Features
+
+* **ui:** centralize extension-led controls and palette across both apps
+
 ## [1.15.0](https://github.com/suiflex/companion/compare/v1.14.0...v1.15.0) (2026-09-23)
 
 

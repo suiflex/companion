@@ -18,12 +18,12 @@ import {
   type ProviderId,
   type Settings,
 } from '@meetcc/shared';
-import { useToast } from '../toast';
 import { DataPanel, IntegrationsPanel, TemplatesPanel, VersionPanel } from './SettingsPanels';
 import { SignInPanel } from './SignInPanel';
 import { t, LANGS, type LangPref } from '@meetcc/shared/i18n';
 import { applyLang, loadLangPref, saveLangPref } from '../lib/lang';
 import { loadMeetingLangPref, saveMeetingLangPref, type MeetingLangPref } from '../lib/meetingLang';
+import { Button, SegmentedControl, TextInput, useToast } from '@meetcc/ui';
 
 type Panel = 'provider' | 'integrations' | 'templates' | 'data' | 'version';
 
@@ -216,22 +216,21 @@ export function SettingsView({
         <div className="toolbar-title">
           <h1>{t('ext.settings.title')}</h1>
         </div>
-        <nav className="tabs" role="tablist" aria-label={t('ext.settings.sections')}>
-          {(Object.keys(PANEL_LABEL) as Panel[]).map((p) => (
-            <button
-              key={p}
-              role="tab"
-              aria-selected={panel === p}
-              className={`tab ${panel === p ? 'active' : ''}`}
-              onClick={() => setPanel(p)}
-            >
-              {t(PANEL_LABEL[p])}
-            </button>
-          ))}
+        <nav className="tabs">
+          <SegmentedControl
+            ariaLabel={t('ext.settings.sections')}
+            role="tablist"
+            options={(Object.keys(PANEL_LABEL) as Panel[]).map((p) => ({
+              value: p,
+              label: t(PANEL_LABEL[p]),
+            }))}
+            value={panel}
+            onChange={(value) => setPanel(value as Panel)}
+          />
         </nav>
-        <button onClick={onClose} aria-label={t('ext.settings.close')}>
+        <Button onClick={onClose} aria-label={t('ext.settings.close')}>
           ✕
-        </button>
+        </Button>
       </header>
 
       <div className="settings-body">
@@ -315,7 +314,7 @@ export function SettingsView({
         {settings.provider !== 'builtin' && !preset.needsSignIn && (
           <label className="field">
             <span>{preset.needsKey ? t('ext.provider.apiKey') : t('ext.provider.apiKeyOptional')}</span>
-            <input
+            <TextInput
               type="password"
               value={settings.apiKey}
               autoComplete="off"
@@ -342,7 +341,7 @@ export function SettingsView({
         {(preset.needsBaseUrl || settings.baseUrl) && (
           <label className="field">
             <span>{t('ext.provider.baseUrl')}</span>
-            <input
+            <TextInput
               type="url"
               value={settings.baseUrl}
               placeholder={preset.baseUrl || 'https://your-endpoint/v1'}
@@ -358,16 +357,16 @@ export function SettingsView({
           <label className="field">
             <span>{t('ext.provider.model')}</span>
             <div className="field-row">
-              <input
+              <TextInput
                 type="text"
                 list="model-options"
                 value={settings.model}
                 placeholder={preset.model || t('ext.provider.modelPlaceholder')}
                 onChange={(e) => set({ model: e.target.value })}
               />
-              <button onClick={refreshModels} disabled={loadingModels}>
+              <Button onClick={refreshModels} disabled={loadingModels}>
                 {loadingModels ? t('ext.provider.loadingModels') : t('ext.provider.loadModels')}
-              </button>
+              </Button>
             </div>
             <datalist id="model-options">
               {models.map((m) => (
@@ -383,15 +382,11 @@ export function SettingsView({
             {showsAsChips(models) && (
               <div className="model-chips">
                 {models.map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    className={m === settings.model ? 'model-chip active' : 'model-chip'}
-                    aria-pressed={m === settings.model}
-                    onClick={() => set({ model: m })}
-                  >
-                    {m}
-                  </button>
+                  <Button key={m}
+                  type="button"
+                  className={m === settings.model ? 'model-chip active' : 'model-chip'}
+                  aria-pressed={m === settings.model}
+                  onClick={() => set({ model: m })}>{m}</Button>
                 ))}
               </div>
             )}
@@ -424,14 +419,14 @@ export function SettingsView({
         {panel !== 'templates' && panel !== 'data' && panel !== 'version' && (
           <div className="subbar">
             {panel === 'provider' && (
-              <button onClick={test} disabled={testing}>
+              <Button onClick={test} disabled={testing}>
                 {testing ? t('ext.settings.testing') : t('ext.settings.testConnection')}
-              </button>
+              </Button>
             )}
             <span className="spacer" />
-            <button className="primary" onClick={save}>
+            <Button variant="primary" onClick={save}>
               {t('ext.settings.save')}
-            </button>
+            </Button>
           </div>
         )}
       </div>

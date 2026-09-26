@@ -4,144 +4,35 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { openDatabase, type SqlDriver } from '@meetcc/store'
 import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
-import { t, formatDate, onLangChange, type LangPref, LANGS } from '@meetcc/shared/i18n'
-import { applyLang, loadLangPref, saveLangPref } from './lang'
+import { t, formatDate, type LangPref } from '@meetcc/shared/i18n'
+import { loadLangPref } from './lang'
 import { DateField } from './DateField'
 import { MeetingMeta } from './MeetingMeta'
 import { Select, type Option, type Tone } from './Select'
-import { useToast } from './toast'
 import { activeSponsorLinks } from './sponsor'
 import { NoteTree } from './NoteTree'
-import { saveTarget } from './saveTarget'
-import { AIProviderPanel } from './AIProviderPanel'
+import { saveTarget, settleSaved } from './saveTarget'
+import { loadAutosave } from './editorPrefs'
 import { drainSpool } from './spool'
-import { InstallView } from './InstallView'
 import { buildTree, folderPaths, withEmptyFolders } from './tree'
-import {
-  applyTheme,
-  loadThemePref,
-  saveThemePref,
-  watchSystemTheme,
-  type ThemePref,
-} from './theme'
+import { hideCopiedOriginals, inboxSearchResults } from './sidebarResults'
+import { loadThemePref, type ThemePref } from './theme'
 import { NoteEditor } from './NoteEditor'
 import UpdateBanner from './UpdateBanner'
+import { Button, SegmentedControl, TextInput, useToast } from '@meetcc/ui'
+import { emitTo, listen, type UnlistenFn } from '@tauri-apps/api/event'
+import { getCurrentWindow } from '@tauri-apps/api/window'
+import { openSettingsWindow } from './openSettingsWindow'
+import { useDesktopPreferences } from './useDesktopPreferences'
+import { themeLabel } from './preferenceLabels'
+import {
+  SETTINGS_ACTION_EVENT,
+  SETTINGS_PREFERENCES_EVENT,
+  SETTINGS_VAULT_CHANGED_EVENT,
+  type SettingsAction,
+  type SettingsPreferences,
+} from './settingsEvents'
 
-/** Vault & bridge settings. Small on purpose: the only thing here that changes
- *  state is where the vault lives, and that is a decision worth making explicit
- *  rather than burying in a preferences tree. */
-// Looked up per render, not frozen at module load: the language can change
-// while the app is open.
-const themeLabel = (p: ThemePref): string =>
-  p === 'system' ? t('pref.system') : p === 'light' ? t('pref.light') : t('pref.dark')
-
-const langLabel = (p: LangPref): string =>
-  p === 'system' ? t('pref.system') : p === 'en' ? t('lang.en') : t('lang.id')
-
-function Settings({
-  root,
-  noteCount,
-  onMove,
-  onReset,
-  isDefaultRoot,
-  themePref,
-  onThemeChange,
-  langPref,
-  onLangChange,
-}: {
-  root: string
-  noteCount: number
-  onMove: () => void
-  onReset: () => void
-  /** Hides the reset action when there is nothing to reset. */
-  isDefaultRoot: boolean
-  themePref: ThemePref
-  onThemeChange: (pref: ThemePref) => void
-  langPref: LangPref
-  onLangChange: (pref: LangPref) => void
-}) {
-  return (
-    <div className="settings">
-      <h1>{t('desktop.settings.title')}</h1>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.settings.language')}</h2>
-          <p className="hint">{t('desktop.settings.languageHint')}</p>
-        </div>
-        <div className="segmented" role="group" aria-label={t('desktop.settings.language')}>
-          {(['system', ...LANGS] as LangPref[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              className={langPref === p ? 'seg active' : 'seg'}
-              aria-pressed={langPref === p}
-              onClick={() => onLangChange(p)}
-            >
-              {langLabel(p)}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.settings.theme')}</h2>
-          <p className="hint">{t('desktop.settings.themeHint')}</p>
-        </div>
-        <div className="segmented" role="group" aria-label={t('desktop.settings.theme')}>
-          {(['system', 'light', 'dark'] as ThemePref[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              className={themePref === p ? 'seg active' : 'seg'}
-              aria-pressed={themePref === p}
-              onClick={() => onThemeChange(p)}
-            >
-              {themeLabel(p)}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.settings.vaultLocation')}</h2>
-          <p className="setting-path">{root}</p>
-          <p className="hint">{t('desktop.settings.vaultHint', { count: noteCount })}</p>
-        </div>
-        <div className="setting-actions">
-          <button type="button" className="btn" onClick={onMove}>
-            {t('desktop.settings.moveVault')}
-          </button>
-          {!isDefaultRoot && (
-            <button type="button" className="btn" onClick={onReset}>
-              {t('desktop.settings.resetVault')}
-            </button>
-          )}
-        </div>
-      </section>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.settings.bridge')}</h2>
-          <p className="hint">{t('desktop.settings.bridgeHint')}</p>
-        </div>
-      </section>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.settings.index')}</h2>
-          <p className="hint">{t('desktop.settings.indexHint')}</p>
-        </div>
-      </section>
-
-      {/* Its own component: this screen is already long, and the provider
-          settings carry their own loading and saving. */}
-      <AIProviderPanel />
-    </div>
-  )
-}
 
 /** The Companion mark from assets/brand/logo-mark.svg, inlined. */
 function BrandMark() {
@@ -301,7 +192,7 @@ function TicketFields({
       {show('assignee') && (
       <label>
         <span>{t('desktop.field.assignee')}</span>
-        <input
+        <TextInput
           value={note.assignee ?? ''}
           placeholder={t('desktop.field.assigneePlaceholder')}
           onChange={(e) => onChange({ assignee: pick(e.target.value) })}
@@ -315,13 +206,9 @@ function TicketFields({
       </label>
       )}
       {anyEmpty && (
-        <button
-          type="button"
-          className="add-property"
-          onClick={() => setShowEmpty((v) => !v)}
-        >
-          {showEmpty ? t('desktop.field.hideEmpty') : t('desktop.field.addProperty')}
-        </button>
+        <Button type="button"
+        className="add-property"
+        onClick={() => setShowEmpty((v) => !v)}>{showEmpty ? t('desktop.field.hideEmpty') : t('desktop.field.addProperty')}</Button>
       )}
     </div>
   )
@@ -335,22 +222,30 @@ export default function App() {
   const [note, setNote] = useState<VaultNote | null>(null)
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'notes' | 'inbox' | 'settings' | 'install'>('notes')
+  const [view, setView] = useState<'notes' | 'inbox'>('notes')
   const [dirty, setDirty] = useState(false)
+  const [autosave, setAutosave] = useState(loadAutosave)
+  // Bumped only when a different note is opened, so the editor remounts then
+  // and never mid-typing — a save can change the note's id (a delivered
+  // meeting becomes its copy), which keying by id used to turn into a jump.
+  const [editorKey, setEditorKey] = useState(0)
+  // The note as last rendered, for a save to see what was typed during its
+  // write, and the write in flight, so two saves never race into two copies.
+  const noteRef = useRef<VaultNote | null>(null)
+  noteRef.current = note
+  const savingRef = useRef<Promise<boolean> | null>(null)
   // Search fell back to titles because the SQLite index would not open.
   const [indexDown, setIndexDown] = useState(false)
   // The duplicate-key warning already shown, so it is not repeated per poll.
   const reportedRef = useRef('')
+  const settingsActionRef = useRef<(action: SettingsAction) => void>(() => {})
+  const settingsWindowOpeningRef = useRef(false)
   // A brand-new note is a draft with no file yet. Pre-selecting its "New note"
   // default title shows a beginner it is editable and lets them type straight
   // over it, the way renaming a file in Finder selects the name. `freshIdRef`
   // stops the selection from repeating on every keystroke.
   const titleRef = useRef<HTMLInputElement>(null)
   const freshIdRef = useRef<string | null>(null)
-  // Bumped when the language changes, purely to force a re-render: `t()` reads
-  // a module-level language that React cannot see.
-  const [, setLangTick] = useState(0)
-  useEffect(() => onLangChange(() => setLangTick((n) => n + 1)), [])
   // Select the title of a brand-new note (no file yet) once, so typing replaces
   // the "New note" default. Never for notes that already live on disk.
   useEffect(() => {
@@ -362,8 +257,7 @@ export default function App() {
   const [themePref, setThemePref] = useState<ThemePref>(loadThemePref)
   const toast = useToast()
   const [langPref, setLangPref] = useState<LangPref>(loadLangPref)
-  // The default root is only known to Rust, so ask once rather than rebuilding
-  // `~/Companion` in the frontend and hoping the two agree.
+  useDesktopPreferences(themePref, langPref)
   // Folders that exist on disk, including ones holding no notes — an empty
   // directory has no note path to be derived from, so it would vanish the
   // moment it was made.
@@ -375,27 +269,7 @@ export default function App() {
   // Where an unsaved note will land. Null means "wherever the session key
   // says", which is what happened before folders existed.
   const [target, setTarget] = useState<string | null>(null)
-  const [defaultRoot, setDefaultRoot] = useState<string | null>(null)
-  useEffect(() => {
-    void invoke<string>('default_vault_root').then(setDefaultRoot).catch(() => undefined)
-  }, [])
-  const isDefaultRoot = !defaultRoot || vault?.io.root === defaultRoot
 
-  // Applied and persisted the same way the theme is. `applyLang` also stamps
-  // <html lang>, so the document declares the language it is actually showing.
-  useEffect(() => {
-    applyLang(langPref)
-    saveLangPref(langPref)
-  }, [langPref])
-
-  // Applied on change, and re-applied when the OS flips while on `system` —
-  // otherwise following the system would only take effect on the next launch.
-  useEffect(() => {
-    applyTheme(themePref)
-    saveThemePref(themePref)
-    if (themePref !== 'system') return
-    return watchSystemTheme(() => applyTheme('system'))
-  }, [themePref])
   // Leaving a note with unsaved edits used to drop them silently. Hold the
   // action the user asked for until they say what to do with the edits.
   const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
@@ -408,6 +282,30 @@ export default function App() {
     run: () => Promise<void>
   }>(null)
   const driverRef = useRef<SqlDriver | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    let unlisten: UnlistenFn[] = []
+    void Promise.all([
+      listen<SettingsAction>(SETTINGS_ACTION_EVENT, ({ payload }) => {
+        settingsActionRef.current(payload)
+      }),
+      listen<SettingsPreferences>(SETTINGS_PREFERENCES_EVENT, ({ payload }) => {
+        if (payload.themePref) setThemePref(payload.themePref)
+        if (payload.langPref) setLangPref(payload.langPref)
+        if (payload.autosave !== undefined) setAutosave(payload.autosave)
+      }),
+    ])
+      .then((stop) => {
+        if (alive) unlisten = stop
+        else stop.forEach((unsubscribe) => unsubscribe())
+      })
+      .catch((error) => setError(String(error)))
+    return () => {
+      alive = false
+      unlisten.forEach((unsubscribe) => unsubscribe())
+    }
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -532,8 +430,11 @@ export default function App() {
 
   /** Run `action`, unless there are unsaved edits to resolve first. */
   function guard(action: () => Promise<void>) {
-    if (dirty) setPending(() => action)
-    else void action()
+    if (!dirty) return void action()
+    // With autosave the edits are kept, not asked about; only a failed write
+    // falls back to the question.
+    if (!autosave) return setPending(() => action)
+    void save(true).then((ok) => (ok ? action() : setPending(() => action)))
   }
 
   async function resume(discard: boolean) {
@@ -550,6 +451,7 @@ export default function App() {
     setSelected(rel)
     setTarget(null)
     setNote(n)
+    setEditorKey((k) => k + 1)
     setDirty(false)
     setError(null)
   }
@@ -610,19 +512,33 @@ export default function App() {
     setTarget(selected ? selected.split('/').slice(0, -1).join('/') : null)
     setSelected(null)
     setNote(fresh)
+    setEditorKey((k) => k + 1)
     setDirty(false)
     setError(null)
   }
 
-  async function save() {
-    if (!vault || !note) return
+  /** Write the open note. `silent` is autosave: no toast unless a copy was made. */
+  function save(silent = false): Promise<boolean> {
+    // ponytail: joins the write in flight rather than queueing another; the
+    // settled note stays dirty if typing happened, which schedules the next.
+    if (savingRef.current) return savingRef.current
+    const run = writeOpenNote(silent).finally(() => {
+      savingRef.current = null
+    })
+    savingRef.current = run
+    return run
+  }
+
+  async function writeOpenNote(silent: boolean): Promise<boolean> {
+    if (!vault || !note) return false
+    const sent = note
     try {
       // Where this goes and what it writes lives in `saveTarget`, which is
       // pure and has tests: the rule was three nested ternaries here and was
       // wrong twice — once writing a second file for a note that already had
       // one, once making a fresh copy of a meeting on every single save.
       const { rel, note: toWrite, copied } = saveTarget({
-        note,
+        note: sent,
         selected,
         target,
         relPath: (n) => vault.relPath(n),
@@ -634,15 +550,34 @@ export default function App() {
       // its session key and misses.
       setSelected(rel)
       setTarget(null)
-      setNote({ ...toWrite })
-      setDirty(false)
+      const current = noteRef.current
+      // Another note was opened, or this one trashed, while the file was
+      // written: leave whatever is on screen now alone.
+      if (current && current.id === sent.id) {
+        const settled = settleSaved(current, sent, { ...toWrite })
+        setNote(settled.note)
+        setDirty(settled.dirty)
+      }
       await refresh(vault)
       setError(null)
-      toast('success', copied ? t('desktop.toast.copiedToNotes') : t('desktop.toast.saved'))
+      if (copied) toast('success', t('desktop.toast.copiedToNotes'))
+      else if (!silent) toast('success', t('desktop.toast.saved'))
+      return true
     } catch (e) {
       setError(String(e))
+      return false
     }
   }
+
+  // Autosave: a quiet moment after the last edit. An untouched draft is left
+  // unwritten — it only becomes a file once something was typed.
+  useEffect(() => {
+    if (!autosave || !dirty || !note || pending) return
+    if (!note.title.trim() && !note.body.trim()) return
+    const timer = setTimeout(() => void save(true), 800)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- save reads the same note
+  }, [autosave, dirty, note, pending])
 
   function trash() {
     if (!vault || !note || pending) return
@@ -703,6 +638,7 @@ export default function App() {
     setSelected(null)
     setDirty(false)
     await refresh(next)
+    void emitTo('settings', SETTINGS_VAULT_CHANGED_EVENT).catch(() => undefined)
     setError(null)
     toast('success', t('desktop.toast.vaultMoved', { path }))
   }
@@ -747,7 +683,16 @@ export default function App() {
       setError(String(e))
     }
   }
-
+  settingsActionRef.current = (action) => {
+    const run = action === 'move-vault' ? moveVault : resetVault
+    void getCurrentWindow()
+      .setFocus()
+      .then(() => guard(run))
+      .catch((error) => {
+        setError(String(error))
+        toast('error', String(error))
+      })
+  }
 
   const filtered = useMemo(() => {
     if (!query.trim()) return notes
@@ -793,13 +738,21 @@ export default function App() {
   // Grouped view of the same notes the search filters over — when a query is
   // running the flat result list is what makes sense, so the tree is only the
   // resting state.
+  const notesTab = useMemo(() => hideCopiedOriginals(notes, notes), [notes])
+  const notesTabResults = useMemo(() => hideCopiedOriginals(filtered, notes), [filtered, notes])
   const tree = useMemo(
     () =>
       withEmptyFolders(
-        buildTree(notes.map((n) => ({ rel: n.rel, title: n.title, platform: n.platform }))),
+        buildTree(notesTab.map((n) => ({
+          rel: n.rel,
+          title: n.title,
+          platform: n.platform,
+          source: n.platform && n.platform !== 'manual' ? platformLabel(n.platform) : undefined,
+          updatedAt: n.updatedAt,
+        }))),
         folders,
       ),
-    [notes, folders],
+    [notesTab, folders],
   )
 
   // Notes the extension delivered, as opposed to ones written here. The split
@@ -812,222 +765,235 @@ export default function App() {
         .sort((a, b) => (b.startedAt ?? b.updatedAt).localeCompare(a.startedAt ?? a.updatedAt)),
     [notes],
   )
+  const filteredIncoming = useMemo(
+    () => inboxSearchResults(query, incoming, filtered),
+    [query, incoming, filtered],
+  )
+
+  async function showSettingsWindow(): Promise<void> {
+    if (settingsWindowOpeningRef.current) return
+    settingsWindowOpeningRef.current = true
+    try {
+      await openSettingsWindow(t('desktop.settings.title'))
+    } catch (error) {
+      toast('error', String(error))
+    } finally {
+      settingsWindowOpeningRef.current = false
+    }
+  }
 
   return (
     <div className="shell">
       <UpdateBanner />
-      <aside className="rail" aria-label="Navigasi utama">
-        <BrandMark />
-        <button
-          type="button"
-          data-tip={t('desktop.nav.notes')} data-tip-side="right"
-          className={view === 'notes' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label={t('desktop.nav.notes')}
-          aria-current={view === 'notes' ? 'page' : undefined}
-          onClick={() => setView('notes')}
-        >
-          ▤
-        </button>
-        <button
-          type="button"
-          data-tip={t('desktop.nav.inbox')} data-tip-side="right"
-          className={view === 'inbox' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label={t('desktop.nav.inbox')}
-          aria-current={view === 'inbox' ? 'page' : undefined}
-          onClick={() => setView('inbox')}
-        >
-          ◈
-        </button>
-        <span className="rail-spacer" />
-        {activeSponsorLinks().map((link) => (
-          <button
-            key={link.id}
-            type="button"
-            className="rail-btn"
-            data-tip={`${t('sponsor.title')} · ${t(link.label)}`}
-            data-tip-side="right"
-            aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
-            onClick={() => void invoke('open_external', { url: link.url })}
-          >
-            {link.icon}
-          </button>
-        ))}
-        <button
-          type="button"
-          className="rail-btn"
-          data-tip={t('desktop.nav.theme', { mode: themeLabel(themePref) })} data-tip-side="right"
-          aria-label={t('desktop.nav.theme', { mode: themeLabel(themePref) })}
-          onClick={() =>
-            setThemePref((p) => (p === 'system' ? 'light' : p === 'light' ? 'dark' : 'system'))
-          }
-        >
-          {themePref === 'system' ? '◐' : themePref === 'light' ? '☀' : '☾'}
-        </button>
-        <button
-          type="button"
-          data-tip={t('desktop.nav.install')} data-tip-side="right"
-          className={view === 'install' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label={t('desktop.nav.install')}
-          aria-current={view === 'install' ? 'page' : undefined}
-          onClick={() => setView('install')}
-        >
-          ⇄
-        </button>
-        <button
-          type="button"
-          data-tip={t('desktop.nav.settings')} data-tip-side="right"
-          className={view === 'settings' ? 'rail-btn rail-active' : 'rail-btn'}
-          aria-label={t('desktop.nav.settings')}
-          aria-current={view === 'settings' ? 'page' : undefined}
-          onClick={() => setView('settings')}
-        >
-          ⚙
-        </button>
-      </aside>
-
-      {view === 'notes' && (
-        <aside className="sidebar">
-          <div className="sidebar-head">
-            <span className="kicker">{t('desktop.vault.kicker')}</span>
-            <span className="count">{t('desktop.vault.count', { count: notes.length })}</span>
-            {/* The vault opens asynchronously and openNew returns early without
-                it, so until then the button would look live and answer a click
-                with nothing. The tip lives on the wrapper because a disabled
-                button receives no hover — which is exactly when it most needs
-                to say why it is disabled. */}
-            <span className="tip-wrap" data-tip={t('desktop.vault.newFolder')}>
-              <button
-                type="button"
-                className="add-btn"
-                onClick={() => setNamingFolder('')}
-                aria-label={t('desktop.vault.newFolder')}
-                disabled={!vault}
-              >
-                ⊞
-              </button>
-            </span>
-            <span
-              className="tip-wrap"
-              data-tip={vault ? t('desktop.vault.newNote') : t('desktop.vault.preparing')}
-            >
-              <button
-                type="button"
-                className="add-btn"
-                onClick={() => guard(openNew)}
-                aria-label={t('desktop.vault.newNote')}
-                disabled={!vault}
-              >
-                ＋
-              </button>
-            </span>
+      <aside className="sidebar" aria-label={t('desktop.nav.notes')}>
+        <div className="sidebar-top">
+          <div className="sidebar-brand">
+            <BrandMark />
+            <span className="sidebar-brand-name">Companion</span>
           </div>
-          {namingFolder !== null && (
-            <input
-              className="search"
-              autoFocus
+          <div className="sidebar-search">
+            <span className="sidebar-search-icon" aria-hidden="true">⌕</span>
+            <TextInput
+              type="search"
+              className="sidebar-search-input"
               placeholder={
-                namingFolder
-                  ? t('desktop.vault.folderNameIn', { folder: namingFolder })
-                  : t('desktop.vault.folderName')
+                !vault
+                  ? t('desktop.vault.preparing')
+                  : view === 'inbox'
+                    ? t('desktop.inbox.search')
+                    : indexDown
+                      ? t('desktop.vault.searchTitlesOnly')
+                      : t('desktop.vault.search')
               }
-              aria-label={t('desktop.vault.folderName')}
-              onBlur={(e) => void createFolder(namingFolder, e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void createFolder(namingFolder, e.currentTarget.value)
-                if (e.key === 'Escape') setNamingFolder(null)
-              }}
+              aria-label={view === 'inbox' ? t('desktop.inbox.search') : t('desktop.vault.search')}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              disabled={!vault}
             />
-          )}
-          <input
-            className="search"
-            placeholder={
-              !vault
-                ? t('desktop.vault.preparing')
-                : indexDown
-                  ? t('desktop.vault.searchTitlesOnly')
-                  : t('desktop.vault.search')
-            }
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            disabled={!vault}
-          />
-          {!query.trim() ? (
-            <NoteTree
-              root={tree}
-              selected={selected}
-              onOpen={(rel) => guard(() => open(rel))}
-              onMove={(rel, folder) => void moveNoteFrom(rel, folder)}
-              onAddFolder={(folder) => setNamingFolder(folder)}
-            />
-          ) : (
-          <ul className="note-list">
-            {filtered.map((n) => (
-              <li key={n.rel || n.title}>
-                {n.rel ? (
-                  <button
-                    type="button"
-                    className={selected === n.rel ? 'note-item active' : 'note-item'}
-                    onClick={() => guard(() => open(n.rel))}
-                  >
-                    <span className="note-title">{n.title}</span>
-                    <span className="note-row-meta">
-                      {/* A delivered meeting stays in this list — it is still a
-                          note — but says where it came from, so the two views
-                          do not read as the same undifferentiated pile. */}
-                      {n.platform && n.platform !== 'manual' && (
-                        <span className="note-source">{platformLabel(n.platform)}</span>
-                      )}
-                      <span className="note-date">{dayOf(n.updatedAt)}</span>
-                    </span>
-                  </button>
-                ) : (
-                  <span className="note-title muted" data-tip={t('desktop.vault.bodyHit')}>
-                    {n.title}
-                  </span>
-                )}
-              </li>
-            ))}
-            {filtered.length === 0 && <li className="empty-hint">{t('desktop.vault.empty')}</li>}
-          </ul>
-          )}
-        </aside>
-      )}
-
-      {view === 'inbox' && (
-        <aside className="sidebar">
-          <div className="sidebar-head">
-            <span className="kicker">{t('desktop.inbox.kicker')}</span>
-            <span className="count">{t('desktop.inbox.count', { count: incoming.length })}</span>
           </div>
-          <ul className="note-list">
-            {incoming.map((n) => (
-              <li key={n.rel}>
-                <button
-                  type="button"
-                  className={selected === n.rel ? 'note-item active' : 'note-item'}
-                  onClick={() => guard(() => open(n.rel))}
+          <nav className="sidebar-tabs">
+            <SegmentedControl
+              ariaLabel={t('desktop.sidebar.tabs')}
+              role="tablist"
+              options={[
+                { value: 'notes', label: t('desktop.nav.notes') },
+                { value: 'inbox', label: t('desktop.nav.inbox') },
+              ]}
+              value={view}
+              onChange={(value) => setView(value as 'notes' | 'inbox')}
+            />
+          </nav>
+        </div>
+
+        <div className="sidebar-scroll">
+          {view === 'notes' && (
+            <>
+              <div className="sidebar-list-head">
+                <span className="kicker">{t('desktop.vault.kicker')}</span>
+                <span className="count">{t('desktop.vault.count', { count: notesTab.length })}</span>
+                <span className="tip-wrap" data-tip={t('desktop.vault.newFolder')}>
+                  <Button
+                    type="button"
+                    className="add-btn"
+                    onClick={() => setNamingFolder('')}
+                    aria-label={t('desktop.vault.newFolder')}
+                    disabled={!vault}
+                  >
+                    ⊞
+                  </Button>
+                </span>
+                <span
+                  className="tip-wrap"
+                  data-tip={vault ? t('desktop.vault.newNote') : t('desktop.vault.preparing')}
                 >
-                  <span className="note-title">{n.title}</span>
-                  <span className="inbox-meta">
-                    <span>{platformLabel(n.platform)}</span>
-                    <span>{dayOf(n.startedAt) || dayOf(n.updatedAt)}</span>
-                    {n.participants > 0 && <span>{t('desktop.inbox.participants', { count: n.participants })}</span>}
-                    {/* A meeting arrives as captions first; the body only fills
-                        once the extension has a summary to send. Saying so beats
-                        an empty note looking like a failed delivery. */}
-                    {!n.hasBody && <span className="pending">{t('desktop.inbox.transcriptOnly')}</span>}
-                  </span>
-                </button>
-              </li>
+                  <Button
+                    type="button"
+                    className="add-btn"
+                    onClick={() => guard(openNew)}
+                    aria-label={t('desktop.vault.newNote')}
+                    disabled={!vault}
+                  >
+                    ＋
+                  </Button>
+                </span>
+              </div>
+              {namingFolder !== null && (
+                <TextInput
+                  className="search"
+                  autoFocus
+                  placeholder={
+                    namingFolder
+                      ? t('desktop.vault.folderNameIn', { folder: namingFolder })
+                      : t('desktop.vault.folderName')
+                  }
+                  aria-label={t('desktop.vault.folderName')}
+                  onBlur={(e) => void createFolder(namingFolder, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void createFolder(namingFolder, e.currentTarget.value)
+                    if (e.key === 'Escape') setNamingFolder(null)
+                  }}
+                />
+              )}
+              {!query.trim() ? (
+                <>
+                  <NoteTree
+                    root={tree}
+                    selected={selected}
+                    onOpen={(rel) => guard(() => open(rel))}
+                    onMove={(rel, folder) => void moveNoteFrom(rel, folder)}
+                    onAddFolder={(folder) => setNamingFolder(folder)}
+                  />
+                </>
+              ) : (
+                <ul className="note-list">
+                  {notesTabResults.map((n) => (
+                    <li key={n.rel || n.title}>
+                      {n.rel ? (
+                        <Button
+                          type="button"
+                          className={selected === n.rel ? 'note-item active' : 'note-item'}
+                          onClick={() => guard(() => open(n.rel))}
+                        >
+                          <span className="note-title">{n.title}</span>
+                          <span className="note-row-meta">
+                            {n.platform && n.platform !== 'manual' && (
+                              <span className="note-source">{platformLabel(n.platform)}</span>
+                            )}
+                            <span className="note-date">{dayOf(n.updatedAt)}</span>
+                          </span>
+                        </Button>
+                      ) : (
+                        <span className="note-title muted" data-tip={t('desktop.vault.bodyHit')}>
+                          {n.title}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                  {notesTabResults.length === 0 && <li className="empty-hint">{t('desktop.vault.noMatches')}</li>}
+                </ul>
+              )}
+            </>
+          )}
+          {view === 'inbox' && (
+            <>
+              <div className="sidebar-list-head">
+                <span className="kicker">{t('desktop.inbox.kicker')}</span>
+                <span className="count">
+                  {t('desktop.inbox.count', {
+                    count: query.trim() ? filteredIncoming.length : incoming.length,
+                  })}
+                </span>
+              </div>
+              <ul className="note-list">
+                {filteredIncoming.map((n) => (
+                  <li key={n.rel}>
+                    <Button
+                      type="button"
+                      className={selected === n.rel ? 'note-item active' : 'note-item'}
+                      onClick={() => guard(() => open(n.rel))}
+                    >
+                      <span className="note-title">{n.title}</span>
+                      <span className="inbox-meta">
+                        <span>{platformLabel(n.platform)}</span>
+                        <span>{dayOf(n.startedAt) || dayOf(n.updatedAt)}</span>
+                        {n.participants > 0 && (
+                          <span>{t('desktop.inbox.participants', { count: n.participants })}</span>
+                        )}
+                        {!n.hasBody && <span className="pending">{t('desktop.inbox.transcriptOnly')}</span>}
+                      </span>
+                    </Button>
+                  </li>
+                ))}
+                {filteredIncoming.length === 0 && (
+                  <li className="empty-hint">
+                    {t(query.trim() ? 'desktop.inbox.noMatches' : 'desktop.inbox.empty')}
+                  </li>
+                )}
+              </ul>
+            </>
+          )}
+        </div>
+
+        <div className="sidebar-bottom">
+          <div className="sidebar-foot">
+            <Button
+              type="button"
+              className="sidebar-support-btn"
+              aria-label={t('desktop.nav.theme', { mode: themeLabel(themePref) })}
+              data-tip={t('desktop.nav.theme', { mode: themeLabel(themePref) })}
+              onClick={() => {
+                const next = themePref === 'system' ? 'light' : themePref === 'light' ? 'dark' : 'system'
+                setThemePref(next)
+                void emitTo('settings', SETTINGS_PREFERENCES_EVENT, { themePref: next }).catch(() => undefined)
+              }}
+            >
+              {themePref === 'system' ? '◐' : themePref === 'light' ? '☀' : '☾'}
+            </Button>
+            <Button
+              type="button"
+              className="sidebar-support-btn"
+              aria-label={t('desktop.nav.settings')}
+              data-tip={t('desktop.nav.settings')}
+              onClick={() => void showSettingsWindow()}
+            >
+              ⚙
+            </Button>
+            <span className="sidebar-foot-spacer" />
+            {activeSponsorLinks().map((link) => (
+              <Button
+                key={link.id}
+                type="button"
+                className="sidebar-support-btn"
+                aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
+                data-tip={`${t('sponsor.title')} · ${t(link.label)}`}
+                onClick={() => void invoke('open_external', { url: link.url })}
+              >
+                {link.icon}
+              </Button>
             ))}
-            {incoming.length === 0 && (
-              <li className="empty-hint">
-                {t('desktop.inbox.empty')}
-              </li>
-            )}
-          </ul>
-        </aside>
-      )}
+          </div>
+        </div>
+      </aside>
 
       <main className="content">
         <header className="topbar">
@@ -1040,23 +1006,9 @@ export default function App() {
         </header>
 
         <section className="editor-wrap">
-          {view === 'install' ? (
-            <InstallView />
-          ) : view === 'settings' ? (
-            <Settings
-              root={vault?.io.root ?? '…'}
-              noteCount={notes.length}
-              onMove={() => guard(moveVault)}
-              onReset={() => guard(resetVault)}
-              isDefaultRoot={isDefaultRoot}
-              themePref={themePref}
-              onThemeChange={setThemePref}
-              langPref={langPref}
-              onLangChange={setLangPref}
-            />
-          ) : note ? (
+          {note ? (
             <>
-              <input
+              <TextInput
                 ref={titleRef}
                 className="title-input"
                 value={note.title}
@@ -1070,12 +1022,13 @@ export default function App() {
                 <MeetingMeta note={note} vault={vault} />
               )}
               <TicketFields note={note} onChange={(patch) => { setNote({ ...note, ...patch }); setDirty(true) }} />
-              {/* Keyed by the note id, not its path: the editor owns its
-                  document, so opening another note must remount it — but the
-                  first save of a new note, which is the moment a path appears,
-                  must not, or the cursor jumps out from under the typing. */}
+              {/* Keyed by which note was opened, not its id or path: the
+                  editor owns its document, so opening another note must
+                  remount it — but a save, which can give the note a path or
+                  (for a meeting's copy) a new id, must not, or the cursor
+                  jumps out from under the typing. */}
               <NoteEditor
-                key={note.id}
+                key={editorKey}
                 value={note.body}
                 onChange={(body) => {
                   setNote({ ...note, body })
@@ -1085,7 +1038,9 @@ export default function App() {
               <div className="editor-actions">
                 <span className="meta">
                   {dirty
-                    ? t('desktop.editor.unsaved')
+                    ? autosave
+                      ? t('desktop.editor.saving')
+                      : t('desktop.editor.unsaved')
                     : t('desktop.editor.updated', {
                         date: formatDate(note.updatedAt) || '—',
                       })}
@@ -1103,43 +1058,38 @@ export default function App() {
                   ]}
                   onChange={(v) => (selected ? void moveNote(v) : setTarget(v))}
                 />
-                <button type="button" className="btn danger" onClick={trash}>
+                <Button type="button" variant="danger" onClick={trash}>
                   {t('desktop.editor.trash')}
-                </button>
+                </Button>
                 {/* The label says what the button does: for a delivered
                     meeting it never overwrites the archive, it makes the note
                     you go on editing. Removing Save here would leave no way to
                     act on a meeting at all. */}
-                <button type="button" className="btn primary" onClick={save}>
+                <Button type="button" variant="primary" onClick={() => void save()}>
                   {note.platform && note.platform !== 'manual'
                     ? t('desktop.editor.saveCopy')
                     : t('desktop.editor.save')}
-                </button>
+                </Button>
               </div>
             </>
           ) : (
             <div className="empty">
               <h1>{t('desktop.editor.emptyTitle')}</h1>
               <p>{t('desktop.editor.emptyBody')}</p>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => guard(openNew)}
-                disabled={!vault}
-              >
+              <Button type="button" variant="primary" onClick={() => guard(openNew)} disabled={!vault}>
                 {t('desktop.vault.newNote')}
-              </button>
+              </Button>
             </div>
           )}
           {confirm && (
             <div className="confirm-bar" role="alert">
               <span>{confirm.message}</span>
-              <button type="button" className="btn" onClick={() => setConfirm(null)}>
+              <Button type="button" onClick={() => setConfirm(null)}>
                 {t('desktop.settings.cancel')}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn primary"
+                variant="primary"
                 onClick={() => {
                   const action = confirm.run
                   setConfirm(null)
@@ -1147,18 +1097,18 @@ export default function App() {
                 }}
               >
                 {confirm.label}
-              </button>
+              </Button>
             </div>
           )}
           {pending && (
             <div className="confirm-bar" role="alert">
               <span>{t('desktop.editor.confirmUnsaved')}</span>
-              <button type="button" className="btn" onClick={() => void resume(true)}>
+              <Button type="button" onClick={() => void resume(true)}>
                 {t('desktop.editor.discard')}
-              </button>
-              <button type="button" className="btn primary" onClick={() => void resume(false)}>
+              </Button>
+              <Button type="button" variant="primary" onClick={() => void resume(false)}>
                 {t('desktop.editor.saveAndGo')}
-              </button>
+              </Button>
             </div>
           )}
           {error && <div className="error-bar">{error}</div>}
