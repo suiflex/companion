@@ -772,11 +772,8 @@ export const en = {
   'desktop.install.removed': 'Disconnected from {browser}.',
   'desktop.install.extension': 'The extension',
   'desktop.install.extensionHint':
-    'Connecting is only half of it: with no extension installed there is nothing to deliver. Load the unpacked extension from the release, then turn on \u201cSend finished meetings\u201d in its settings.',
-  'desktop.install.getExtension': 'Get the extension',
-  'desktop.install.firefox': 'Firefox',
-  'desktop.install.firefoxHint':
-    'Firefox is not connected from here. A signed add-on cannot be side-loaded, so there is nothing to register until the listing on addons.mozilla.org is published \u2014 that is coming.',
+    'Connecting is only half of it: with no extension installed there is nothing to deliver. Install it from your browser\u2019s store, then turn on \u201cSend finished meetings\u201d in its settings.',
+  'desktop.install.downloadZip': 'Download extension (ZIP)',
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.version.current': 'Companion Desktop',

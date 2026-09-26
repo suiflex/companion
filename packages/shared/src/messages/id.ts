@@ -769,11 +769,8 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.install.removed': 'Diputus dari {browser}.',
   'desktop.install.extension': 'Extension-nya',
   'desktop.install.extensionHint':
-    'Menyambungkan baru separuhnya: kalau extension-nya belum terpasang, tidak ada yang dikirim. Muat extension dari rilis sebagai unpacked, lalu nyalakan \u201cKirim rapat yang selesai\u201d di setelannya.',
-  'desktop.install.getExtension': 'Ambil extension',
-  'desktop.install.firefox': 'Firefox',
-  'desktop.install.firefoxHint':
-    'Firefox belum bisa disambungkan dari sini. Add-on yang sudah ditandatangani tidak bisa dipasang manual, jadi belum ada yang bisa didaftarkan sampai listing di addons.mozilla.org terbit \u2014 itu sedang menyusul.',
+    'Menyambungkan baru separuhnya: tanpa ekstensi terpasang, tidak ada yang bisa dikirim. Pasang dari toko browser kamu, lalu nyalakan \u201cKirim rapat selesai ke Companion Desktop\u201d di pengaturannya.',
+  'desktop.install.downloadZip': 'Unduh ekstensi (ZIP)',
 
   // -- desktop: updater -----------------------------------------------------
   'desktop.version.current': 'Companion Desktop',
