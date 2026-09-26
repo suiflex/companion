@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { saveTarget } from './saveTarget'
+import { saveTarget, settleSaved } from './saveTarget'
 import type { VaultNote } from '@meetcc/vault'
 
 const meeting: VaultNote = {
@@ -56,5 +56,22 @@ describe('saveTarget', () => {
     const out = saveTarget({ note: meeting, selected: 'Rapat/2026-09-04/abc.md', target: 'Test', relPath })
     expect(out.rel.startsWith('Test/')).toBe(true)
     expect(out.rel).not.toBe('Rapat/2026-09-04/abc.md')
+  })
+})
+
+describe('settleSaved', () => {
+  it('takes the written note when nothing was typed during the write', () => {
+    const written = { ...manual, updatedAt: '2026-09-05T00:00:00Z' }
+    expect(settleSaved(manual, manual, written)).toEqual({ note: written, dirty: false })
+  })
+
+  it('keeps text typed during the write and stays dirty', () => {
+    const typed = { ...meeting, body: 'catatan lagi' }
+    const copy = { ...meeting, id: 'c-1', sessionKey: 'nota/c', platform: 'manual', source: meeting.sessionKey }
+    const out = settleSaved(typed, meeting, copy)
+    expect(out.dirty).toBe(true)
+    expect(out.note.body).toBe('catatan lagi')
+    // the next save must land on the copy, not make a second one
+    expect(out.note).toMatchObject({ id: 'c-1', sessionKey: 'nota/c', platform: 'manual', source: meeting.sessionKey })
   })
 })
