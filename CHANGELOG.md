@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.16.0](https://github.com/suiflex/companion/compare/v1.15.0...v1.16.0) (2026-09-26)
+
+
+### Features
+
+* **desktop:** add a Version section to Settings ([5e0b296](https://github.com/suiflex/companion/commit/5e0b296085d51689f1fc6fc31a913bac21df99cd))
+* **desktop:** autosave notes with a settings toggle ([6b0abbb](https://github.com/suiflex/companion/commit/6b0abbb84da15821c90c122cce6eb0fb9358bedf))
+* **desktop:** compact note tree with indent guides ([59e9bda](https://github.com/suiflex/companion/commit/59e9bdac1d045b5c3ac62fe72d8c9fbffc3f3e50))
+* **desktop:** group Settings into sections ([9c44846](https://github.com/suiflex/companion/commit/9c4484686a7dd7283e85667db2d238adbde34ab9))
+* **desktop:** link the extension store listings from Browsers ([1407a43](https://github.com/suiflex/companion/commit/1407a43508b79faed3ad6d4b2770e9af7007b2cb))
+* **desktop:** move Settings to its own window and tab the sidebar ([9f26da4](https://github.com/suiflex/companion/commit/9f26da4227703e73c52c963629d131c54caa438d))
+* **desktop:** Settings window, compact sidebar and autosave ([3441320](https://github.com/suiflex/companion/commit/3441320952a76695ba7f948c114e1ef589f3ae0d))
+* **extension:** add 15 mock meetings for standalone sidebar scroll testing ([f81b9a5](https://github.com/suiflex/companion/commit/f81b9a510ced7d25587b5e2bf6256645e52daa09))
+* **extension:** add mini context manager, meeting insertion, and store badges ([b11d995](https://github.com/suiflex/companion/commit/b11d995e63e7aab35556fafccf254a36fb46d059))
+* **extension:** add mini-context manager and settings version view (@wahyuakbarwibowo) ([7f9fad1](https://github.com/suiflex/companion/commit/7f9fad1a73eb4a3bcf62d1c1c2a79b71e3d998fd))
+* **extension:** add reference tag picker and hover-to-edit cards ([0c8f60a](https://github.com/suiflex/companion/commit/0c8f60a072778f73d016034d21d5b22cada44963))
+* **extension:** add standalone dev mock for localhost preview ([4858297](https://github.com/suiflex/companion/commit/48582979984523acce56ce16ee237c049a759189))
+* **extension:** add version and installation guides tab in settings ([0823443](https://github.com/suiflex/companion/commit/08234438ba2eb1da4fe81e853c421d7060922a38))
+* **extension:** attach tags to meetings as AI context ([302a595](https://github.com/suiflex/companion/commit/302a595f8295862e15026751d12f360df7d12308))
+* **extension:** connect dev mock to extension entry point ([09715b6](https://github.com/suiflex/companion/commit/09715b6ea807156eb31700ed18f9c1ab92dac3c7))
+* **extension:** expand mock seeds to 25 meetings for sidebar scrolling ([ac5ef69](https://github.com/suiflex/companion/commit/ac5ef69610d39c9c6b50c678e6091e71f065c960))
+* **extension:** expand version panel to full width in settings ([542d76b](https://github.com/suiflex/companion/commit/542d76baaf450cc847a9d8f5d5d3c1328f61cd8f))
+* **extension:** indicate active menu and meeting in sidebar ([7172576](https://github.com/suiflex/companion/commit/7172576194c51609a2b83867c5aca3bc5795edc5))
+* **extension:** move mini-context inserter under meeting context card ([f4b5bee](https://github.com/suiflex/companion/commit/f4b5bee8bf85953b1a705fe071f63a17479ef33c))
+* **extension:** remove update banner from extension layout ([ba7e0d4](https://github.com/suiflex/companion/commit/ba7e0d4e54bba2d905d9024c148c774ee33e30d6))
+* **extension:** revamp sidebar with fixed header and footer layout ([567061c](https://github.com/suiflex/companion/commit/567061c6a91a572103474c08206b3b9f340fc3e2))
+* **extension:** standardize knowledge view header toolbar ([d5066f7](https://github.com/suiflex/companion/commit/d5066f7cb84b461da905ac681a16e064da393534))
+* **shared:** add mini context types and storage helpers ([2bcb21f](https://github.com/suiflex/companion/commit/2bcb21f12087b5d252b7589be2c399406f2b8b83))
+* **shared:** store tags per meeting ([5428158](https://github.com/suiflex/companion/commit/54281584d8196ce9344f6fa27d6d93a3806b78a6))
+* **ui:** add shared cross-app controls ([360ebaf](https://github.com/suiflex/companion/commit/360ebaf8e5370be9dd87a8f920364e538e833d30))
+
+
+### Bug Fixes
+
+* **desktop:** apply re-exported meetings in place ([eb6019d](https://github.com/suiflex/companion/commit/eb6019dc29ebfc99b94356af94404f906963b1fa))
+* **desktop:** exit the app when the main window closes ([ee80c7e](https://github.com/suiflex/companion/commit/ee80c7e6fa11bfc5229a9d44aa4127b69088ee4b))
+* **desktop:** list a meeting's edited copy in its place ([9c2cdf1](https://github.com/suiflex/companion/commit/9c2cdf167c99f4e79781ab4f80d7c6602d186dfc))
+* **desktop:** stop the window from scrolling sideways ([98e9419](https://github.com/suiflex/companion/commit/98e941912686e4e5556f21d17580ffb3eb7dc28d))
+* **extension:** address review feedback on bundle size and banner ([0737cf0](https://github.com/suiflex/companion/commit/0737cf037b67373e74a68879fa1132a406140b92))
+* **extension:** prevent KnowledgeView crash and provide mock chronology data ([65b4ac2](https://github.com/suiflex/companion/commit/65b4ac26bbe353528c8a668d7e0a472137bbdd2e))
+* **extension:** resend the summary with a manual desktop export ([43c9010](https://github.com/suiflex/companion/commit/43c9010402f5d9f8383bc1bee10eae531efad21e))
+* **extension:** resolve mock database responses and initial seed check ([b796ffd](https://github.com/suiflex/companion/commit/b796ffd287ff5fa2b9bae3d57b38eff1d4c73395))
+
+
+### Thanks
+
+Thanks to everyone who contributed to this release:
+
+* @wahyuakbarwibowo
+
 ## [Unreleased]
 
 ### Features
