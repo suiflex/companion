@@ -23,6 +23,7 @@ interface VaultRow {
  * stays on disk as the archive and stays listed under Incoming meetings.
  */
 export function hideCopiedOriginals<T extends VaultRow>(list: readonly T[], all: readonly VaultRow[]): T[] {
-  const copied = new Set(all.map((n) => n.source).filter(Boolean))
+  const copied = new Set<string>()
+  for (const n of all) if (n.source) copied.add(n.source)
   return list.filter((n) => !n.platform || n.platform === 'manual' || !copied.has(n.sessionKey))
 }

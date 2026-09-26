@@ -5,10 +5,19 @@
 // localStorage, the way the theme and language preferences do.
 import { useState } from 'react'
 import { formatDate, t } from '@meetcc/shared/i18n'
-import type { TreeFolder } from './tree'
+import type { TreeFolder, TreeNote } from './tree'
 import { Button } from '@meetcc/ui'
 
 const KEY = 'companion:collapsed-folders'
+
+/** The whole row as one line, for a title the tree had to truncate. */
+function rowTooltip(n: TreeNote): string {
+  const date = n.updatedAt ? formatDate(n.updatedAt) : ''
+  let tip = n.title
+  if (n.source) tip += ` · ${n.source}`
+  if (date) tip += ` · ${date}`
+  return tip
+}
 
 function loadCollapsed(): Set<string> {
   try {
@@ -123,7 +132,7 @@ export function NoteTree({
               type="button"
               draggable
               className={selected === n.rel ? 'note-item active' : 'note-item'}
-              title={[n.title, n.source, n.updatedAt && formatDate(n.updatedAt)].filter(Boolean).join(' · ')}
+              title={rowTooltip(n)}
               onClick={() => onOpen(n.rel)}
               onDragStart={(e) => {
                 e.dataTransfer.setData('text/plain', n.rel)
