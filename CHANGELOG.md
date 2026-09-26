@@ -14,7 +14,7 @@
 * **desktop:** Settings window, compact sidebar and autosave ([3441320](https://github.com/suiflex/companion/commit/3441320952a76695ba7f948c114e1ef589f3ae0d))
 * **extension:** add 15 mock meetings for standalone sidebar scroll testing ([f81b9a5](https://github.com/suiflex/companion/commit/f81b9a510ced7d25587b5e2bf6256645e52daa09))
 * **extension:** add mini context manager, meeting insertion, and store badges ([b11d995](https://github.com/suiflex/companion/commit/b11d995e63e7aab35556fafccf254a36fb46d059))
-* **extension:** add mini-context manager and settings version view ([7f9fad1](https://github.com/suiflex/companion/commit/7f9fad1a73eb4a3bcf62d1c1c2a79b71e3d998fd))
+* **extension:** add mini-context manager and settings version view (@wahyuakbarwibowo) ([7f9fad1](https://github.com/suiflex/companion/commit/7f9fad1a73eb4a3bcf62d1c1c2a79b71e3d998fd))
 * **extension:** add reference tag picker and hover-to-edit cards ([0c8f60a](https://github.com/suiflex/companion/commit/0c8f60a072778f73d016034d21d5b22cada44963))
 * **extension:** add standalone dev mock for localhost preview ([4858297](https://github.com/suiflex/companion/commit/48582979984523acce56ce16ee237c049a759189))
 * **extension:** add version and installation guides tab in settings ([0823443](https://github.com/suiflex/companion/commit/08234438ba2eb1da4fe81e853c421d7060922a38))
@@ -42,6 +42,13 @@
 * **extension:** prevent KnowledgeView crash and provide mock chronology data ([65b4ac2](https://github.com/suiflex/companion/commit/65b4ac26bbe353528c8a668d7e0a472137bbdd2e))
 * **extension:** resend the summary with a manual desktop export ([43c9010](https://github.com/suiflex/companion/commit/43c9010402f5d9f8383bc1bee10eae531efad21e))
 * **extension:** resolve mock database responses and initial seed check ([b796ffd](https://github.com/suiflex/companion/commit/b796ffd287ff5fa2b9bae3d57b38eff1d4c73395))
+
+
+### Thanks
+
+Thanks to everyone who contributed to this release:
+
+* @wahyuakbarwibowo
 
 ## [Unreleased]
 
