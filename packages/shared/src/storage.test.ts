@@ -13,6 +13,8 @@ import {
   saveTitle,
   getContext,
   saveContext,
+  getMeetingTags,
+  saveMeetingTags,
   getMiniContexts,
   saveMiniContexts,
   watchStorage,
@@ -20,6 +22,7 @@ import {
   AUDIT_KEY,
   AUDIT_RING_MAX,
   CONTEXT_PREFIX,
+  MEETING_TAGS_PREFIX,
   META_PREFIX,
   MINI_CONTEXTS_KEY,
   TITLE_PREFIX,
@@ -108,6 +111,21 @@ describe('parsers', () => {
 
     await saveContext('new', '   ');
     expect(await getContext('new')).toBe('');
+  });
+
+  it('parses and manages meeting tags in storage', async () => {
+    const rawWithTags = {
+      ...RAW,
+      [MEETING_TAGS_PREFIX + 'new']: ['backend', 'infra'],
+    };
+    const meetings = parseMeetings(rawWithTags);
+    expect(meetings[0].tags).toEqual(['backend', 'infra']);
+
+    await saveMeetingTags('new', ['security', 'compliance']);
+    expect(await getMeetingTags('new')).toEqual(['security', 'compliance']);
+
+    await saveMeetingTags('new', []);
+    expect(await getMeetingTags('new')).toEqual([]);
   });
 
   it('manages mini contexts in storage', async () => {
