@@ -289,6 +289,9 @@ key prefix and the `rapat` tag are data, not copy.
 - **A delivered meeting is an archive and is never rewritten.** Saving an edit
   of one produces a new note (new id, own session key, `manual`, `source`
   pointing back at the meeting) and leaves the delivered file untouched. The
+  Notes tab then lists the copy in place of the meeting
+  (`hideCopiedOriginals` in `sidebarResults.ts`); the meeting stays under
+  Incoming meetings. The
   rule lives in `apps/desktop/src/saveTarget.ts`, which is pure and tested for
   a reason: it was three nested ternaries inside `App.tsx` and was wrong twice
   — once writing a second file for a note that already had one, once making a
