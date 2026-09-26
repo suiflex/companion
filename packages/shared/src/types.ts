@@ -19,6 +19,7 @@ export interface Meeting {
   meta: MeetingMeta | null;
   entries: Entry[];
   context?: string;
+  tags?: string[];
 }
 
 export interface ActionItem {

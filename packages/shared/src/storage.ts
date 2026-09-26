@@ -36,6 +36,7 @@ export const CLEAN_PREFIX = 'clean:';
 export const DOCPROG_PREFIX = 'docprog:';
 export const TITLE_PREFIX = 'title:';
 export const CONTEXT_PREFIX = 'context:';
+export const MEETING_TAGS_PREFIX = 'tags:';
 export const MINI_CONTEXTS_KEY = 'mini_contexts';
 const SETTINGS_KEY = 'settings';
 export const AUDIT_KEY = 'audit';
@@ -84,6 +85,8 @@ export function parseMeetings(all: Record<string, unknown>): Meeting[] {
       get(key.slice(META_PREFIX.length)).meta = value as MeetingMeta;
     } else if (key.startsWith(CONTEXT_PREFIX) && typeof value === 'string') {
       get(key.slice(CONTEXT_PREFIX.length)).context = value;
+    } else if (key.startsWith(MEETING_TAGS_PREFIX) && Array.isArray(value)) {
+      get(key.slice(MEETING_TAGS_PREFIX.length)).tags = value as string[];
     }
   }
   // Sort by start time, NOT lastActivity: live heartbeats bump lastSeenAt
@@ -178,6 +181,7 @@ export async function clearMeeting(id: string): Promise<void> {
     CLEAN_PREFIX + id,
     TITLE_PREFIX + id,
     CONTEXT_PREFIX + id,
+    MEETING_TAGS_PREFIX + id,
   ]);
 }
 
@@ -196,6 +200,21 @@ export async function saveContext(id: string, context: string): Promise<void> {
     await chrome.storage.local.remove(key);
   } else {
     await chrome.storage.local.set({ [key]: trimmed });
+  }
+}
+
+export async function getMeetingTags(id: string): Promise<string[]> {
+  const key = MEETING_TAGS_PREFIX + id;
+  const res = await chrome.storage.local.get(key);
+  return (res[key] as string[] | undefined) ?? [];
+}
+
+export async function saveMeetingTags(id: string, tags: string[]): Promise<void> {
+  const key = MEETING_TAGS_PREFIX + id;
+  if (!tags.length) {
+    await chrome.storage.local.remove(key);
+  } else {
+    await chrome.storage.local.set({ [key]: tags });
   }
 }
 
