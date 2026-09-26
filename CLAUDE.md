@@ -101,6 +101,7 @@ Where to go:
 | shared UI components, variants and palette | `packages/ui/src/` and `packages/ui/src/styles.css` |
 | where a save lands | `apps/desktop/src/saveTarget.ts` — pure, and tested |
 | the desktop sidebar tree | `apps/desktop/src/{NoteTree.tsx,tree.ts}` |
+| desktop Settings window and vault switch | `apps/desktop/src/{SettingsWindow.tsx,SettingsPage.tsx,openSettingsWindow.ts,settingsEvents.ts}`, then `App.tsx` for dirty-note confirmation |
 | desktop AI settings | `apps/desktop/src/{AIProviderPanel.tsx,aiSettings.ts}` |
 | extension settings UI | `apps/extension/src/components/SettingsPanels.tsx` |
 | an AI provider | `packages/ai/src/providers.ts` + `PROVIDER_PRESETS` in `client.ts` |
