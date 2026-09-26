@@ -58,8 +58,8 @@ export function InstallView() {
   }
 
   return (
-    <div className="settings">
-      <h1>{t('desktop.install.title')}</h1>
+    <section className="install-settings-section">
+      <h2>{t('desktop.install.title')}</h2>
       <p className="hint">{t('desktop.install.intro')}</p>
 
       {browsers === null && <p className="hint">{t('desktop.install.looking')}</p>}
@@ -108,6 +108,6 @@ export function InstallView() {
           <p className="hint">{t('desktop.install.firefoxHint')}</p>
         </div>
       </section>
-    </div>
+    </section>
   )
 }

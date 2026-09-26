@@ -4,138 +4,34 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { openDatabase, type SqlDriver } from '@meetcc/store'
 import { createIndex, search, Vault, uuidV7, type VaultNote } from '@meetcc/vault'
 import { tauriVaultIo } from './vaultIo'
-import { t, formatDate, onLangChange, type LangPref, LANGS } from '@meetcc/shared/i18n'
-import { applyLang, loadLangPref, saveLangPref } from './lang'
+import { t, formatDate, type LangPref } from '@meetcc/shared/i18n'
+import { loadLangPref } from './lang'
 import { DateField } from './DateField'
 import { MeetingMeta } from './MeetingMeta'
 import { Select, type Option, type Tone } from './Select'
 import { activeSponsorLinks } from './sponsor'
 import { NoteTree } from './NoteTree'
 import { saveTarget } from './saveTarget'
-import { AIProviderPanel } from './AIProviderPanel'
 import { drainSpool } from './spool'
-import { InstallView } from './InstallView'
 import { buildTree, folderPaths, withEmptyFolders } from './tree'
-import {
-  applyTheme,
-  loadThemePref,
-  saveThemePref,
-  watchSystemTheme,
-  type ThemePref,
-} from './theme'
+import { inboxSearchResults } from './sidebarResults'
+import { loadThemePref, type ThemePref } from './theme'
 import { NoteEditor } from './NoteEditor'
 import UpdateBanner from './UpdateBanner'
 import { Button, SegmentedControl, TextInput, useToast } from '@meetcc/ui'
+import { emitTo, listen, type UnlistenFn } from '@tauri-apps/api/event'
+import { getCurrentWindow } from '@tauri-apps/api/window'
+import { openSettingsWindow } from './openSettingsWindow'
+import { useDesktopPreferences } from './useDesktopPreferences'
+import { themeLabel } from './preferenceLabels'
+import {
+  SETTINGS_ACTION_EVENT,
+  SETTINGS_PREFERENCES_EVENT,
+  SETTINGS_VAULT_CHANGED_EVENT,
+  type SettingsAction,
+  type SettingsPreferences,
+} from './settingsEvents'
 
-/** Vault & bridge settings. Small on purpose: the only thing here that changes
- *  state is where the vault lives, and that is a decision worth making explicit
- *  rather than burying in a preferences tree. */
-// Looked up per render, not frozen at module load: the language can change
-// while the app is open.
-const themeLabel = (p: ThemePref): string =>
-  p === 'system' ? t('pref.system') : p === 'light' ? t('pref.light') : t('pref.dark')
-
-const langLabel = (p: LangPref): string =>
-  p === 'system' ? t('pref.system') : p === 'en' ? t('lang.en') : t('lang.id')
-
-function Settings({
-  root,
-  noteCount,
-  onMove,
-  onReset,
-  isDefaultRoot,
-  themePref,
-  onThemeChange,
-  langPref,
-  onLangChange,
-}: {
-  root: string
-  noteCount: number
-  onMove: () => void
-  onReset: () => void
-  /** Hides the reset action when there is nothing to reset. */
-  isDefaultRoot: boolean
-  themePref: ThemePref
-  onThemeChange: (pref: ThemePref) => void
-  langPref: LangPref
-  onLangChange: (pref: LangPref) => void
-}) {
-  return (
-    <div className="settings">
-      <h1>{t('desktop.settings.title')}</h1>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.settings.language')}</h2>
-          <p className="hint">{t('desktop.settings.languageHint')}</p>
-        </div>
-        <SegmentedControl
-          role="group"
-          ariaLabel={t('desktop.settings.language')}
-          options={(['system', ...LANGS] as LangPref[]).map((p) => ({
-            value: p,
-            label: langLabel(p),
-          }))}
-          value={langPref}
-          onChange={(value) => onLangChange(value as LangPref)}
-        />
-      </section>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.settings.theme')}</h2>
-          <p className="hint">{t('desktop.settings.themeHint')}</p>
-        </div>
-        <SegmentedControl
-          role="group"
-          ariaLabel={t('desktop.settings.theme')}
-          options={(['system', 'light', 'dark'] as ThemePref[]).map((p) => ({
-            value: p,
-            label: themeLabel(p),
-          }))}
-          value={themePref}
-          onChange={(value) => onThemeChange(value as ThemePref)}
-        />
-      </section>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.settings.vaultLocation')}</h2>
-          <p className="setting-path">{root}</p>
-          <p className="hint">{t('desktop.settings.vaultHint', { count: noteCount })}</p>
-        </div>
-        <div className="setting-actions">
-          <Button type="button" onClick={onMove}>
-            {t('desktop.settings.moveVault')}
-          </Button>
-          {!isDefaultRoot && (
-            <Button type="button" onClick={onReset}>
-              {t('desktop.settings.resetVault')}
-            </Button>
-          )}
-        </div>
-      </section>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.settings.bridge')}</h2>
-          <p className="hint">{t('desktop.settings.bridgeHint')}</p>
-        </div>
-      </section>
-
-      <section className="setting-row">
-        <div>
-          <h2>{t('desktop.settings.index')}</h2>
-          <p className="hint">{t('desktop.settings.indexHint')}</p>
-        </div>
-      </section>
-
-      {/* Its own component: this screen is already long, and the provider
-          settings carry their own loading and saving. */}
-      <AIProviderPanel />
-    </div>
-  )
-}
 
 /** The Companion mark from assets/brand/logo-mark.svg, inlined. */
 function BrandMark() {
@@ -325,22 +221,20 @@ export default function App() {
   const [note, setNote] = useState<VaultNote | null>(null)
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'notes' | 'inbox' | 'settings' | 'install'>('notes')
+  const [view, setView] = useState<'notes' | 'inbox'>('notes')
   const [dirty, setDirty] = useState(false)
   // Search fell back to titles because the SQLite index would not open.
   const [indexDown, setIndexDown] = useState(false)
   // The duplicate-key warning already shown, so it is not repeated per poll.
   const reportedRef = useRef('')
+  const settingsActionRef = useRef<(action: SettingsAction) => void>(() => {})
+  const settingsWindowOpeningRef = useRef(false)
   // A brand-new note is a draft with no file yet. Pre-selecting its "New note"
   // default title shows a beginner it is editable and lets them type straight
   // over it, the way renaming a file in Finder selects the name. `freshIdRef`
   // stops the selection from repeating on every keystroke.
   const titleRef = useRef<HTMLInputElement>(null)
   const freshIdRef = useRef<string | null>(null)
-  // Bumped when the language changes, purely to force a re-render: `t()` reads
-  // a module-level language that React cannot see.
-  const [, setLangTick] = useState(0)
-  useEffect(() => onLangChange(() => setLangTick((n) => n + 1)), [])
   // Select the title of a brand-new note (no file yet) once, so typing replaces
   // the "New note" default. Never for notes that already live on disk.
   useEffect(() => {
@@ -352,8 +246,7 @@ export default function App() {
   const [themePref, setThemePref] = useState<ThemePref>(loadThemePref)
   const toast = useToast()
   const [langPref, setLangPref] = useState<LangPref>(loadLangPref)
-  // The default root is only known to Rust, so ask once rather than rebuilding
-  // `~/Companion` in the frontend and hoping the two agree.
+  useDesktopPreferences(themePref, langPref)
   // Folders that exist on disk, including ones holding no notes — an empty
   // directory has no note path to be derived from, so it would vanish the
   // moment it was made.
@@ -365,27 +258,7 @@ export default function App() {
   // Where an unsaved note will land. Null means "wherever the session key
   // says", which is what happened before folders existed.
   const [target, setTarget] = useState<string | null>(null)
-  const [defaultRoot, setDefaultRoot] = useState<string | null>(null)
-  useEffect(() => {
-    void invoke<string>('default_vault_root').then(setDefaultRoot).catch(() => undefined)
-  }, [])
-  const isDefaultRoot = !defaultRoot || vault?.io.root === defaultRoot
 
-  // Applied and persisted the same way the theme is. `applyLang` also stamps
-  // <html lang>, so the document declares the language it is actually showing.
-  useEffect(() => {
-    applyLang(langPref)
-    saveLangPref(langPref)
-  }, [langPref])
-
-  // Applied on change, and re-applied when the OS flips while on `system` —
-  // otherwise following the system would only take effect on the next launch.
-  useEffect(() => {
-    applyTheme(themePref)
-    saveThemePref(themePref)
-    if (themePref !== 'system') return
-    return watchSystemTheme(() => applyTheme('system'))
-  }, [themePref])
   // Leaving a note with unsaved edits used to drop them silently. Hold the
   // action the user asked for until they say what to do with the edits.
   const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
@@ -398,6 +271,29 @@ export default function App() {
     run: () => Promise<void>
   }>(null)
   const driverRef = useRef<SqlDriver | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    let unlisten: UnlistenFn[] = []
+    void Promise.all([
+      listen<SettingsAction>(SETTINGS_ACTION_EVENT, ({ payload }) => {
+        settingsActionRef.current(payload)
+      }),
+      listen<SettingsPreferences>(SETTINGS_PREFERENCES_EVENT, ({ payload }) => {
+        if (payload.themePref) setThemePref(payload.themePref)
+        if (payload.langPref) setLangPref(payload.langPref)
+      }),
+    ])
+      .then((stop) => {
+        if (alive) unlisten = stop
+        else stop.forEach((unsubscribe) => unsubscribe())
+      })
+      .catch((error) => setError(String(error)))
+    return () => {
+      alive = false
+      unlisten.forEach((unsubscribe) => unsubscribe())
+    }
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -693,6 +589,7 @@ export default function App() {
     setSelected(null)
     setDirty(false)
     await refresh(next)
+    void emitTo('settings', SETTINGS_VAULT_CHANGED_EVENT).catch(() => undefined)
     setError(null)
     toast('success', t('desktop.toast.vaultMoved', { path }))
   }
@@ -737,7 +634,16 @@ export default function App() {
       setError(String(e))
     }
   }
-
+  settingsActionRef.current = (action) => {
+    const run = action === 'move-vault' ? moveVault : resetVault
+    void getCurrentWindow()
+      .setFocus()
+      .then(() => guard(run))
+      .catch((error) => {
+        setError(String(error))
+        toast('error', String(error))
+      })
+  }
 
   const filtered = useMemo(() => {
     if (!query.trim()) return notes
@@ -786,7 +692,13 @@ export default function App() {
   const tree = useMemo(
     () =>
       withEmptyFolders(
-        buildTree(notes.map((n) => ({ rel: n.rel, title: n.title, platform: n.platform }))),
+        buildTree(notes.map((n) => ({
+          rel: n.rel,
+          title: n.title,
+          platform: n.platform,
+          source: n.platform && n.platform !== 'manual' ? platformLabel(n.platform) : undefined,
+          updatedAt: n.updatedAt,
+        }))),
         folders,
       ),
     [notes, folders],
@@ -802,194 +714,236 @@ export default function App() {
         .sort((a, b) => (b.startedAt ?? b.updatedAt).localeCompare(a.startedAt ?? a.updatedAt)),
     [notes],
   )
+  const filteredIncoming = useMemo(
+    () => inboxSearchResults(query, incoming, filtered),
+    [query, incoming, filtered],
+  )
+
+  async function showSettingsWindow(): Promise<void> {
+    if (settingsWindowOpeningRef.current) return
+    settingsWindowOpeningRef.current = true
+    try {
+      await openSettingsWindow(t('desktop.settings.title'))
+    } catch (error) {
+      toast('error', String(error))
+    } finally {
+      settingsWindowOpeningRef.current = false
+    }
+  }
 
   return (
     <div className="shell">
       <UpdateBanner />
-      <aside className="rail" aria-label="Navigasi utama">
-        <BrandMark />
-        <Button type="button"
-        data-tip={t('desktop.nav.notes')} data-tip-side="right"
-        className={view === 'notes' ? 'rail-btn rail-active' : 'rail-btn'}
-        aria-label={t('desktop.nav.notes')}
-        aria-current={view === 'notes' ? 'page' : undefined}
-        onClick={() => setView('notes')}>
-          ▤
-        </Button>
-        <Button type="button"
-        data-tip={t('desktop.nav.inbox')} data-tip-side="right"
-        className={view === 'inbox' ? 'rail-btn rail-active' : 'rail-btn'}
-        aria-label={t('desktop.nav.inbox')}
-        aria-current={view === 'inbox' ? 'page' : undefined}
-        onClick={() => setView('inbox')}>
-          ◈
-        </Button>
-        <span className="rail-spacer" />
-        {activeSponsorLinks().map((link) => (
-          <Button key={link.id}
-          type="button"
-          className="rail-btn"
-          data-tip={`${t('sponsor.title')} · ${t(link.label)}`}
-          data-tip-side="right"
-          aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
-          onClick={() => void invoke('open_external', { url: link.url })}>{link.icon}</Button>
-        ))}
-        <Button type="button"
-        className="rail-btn"
-        data-tip={t('desktop.nav.theme', { mode: themeLabel(themePref) })} data-tip-side="right"
-        aria-label={t('desktop.nav.theme', { mode: themeLabel(themePref) })}
-        onClick={() =>
-          setThemePref((p) => (p === 'system' ? 'light' : p === 'light' ? 'dark' : 'system'))
-        }>{themePref === 'system' ? '◐' : themePref === 'light' ? '☀' : '☾'}</Button>
-        <Button type="button"
-        data-tip={t('desktop.nav.install')} data-tip-side="right"
-        className={view === 'install' ? 'rail-btn rail-active' : 'rail-btn'}
-        aria-label={t('desktop.nav.install')}
-        aria-current={view === 'install' ? 'page' : undefined}
-        onClick={() => setView('install')}>
-          ⇄
-        </Button>
-        <Button type="button"
-        data-tip={t('desktop.nav.settings')} data-tip-side="right"
-        className={view === 'settings' ? 'rail-btn rail-active' : 'rail-btn'}
-        aria-label={t('desktop.nav.settings')}
-        aria-current={view === 'settings' ? 'page' : undefined}
-        onClick={() => setView('settings')}>
-          ⚙
-        </Button>
-      </aside>
-
-      {view === 'notes' && (
-        <aside className="sidebar">
-          <div className="sidebar-head">
-            <span className="kicker">{t('desktop.vault.kicker')}</span>
-            <span className="count">{t('desktop.vault.count', { count: notes.length })}</span>
-            {/* The vault opens asynchronously and openNew returns early without
-                it, so until then the button would look live and answer a click
-                with nothing. The tip lives on the wrapper because a disabled
-                button receives no hover — which is exactly when it most needs
-                to say why it is disabled. */}
-            <span className="tip-wrap" data-tip={t('desktop.vault.newFolder')}>
-              <Button type="button"
-              className="add-btn"
-              onClick={() => setNamingFolder('')}
-              aria-label={t('desktop.vault.newFolder')}
-              disabled={!vault}>
-                ⊞
-              </Button>
-            </span>
-            <span
-              className="tip-wrap"
-              data-tip={vault ? t('desktop.vault.newNote') : t('desktop.vault.preparing')}
-            >
-              <Button type="button"
-              className="add-btn"
-              onClick={() => guard(openNew)}
-              aria-label={t('desktop.vault.newNote')}
-              disabled={!vault}>
-                ＋
-              </Button>
-            </span>
+      <aside className="sidebar" aria-label={t('desktop.nav.notes')}>
+        <div className="sidebar-top">
+          <div className="sidebar-brand">
+            <BrandMark />
+            <span className="sidebar-brand-name">Companion</span>
           </div>
-          {namingFolder !== null && (
+          <div className="sidebar-search">
+            <span className="sidebar-search-icon" aria-hidden="true">⌕</span>
             <TextInput
-              className="search"
-              autoFocus
+              type="search"
+              className="sidebar-search-input"
               placeholder={
-                namingFolder
-                  ? t('desktop.vault.folderNameIn', { folder: namingFolder })
-                  : t('desktop.vault.folderName')
+                !vault
+                  ? t('desktop.vault.preparing')
+                  : view === 'inbox'
+                    ? t('desktop.inbox.search')
+                    : indexDown
+                      ? t('desktop.vault.searchTitlesOnly')
+                      : t('desktop.vault.search')
               }
-              aria-label={t('desktop.vault.folderName')}
-              onBlur={(e) => void createFolder(namingFolder, e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void createFolder(namingFolder, e.currentTarget.value)
-                if (e.key === 'Escape') setNamingFolder(null)
-              }}
+              aria-label={view === 'inbox' ? t('desktop.inbox.search') : t('desktop.vault.search')}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              disabled={!vault}
             />
-          )}
-          <TextInput
-            className="search"
-            placeholder={
-              !vault
-                ? t('desktop.vault.preparing')
-                : indexDown
-                  ? t('desktop.vault.searchTitlesOnly')
-                  : t('desktop.vault.search')
-            }
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            disabled={!vault}
-          />
-          {!query.trim() ? (
-            <NoteTree
-              root={tree}
-              selected={selected}
-              onOpen={(rel) => guard(() => open(rel))}
-              onMove={(rel, folder) => void moveNoteFrom(rel, folder)}
-              onAddFolder={(folder) => setNamingFolder(folder)}
-            />
-          ) : (
-          <ul className="note-list">
-            {filtered.map((n) => (
-              <li key={n.rel || n.title}>
-                {n.rel ? (
-                  <Button type="button"
-                  className={selected === n.rel ? 'note-item active' : 'note-item'}
-                  onClick={() => guard(() => open(n.rel))}><span className="note-title">{n.title}</span>
-                  <span className="note-row-meta">
-                    {/* A delivered meeting stays in this list — it is still a
-                        note — but says where it came from, so the two views
-                        do not read as the same undifferentiated pile. */}
-                    {n.platform && n.platform !== 'manual' && (
-                      <span className="note-source">{platformLabel(n.platform)}</span>
-                    )}
-                    <span className="note-date">{dayOf(n.updatedAt)}</span>
-                  </span></Button>
-                ) : (
-                  <span className="note-title muted" data-tip={t('desktop.vault.bodyHit')}>
-                    {n.title}
-                  </span>
-                )}
-              </li>
-            ))}
-            {filtered.length === 0 && <li className="empty-hint">{t('desktop.vault.empty')}</li>}
-          </ul>
-          )}
-        </aside>
-      )}
-
-      {view === 'inbox' && (
-        <aside className="sidebar">
-          <div className="sidebar-head">
-            <span className="kicker">{t('desktop.inbox.kicker')}</span>
-            <span className="count">{t('desktop.inbox.count', { count: incoming.length })}</span>
           </div>
-          <ul className="note-list">
-            {incoming.map((n) => (
-              <li key={n.rel}>
-                <Button type="button"
-                className={selected === n.rel ? 'note-item active' : 'note-item'}
-                onClick={() => guard(() => open(n.rel))}><span className="note-title">{n.title}</span>
-                <span className="inbox-meta">
-                  <span>{platformLabel(n.platform)}</span>
-                  <span>{dayOf(n.startedAt) || dayOf(n.updatedAt)}</span>
-                  {n.participants > 0 && <span>{t('desktop.inbox.participants', { count: n.participants })}</span>}
-                  {/* A meeting arrives as captions first; the body only fills
-                      once the extension has a summary to send. Saying so beats
-                      an empty note looking like a failed delivery. */}
-                  {!n.hasBody && <span className="pending">{t('desktop.inbox.transcriptOnly')}</span>}
-                </span></Button>
-              </li>
+          <nav className="sidebar-tabs">
+            <SegmentedControl
+              ariaLabel={t('desktop.sidebar.tabs')}
+              role="tablist"
+              options={[
+                { value: 'notes', label: t('desktop.nav.notes') },
+                { value: 'inbox', label: t('desktop.nav.inbox') },
+              ]}
+              value={view}
+              onChange={(value) => setView(value as 'notes' | 'inbox')}
+            />
+          </nav>
+        </div>
+
+        <div className="sidebar-scroll">
+          {view === 'notes' && (
+            <>
+              <div className="sidebar-list-head">
+                <span className="kicker">{t('desktop.vault.kicker')}</span>
+                <span className="count">{t('desktop.vault.count', { count: notes.length })}</span>
+                <span className="tip-wrap" data-tip={t('desktop.vault.newFolder')}>
+                  <Button
+                    type="button"
+                    className="add-btn"
+                    onClick={() => setNamingFolder('')}
+                    aria-label={t('desktop.vault.newFolder')}
+                    disabled={!vault}
+                  >
+                    ⊞
+                  </Button>
+                </span>
+                <span
+                  className="tip-wrap"
+                  data-tip={vault ? t('desktop.vault.newNote') : t('desktop.vault.preparing')}
+                >
+                  <Button
+                    type="button"
+                    className="add-btn"
+                    onClick={() => guard(openNew)}
+                    aria-label={t('desktop.vault.newNote')}
+                    disabled={!vault}
+                  >
+                    ＋
+                  </Button>
+                </span>
+              </div>
+              {namingFolder !== null && (
+                <TextInput
+                  className="search"
+                  autoFocus
+                  placeholder={
+                    namingFolder
+                      ? t('desktop.vault.folderNameIn', { folder: namingFolder })
+                      : t('desktop.vault.folderName')
+                  }
+                  aria-label={t('desktop.vault.folderName')}
+                  onBlur={(e) => void createFolder(namingFolder, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void createFolder(namingFolder, e.currentTarget.value)
+                    if (e.key === 'Escape') setNamingFolder(null)
+                  }}
+                />
+              )}
+              {!query.trim() ? (
+                <>
+                  <h2 className="sidebar-section-label">{t('desktop.nav.notes')}</h2>
+                  <NoteTree
+                    root={tree}
+                    selected={selected}
+                    onOpen={(rel) => guard(() => open(rel))}
+                    onMove={(rel, folder) => void moveNoteFrom(rel, folder)}
+                    onAddFolder={(folder) => setNamingFolder(folder)}
+                  />
+                </>
+              ) : (
+                <ul className="note-list">
+                  {filtered.map((n) => (
+                    <li key={n.rel || n.title}>
+                      {n.rel ? (
+                        <Button
+                          type="button"
+                          className={selected === n.rel ? 'note-item active' : 'note-item'}
+                          onClick={() => guard(() => open(n.rel))}
+                        >
+                          <span className="note-title">{n.title}</span>
+                          <span className="note-row-meta">
+                            {n.platform && n.platform !== 'manual' && (
+                              <span className="note-source">{platformLabel(n.platform)}</span>
+                            )}
+                            <span className="note-date">{dayOf(n.updatedAt)}</span>
+                          </span>
+                        </Button>
+                      ) : (
+                        <span className="note-title muted" data-tip={t('desktop.vault.bodyHit')}>
+                          {n.title}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                  {filtered.length === 0 && <li className="empty-hint">{t('desktop.vault.noMatches')}</li>}
+                </ul>
+              )}
+            </>
+          )}
+          {view === 'inbox' && (
+            <>
+              <div className="sidebar-list-head">
+                <span className="kicker">{t('desktop.inbox.kicker')}</span>
+                <span className="count">
+                  {t('desktop.inbox.count', {
+                    count: query.trim() ? filteredIncoming.length : incoming.length,
+                  })}
+                </span>
+              </div>
+              <ul className="note-list">
+                {filteredIncoming.map((n) => (
+                  <li key={n.rel}>
+                    <Button
+                      type="button"
+                      className={selected === n.rel ? 'note-item active' : 'note-item'}
+                      onClick={() => guard(() => open(n.rel))}
+                    >
+                      <span className="note-title">{n.title}</span>
+                      <span className="inbox-meta">
+                        <span>{platformLabel(n.platform)}</span>
+                        <span>{dayOf(n.startedAt) || dayOf(n.updatedAt)}</span>
+                        {n.participants > 0 && (
+                          <span>{t('desktop.inbox.participants', { count: n.participants })}</span>
+                        )}
+                        {!n.hasBody && <span className="pending">{t('desktop.inbox.transcriptOnly')}</span>}
+                      </span>
+                    </Button>
+                  </li>
+                ))}
+                {filteredIncoming.length === 0 && (
+                  <li className="empty-hint">
+                    {t(query.trim() ? 'desktop.inbox.noMatches' : 'desktop.inbox.empty')}
+                  </li>
+                )}
+              </ul>
+            </>
+          )}
+        </div>
+
+        <div className="sidebar-bottom">
+          <div className="sidebar-foot">
+            <Button
+              type="button"
+              className="sidebar-support-btn"
+              aria-label={t('desktop.nav.theme', { mode: themeLabel(themePref) })}
+              data-tip={t('desktop.nav.theme', { mode: themeLabel(themePref) })}
+              onClick={() => {
+                const next = themePref === 'system' ? 'light' : themePref === 'light' ? 'dark' : 'system'
+                setThemePref(next)
+                void emitTo('settings', SETTINGS_PREFERENCES_EVENT, { themePref: next }).catch(() => undefined)
+              }}
+            >
+              {themePref === 'system' ? '◐' : themePref === 'light' ? '☀' : '☾'}
+            </Button>
+            <Button
+              type="button"
+              className="sidebar-support-btn"
+              aria-label={t('desktop.nav.settings')}
+              data-tip={t('desktop.nav.settings')}
+              onClick={() => void showSettingsWindow()}
+            >
+              ⚙
+            </Button>
+            <span className="sidebar-foot-spacer" />
+            {activeSponsorLinks().map((link) => (
+              <Button
+                key={link.id}
+                type="button"
+                className="sidebar-support-btn"
+                aria-label={`${t('sponsor.title')} · ${t(link.label)}`}
+                data-tip={`${t('sponsor.title')} · ${t(link.label)}`}
+                onClick={() => void invoke('open_external', { url: link.url })}
+              >
+                {link.icon}
+              </Button>
             ))}
-            {incoming.length === 0 && (
-              <li className="empty-hint">
-                {t('desktop.inbox.empty')}
-              </li>
-            )}
-          </ul>
-        </aside>
-      )}
+          </div>
+        </div>
+      </aside>
 
       <main className="content">
         <header className="topbar">
@@ -1002,21 +956,7 @@ export default function App() {
         </header>
 
         <section className="editor-wrap">
-          {view === 'install' ? (
-            <InstallView />
-          ) : view === 'settings' ? (
-            <Settings
-              root={vault?.io.root ?? '…'}
-              noteCount={notes.length}
-              onMove={() => guard(moveVault)}
-              onReset={() => guard(resetVault)}
-              isDefaultRoot={isDefaultRoot}
-              themePref={themePref}
-              onThemeChange={setThemePref}
-              langPref={langPref}
-              onLangChange={setLangPref}
-            />
-          ) : note ? (
+          {note ? (
             <>
               <TextInput
                 ref={titleRef}

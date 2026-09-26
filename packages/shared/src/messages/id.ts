@@ -8,9 +8,9 @@ export const id: Record<keyof typeof en, string> = {
   // -- desktop: shell -------------------------------------------------------
   'desktop.nav.notes': 'Catatan',
   'desktop.nav.inbox': 'Rapat masuk',
-  'desktop.nav.settings': 'Vault & jembatan',
-  'desktop.nav.install': 'Sambungkan browser',
+  'desktop.nav.settings': 'Pengaturan',
   'desktop.nav.theme': 'Tema: {mode}',
+  'desktop.sidebar.tabs': 'Tampilan panel',
   'desktop.badge.local': 'Tersimpan lokal, tanpa sinkron',
 
   // -- desktop: note list ---------------------------------------------------
@@ -21,15 +21,18 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.vault.search': 'Cari nota…',
   'desktop.vault.searchTitlesOnly': 'Cari judul (indeks mati)…',
   'desktop.vault.empty': 'Belum ada nota.',
+  'desktop.vault.noMatches': 'Tidak ada nota yang cocok dengan pencarian ini.',
   'desktop.vault.bodyHit': 'cocok di dalam isi nota',
 
   // -- desktop: inbox -------------------------------------------------------
   'desktop.inbox.kicker': 'Rapat masuk',
   'desktop.inbox.count': '{count} rapat',
+  'desktop.inbox.search': 'Cari rapat masuk…',
   'desktop.inbox.participants': '{count} peserta',
   'desktop.inbox.transcriptOnly': 'transkrip saja',
   'desktop.inbox.empty':
     'Belum ada rapat yang masuk. Nyalakan “Kirim rapat selesai ke Companion Desktop” di setelan extension, lalu tekan “Tes koneksi” di sana.',
+  'desktop.inbox.noMatches': 'Tidak ada rapat masuk yang cocok dengan pencarian ini.',
 
   // -- desktop: editor ------------------------------------------------------
   'desktop.editor.titlePlaceholder': 'Judul nota',
@@ -71,13 +74,14 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.date.today': 'Hari ini',
 
   // -- desktop: settings ----------------------------------------------------
-  'desktop.settings.title': 'Vault & jembatan',
+  'desktop.settings.title': 'Pengaturan',
   'desktop.settings.theme': 'Tema',
   'desktop.settings.themeHint':
     '“Ikut sistem” mengikuti tampilan macOS atau Windows dan berubah sendiri saat sistem berganti terang atau gelap.',
   'desktop.settings.language': 'Bahasa',
   'desktop.settings.languageHint':
     '“Ikut sistem” memakai bahasa sistem operasi. Ini hanya mengubah antarmuka — notulen rapat tetap memakai bahasa yang dipakai saat rapat.',
+  'desktop.settings.vaultBridge': 'Vault & jembatan',
   'desktop.settings.vaultLocation': 'Lokasi vault',
   'desktop.settings.vaultHint':
     '{count} nota. Semua berkas .md biasa — bisa dibuka editor apa pun, dan aman disalin atau di-backup seperti folder lain.',

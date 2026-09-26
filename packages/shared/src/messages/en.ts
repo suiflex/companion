@@ -12,9 +12,9 @@ export const en = {
   // -- desktop: shell -------------------------------------------------------
   'desktop.nav.notes': 'Notes',
   'desktop.nav.inbox': 'Incoming meetings',
-  'desktop.nav.settings': 'Vault & bridge',
-  'desktop.nav.install': 'Connect a browser',
+  'desktop.nav.settings': 'Settings',
   'desktop.nav.theme': 'Theme: {mode}',
+  'desktop.sidebar.tabs': 'Sidebar views',
   'desktop.badge.local': 'Saved locally, never synced',
 
   // -- desktop: note list ---------------------------------------------------
@@ -25,15 +25,18 @@ export const en = {
   'desktop.vault.search': 'Search notes…',
   'desktop.vault.searchTitlesOnly': 'Search titles (index unavailable)…',
   'desktop.vault.empty': 'No notes yet.',
+  'desktop.vault.noMatches': 'No notes match this search.',
   'desktop.vault.bodyHit': 'matched inside the note body',
 
   // -- desktop: inbox -------------------------------------------------------
   'desktop.inbox.kicker': 'Incoming meetings',
   'desktop.inbox.count': '{count} meetings',
+  'desktop.inbox.search': 'Search incoming meetings…',
   'desktop.inbox.participants': '{count} participants',
   'desktop.inbox.transcriptOnly': 'transcript only',
   'desktop.inbox.empty':
     'No meetings have arrived yet. Turn on “Send finished meetings to Companion Desktop” in the extension settings, then press “Test connection” there.',
+  'desktop.inbox.noMatches': 'No incoming meetings match this search.',
 
   // -- desktop: editor ------------------------------------------------------
   'desktop.editor.titlePlaceholder': 'Note title',
@@ -75,13 +78,14 @@ export const en = {
   'desktop.date.today': 'Today',
 
   // -- desktop: settings ----------------------------------------------------
-  'desktop.settings.title': 'Vault & bridge',
+  'desktop.settings.title': 'Settings',
   'desktop.settings.theme': 'Theme',
   'desktop.settings.themeHint':
     '“Follow system” matches macOS or Windows and changes on its own when the system switches between light and dark.',
   'desktop.settings.language': 'Language',
   'desktop.settings.languageHint':
     '“Follow system” uses your operating system’s language. This changes the interface only — meeting notes keep the language they were spoken in.',
+  'desktop.settings.vaultBridge': 'Vault & bridge',
   'desktop.settings.vaultLocation': 'Vault location',
   'desktop.settings.vaultHint':
     '{count} notes. All ordinary .md files — openable in any editor, and safe to copy or back up like any other folder.',

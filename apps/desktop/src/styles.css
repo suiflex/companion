@@ -59,61 +59,16 @@ body {
 .shell {
   display: flex;
   height: 100%;
-}
-
-.rail {
-  width: 52px;
-  flex: none;
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 0;
-  border-right: 1px solid var(--border);
-  background: var(--bg-sunken);
-}
-
-.rail .brand {
-  width: 26px;
-  height: 26px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-}
-
-.rail-btn {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--fg-muted);
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.rail-btn:hover:not(:disabled) {
-  background: var(--bg-raised);
-  color: var(--fg);
-}
-
-/* A disabled rail button must not invite a click it will not answer. */
-.rail-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
+  min-width: 0;
 }
 
 .add-btn:disabled,
-.search:disabled {
+.search:disabled,
+.sidebar-search-input:disabled {
   opacity: 0.45;
   cursor: default;
 }
 
-.rail-spacer {
-  margin-top: auto;
-}
 
 .content {
   flex: 1;
@@ -177,18 +132,12 @@ body {
   max-width: 46ch;
 }
 
-.rail-active {
-  background: var(--bg-raised);
-  color: var(--fg);
-}
 
-/* ponytail: the CSS `resize` grabber rather than a drag handle of our own —
-   the platform already draws one. It does not persist across launches; add a
-   stored width if that turns out to matter. */
+/* Match the extension's default width while keeping resize bounded beside the editor. */
 .sidebar {
-  width: 300px;
+  width: 276px;
   min-width: 240px;
-  max-width: 520px;
+  max-width: 340px;
   resize: horizontal;
   overflow: hidden;
   flex: none;
@@ -199,12 +148,40 @@ body {
   min-height: 0;
 }
 
-.sidebar-head {
+.sidebar-top {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 12px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border-bottom: 1px solid var(--border);
+  gap: 9px;
+  padding: 0 2px 2px;
+}
+
+.sidebar-brand .brand {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  margin: 0;
+}
+
+.sidebar-brand-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .kicker {
@@ -219,14 +196,101 @@ body {
 .count {
   margin-left: auto;
   font-weight: 400;
-  font-size: 11px;
-  line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--fg-muted);
 }
+.sidebar-tabs { width: 100%; }
+
+.sidebar-tabs .ui-segmented {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  width: 100%;
+  padding: 3px;
+  border: 1px solid var(--ui-hairline-2);
+  border-radius: 9px;
+  background: var(--ui-ink);
+}
+
+.sidebar-tabs .ui-segmented-option {
+  min-width: 0;
+  padding: 7px 5px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.sidebar-tabs .ui-segmented-option.is-active {
+  border-color: var(--ui-accent);
+  background: var(--ui-accent-dim);
+}
+
+.sidebar-scroll {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  padding: 12px 10px;
+}
+
+.sidebar-list-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-list-head .kicker {
+  margin: 0;
+}
+
+.sidebar-bottom {
+  flex: none;
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  padding: 10px 12px 12px;
+}
+
+.sidebar-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-foot-spacer { flex: 1; }
+
+
+.sidebar-support-btn {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-muted);
+  padding: 0;
+}
+
+.sidebar-support-btn:hover:not(:disabled) {
+  border-color: var(--border);
+  background: var(--bg-raised);
+  color: var(--fg);
+}
+
 
 .add-btn {
+  display: grid;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  place-items: center;
   border: 0;
+  padding: 0;
   background: transparent;
   color: var(--fg-muted);
   font-size: 14px;
@@ -237,14 +301,72 @@ body {
   color: var(--accent);
 }
 
+.sidebar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid var(--ui-hairline);
+  border-radius: 8px;
+  background: var(--ui-panel-2);
+}
+
+.sidebar-search:focus-within {
+  border-color: var(--ui-accent);
+}
+
+.sidebar-search-icon {
+  flex: none;
+  color: var(--ui-text-faint);
+  font-size: 14px;
+}
+
+.sidebar-search-input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 7px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.sidebar-search-input:focus-visible {
+  outline: none;
+}
+
 .search {
-  margin: 10px;
+  margin: 0;
+}
+
+.sidebar-section-label {
+  flex: none;
+  margin: 0;
+  padding: 0 6px 6px;
+  color: var(--ui-text-faint);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sidebar-tree-section {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
 }
 
 .note-list {
   list-style: none;
+  min-width: 0;
   margin: 0;
   padding: 0 8px 12px;
+  overflow-x: hidden;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -252,7 +374,7 @@ body {
 
 .note-tree .note-item {
   flex-direction: row;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 7px;
 }
 
@@ -262,6 +384,7 @@ body {
 .note-kind {
   flex: none;
   width: 11px;
+  margin-top: 4px;
   text-align: center;
   font-size: 10px;
   color: var(--fg-muted);
@@ -275,73 +398,129 @@ body {
 
 .note-item {
   width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
   text-align: left;
   padding: 8px 10px;
-  border: 0;
-  border-radius: 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
+  font: inherit;
   cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
 }
 
-.note-item:hover {
+.note-item:hover:not(:disabled) {
+  border-color: var(--border);
   background: var(--bg-raised);
 }
 
-.note-item.active {
+.note-item.active,
+.note-item.active:hover:not(:disabled) {
+  border-color: var(--ui-hairline-2);
   background: var(--bg-raised);
-  box-shadow: inset 2px 0 0 var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .note-item:hover .note-title,
 .note-item.active .note-title { color: var(--fg); }
 
-/* A leaf sits below its folder in weight as well as in the tree: same face,
-   one step lighter, so the structure is legible without reading the words. */
+/* Keep title and metadata readable inside a bounded tree row. */
+.note-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
 .note-title {
-  font-weight: 400;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--fg-muted);
   overflow: hidden;
+  color: var(--fg);
+  font: 600 12px/1.4 var(--ui-font-mono);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 /* One type scale for the whole sidebar.
-   It had three: monospace for the counts and the kicker, 600-weight Avenir for
-   the folders, and the body face for the notes — in a 300px column that reads
-   as three unrelated lists stacked on top of each other rather than one tree.
-   Everything below is the body face at two sizes; the counts keep tabular
-   figures so the column of numbers stays straight, which is the one thing the
-   monospace was actually buying. */
+   It had three: monospace for the counts and kicker, 600-weight Avenir for
+   folders, and the body face for notes — a narrow tree made them read as
+   unrelated lists. Two sizes keep hierarchy; tabular figures keep counts
+   aligned without giving them another face.
+*/
 
 /* The folder tree. Indentation is applied per row rather than by nesting
    padding, so a deep note still starts its hit area at the sidebar edge. */
-.note-tree { padding: 4px 0; overflow-y: auto; }
+.note-tree {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 6px 10px 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
 
-.note-tree .tree-list { list-style: none; margin: 0; padding: 0; }
+.note-tree .tree-list {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.note-tree > .tree-list > li + li {
+  border-top: 1px solid var(--ui-hairline);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.note-tree .tree-list .tree-list {
+  border-left: 1px solid var(--ui-hairline);
+  margin-left: 8px;
+}
+
+.note-tree .tree-list .tree-list .tree-folder {
+  color: var(--fg-muted);
+  font-weight: 500;
+}
+
+.note-tree li { min-width: 0; }
+
+.tree-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
 
 .tree-folder {
   display: flex;
+  flex: 1;
   align-items: center;
   gap: 6px;
   width: 100%;
+  min-width: 0;
   padding: 5px 8px;
-  border: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
   font-weight: 600;
-  font-size: 12.5px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.4;
   text-align: left;
   cursor: pointer;
 }
 
-.tree-folder:hover .tree-name { color: var(--accent); }
+.tree-folder:hover:not(:disabled) {
+  border-color: var(--border);
+  background: var(--bg-raised);
+  color: var(--accent);
+}
 
 /* The folder a dragged note would land in. Without a visible target the
    gesture is a guess. */
@@ -370,9 +549,13 @@ body {
 /* The per-folder add button. Hidden until the row is touched, so a sidebar
    of folders is not a wall of icons. */
 .tree-add {
+  display: grid;
   flex: none;
+  width: 26px;
+  height: 28px;
+  place-items: center;
   border: 0;
-  padding: 0 2px;
+  padding: 0;
   background: transparent;
   color: var(--fg-muted);
   font-size: 12px;
@@ -381,9 +564,13 @@ body {
   opacity: 0;
 }
 
-.tree-folder:hover .tree-add,
+.tree-folder-row:hover .tree-add,
 .tree-add:focus-visible { opacity: 1; }
-.tree-add:hover { color: var(--accent); }
+.tree-add:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--bg-raised);
+  color: var(--accent);
+}
 
 .tree-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -403,10 +590,16 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* Where a note came from, when it did not come from here. */
 .note-source {
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 1px 5px;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -421,8 +614,15 @@ body {
 .note-item.active .note-source { border-color: var(--accent); color: var(--accent); }
 
 .note-date {
-  font: 400 9.5px/1 ui-monospace, Menlo, monospace;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  margin-left: auto;
   color: var(--fg-muted);
+  font: 400 11px/1.3 var(--ui-font-body);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* One row per delivered meeting: where it came from, when, how many people,
@@ -447,6 +647,7 @@ body {
 .editor-wrap {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   padding: 28px 40px;
@@ -646,12 +847,17 @@ body {
 [data-tip]:hover::after,
 [data-tip]:focus-visible::after { opacity: 1; }
 
-/* The rail is a narrow left edge; a tooltip below it would be clipped by the
-   next button, so those sit beside it instead. */
-[data-tip-side='right']::after {
-  top: 50%;
-  left: calc(100% + 8px);
-  transform: translateY(-50%);
+/* Footer icons sit against the window edge; keep labels inside the sidebar. */
+.sidebar-foot [data-tip]::after {
+  top: auto;
+  bottom: calc(100% + 6px);
+  left: 0;
+  transform: none;
+}
+
+.sidebar-foot [data-tip]:nth-last-child(-n+2)::after {
+  left: auto;
+  right: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1124,9 +1330,27 @@ body {
   flex: 1;
 }
 
+.settings-window {
+  box-sizing: border-box;
+  height: 100%;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 28px 32px;
+  background: var(--bg);
+}
+
+.settings-window .settings {
+  margin: 0 auto;
+}
 .settings {
   max-width: 640px;
   padding: 8px 4px;
+}
+
+.install-settings-section {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
 }
 
 .settings h1 {
@@ -1140,6 +1364,14 @@ body {
   font-size: 13px;
   font-weight: 600;
   color: var(--fg);
+}
+
+.settings .settings-section-title {
+  margin: 24px 0 4px;
+  color: var(--accent);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .setting-row {

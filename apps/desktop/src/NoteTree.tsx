@@ -4,7 +4,7 @@
 // what is on disk. Expanded state is a per-viewer convenience and lives in
 // localStorage, the way the theme and language preferences do.
 import { useState } from 'react'
-import { t } from '@meetcc/shared/i18n'
+import { formatDate, t } from '@meetcc/shared/i18n'
 import type { TreeFolder } from './tree'
 import { Button } from '@meetcc/ui'
 
@@ -65,52 +65,41 @@ export function NoteTree({
     const total = countNotes(folder)
     return (
       <li key={folder.path}>
-        <Button type="button"
-        className={over === folder.path ? 'tree-folder drop-over' : 'tree-folder'}
-        style={{ paddingLeft: `${8 + depth * 12}px` }}
-        aria-expanded={!isCollapsed}
-        onClick={() => toggle(folder.path)}
-        onDragOver={(e) => {
-          // preventDefault is what marks this a valid drop target; without
-          // it the browser refuses the drop and the gesture does nothing.
-          e.preventDefault()
-          e.stopPropagation()
-          setOver(folder.path)
-        }}
-        onDragLeave={() => setOver((p) => (p === folder.path ? null : p))}
-        onDrop={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          setOver(null)
-          const rel = e.dataTransfer.getData('text/plain')
-          if (rel) onMove(rel, folder.path)
-        }}><span className={isCollapsed ? 'tree-caret' : 'tree-caret open'} aria-hidden="true" />
-        <span className="tree-name">{folder.name}</span>
-        {/* Nesting is what makes folders worth having, and the only place to
-            say which folder a new one belongs to is the folder itself —
-            asking afterwards is a second question for something the click
-            already answered. */}
-        <span
-          role="button"
-          tabIndex={0}
-          className="tree-add"
-          aria-label={t('desktop.vault.newFolderIn', { folder: folder.name })}
-          data-tip={t('desktop.vault.newFolderIn', { folder: folder.name })}
-          onClick={(e) => {
-            // The row toggles; only the inner control adds.
-            e.stopPropagation()
-            onAddFolder(folder.path)
-          }}
-          onKeyDown={(e) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return
-            e.preventDefault()
-            e.stopPropagation()
-            onAddFolder(folder.path)
-          }}
-        >
-          ⊞
-        </span>
-        <span className="tree-count">{total}</span></Button>
+        <div className="tree-folder-row">
+          <Button
+            type="button"
+            className={over === folder.path ? 'tree-folder drop-over' : 'tree-folder'}
+            style={{ paddingLeft: `${Math.min(8 + depth * 12, 56)}px` }}
+            aria-expanded={!isCollapsed}
+            onClick={() => toggle(folder.path)}
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setOver(folder.path)
+            }}
+            onDragLeave={() => setOver((path) => (path === folder.path ? null : path))}
+            onDrop={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setOver(null)
+              const rel = e.dataTransfer.getData('text/plain')
+              if (rel) onMove(rel, folder.path)
+            }}
+          >
+            <span className={isCollapsed ? 'tree-caret' : 'tree-caret open'} aria-hidden="true" />
+            <span className="tree-name">{folder.name}</span>
+            <span className="tree-count">{total}</span>
+          </Button>
+          <Button
+            type="button"
+            className="tree-add"
+            aria-label={t('desktop.vault.newFolderIn', { folder: folder.name })}
+            data-tip={t('desktop.vault.newFolderIn', { folder: folder.name })}
+            onClick={() => onAddFolder(folder.path)}
+          >
+            ⊞
+          </Button>
+        </div>
         {!isCollapsed && renderChildren(folder, depth + 1)}
       </li>
     )
@@ -123,22 +112,28 @@ export function NoteTree({
         const delivered = Boolean(n.platform && n.platform !== 'manual')
         return (
           <li key={n.rel}>
-            <Button type="button"
-            draggable
-            className={selected === n.rel ? 'note-item active' : 'note-item'}
-            style={{ paddingLeft: `${8 + depth * 12}px` }}
-            onClick={() => onOpen(n.rel)}
-            onDragStart={(e) => {
-              e.dataTransfer.setData('text/plain', n.rel)
-              e.dataTransfer.effectAllowed = 'move'
-            }}>{/* Two kinds of note share this list, and which is which decides
-                whether editing it rewrites an archive. A badge at the end of
-                the row was too quiet to separate them while scanning, so the
-                mark leads. */}
-            <span className={delivered ? 'note-kind delivered' : 'note-kind'} aria-hidden="true">
-              {delivered ? '▤' : '·'}
-            </span>
-            <span className="note-title">{n.title}</span></Button>
+            <Button
+              type="button"
+              draggable
+              className={selected === n.rel ? 'note-item active' : 'note-item'}
+              style={{ paddingLeft: `${Math.min(8 + depth * 12, 56)}px` }}
+              onClick={() => onOpen(n.rel)}
+              onDragStart={(e) => {
+                e.dataTransfer.setData('text/plain', n.rel)
+                e.dataTransfer.effectAllowed = 'move'
+              }}
+            >
+              <span className={delivered ? 'note-kind delivered' : 'note-kind'} aria-hidden="true">
+                {delivered ? '▤' : '·'}
+              </span>
+              <span className="note-main">
+                <span className="note-title">{n.title}</span>
+                <span className="note-row-meta">
+                  {n.source && <span className="note-source">{n.source}</span>}
+                  {n.updatedAt && <span className="note-date">{formatDate(n.updatedAt)}</span>}
+                </span>
+              </span>
+            </Button>
           </li>
         )
       })}

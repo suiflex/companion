@@ -9,6 +9,9 @@ export interface TreeNote {
   title: string
   /** The meeting platform, or 'manual' for a note written in the app. */
   platform?: string
+  /** Human-facing source label, set by the desktop UI. */
+  source?: string
+  updatedAt?: string
 }
 
 export interface TreeFolder {
