@@ -13,6 +13,7 @@ import {
 } from './settingsEvents'
 import { loadLangPref } from './lang'
 import { loadThemePref, type ThemePref } from './theme'
+import { loadAutosave, saveAutosave } from './editorPrefs'
 import { useDesktopPreferences } from './useDesktopPreferences'
 
 export function SettingsWindow() {
@@ -22,6 +23,7 @@ export function SettingsWindow() {
   const [noteCount, setNoteCount] = useState(0)
   const [themePref, setThemePref] = useState<ThemePref>(loadThemePref)
   const [langPref, setLangPref] = useState<LangPref>(loadLangPref)
+  const [autosave, setAutosave] = useState(loadAutosave)
   useDesktopPreferences(themePref, langPref)
 
   const reloadVault = useCallback(async () => {
@@ -60,6 +62,7 @@ export function SettingsWindow() {
     void listen<SettingsPreferences>(SETTINGS_PREFERENCES_EVENT, ({ payload }) => {
       if (payload.themePref) setThemePref(payload.themePref)
       if (payload.langPref) setLangPref(payload.langPref)
+      if (payload.autosave !== undefined) setAutosave(payload.autosave)
     })
       .then((unlisten) => {
         if (alive) stop = unlisten
@@ -101,6 +104,12 @@ export function SettingsWindow() {
         onLangChange={(pref) => {
           setLangPref(pref)
           sendPreferences({ langPref: pref })
+        }}
+        autosave={autosave}
+        onAutosaveChange={(on) => {
+          setAutosave(on)
+          saveAutosave(on)
+          sendPreferences({ autosave: on })
         }}
       />
     </main>

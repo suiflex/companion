@@ -73,3 +73,23 @@ export function saveTarget(input: SaveInput): SaveTarget {
   }
   return { rel: inFolder(relPath(copy)), note: copy, copied: true }
 }
+
+/**
+ * The open note after a write, which autosave can race with typing: the file
+ * was written from `sent`, but `current` may already hold newer text. Newer
+ * text wins and stays dirty for the next save; it only adopts the identity
+ * the write gave it — a delivered meeting becomes its copy on first save,
+ * and the next save must land on that copy, not make another.
+ */
+export function settleSaved(
+  current: VaultNote,
+  sent: VaultNote,
+  written: VaultNote,
+): { note: VaultNote; dirty: boolean } {
+  if (current === sent) return { note: written, dirty: false }
+  const { id, sessionKey, platform, source, transcript, updatedAt } = written
+  return {
+    note: { ...current, id, sessionKey, platform, source, transcript, updatedAt },
+    dirty: true,
+  }
+}

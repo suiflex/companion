@@ -37,6 +37,7 @@ export const id: Record<keyof typeof en, string> = {
   // -- desktop: editor ------------------------------------------------------
   'desktop.editor.titlePlaceholder': 'Judul nota',
   'desktop.editor.unsaved': 'belum disimpan',
+  'desktop.editor.saving': 'menyimpan…',
   'desktop.editor.updated': 'diperbarui {date}',
   'desktop.editor.trash': 'Pindah ke sampah',
   'desktop.editor.save': 'Simpan',
@@ -81,6 +82,9 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.settings.language': 'Bahasa',
   'desktop.settings.languageHint':
     '“Ikut sistem” memakai bahasa sistem operasi. Ini hanya mengubah antarmuka — notulen rapat tetap memakai bahasa yang dipakai saat rapat.',
+  'desktop.settings.autosave': 'Simpan otomatis',
+  'desktop.settings.autosaveHint':
+    'Simpan perubahan sesaat setelah berhenti mengetik. Mati: simpan lewat tombol Simpan, dan meninggalkan nota yang belum disimpan akan ditanya dulu.',
   'desktop.settings.vaultBridge': 'Vault & jembatan',
   'desktop.settings.vaultLocation': 'Lokasi vault',
   'desktop.settings.vaultHint':
@@ -98,6 +102,8 @@ export const id: Record<keyof typeof en, string> = {
   'pref.system': 'Ikut sistem',
   'pref.light': 'Terang',
   'pref.dark': 'Gelap',
+  'pref.on': 'Aktif',
+  'pref.off': 'Mati',
   'lang.en': 'Inggris',
   'lang.id': 'Indonesia',
   'meetingLang.keep': 'Jangan diubah (deteksi otomatis)',

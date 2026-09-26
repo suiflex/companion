@@ -15,6 +15,8 @@ export interface SettingsPageProps {
   onThemeChange: (pref: ThemePref) => void
   langPref: LangPref
   onLangChange: (pref: LangPref) => void
+  autosave: boolean
+  onAutosaveChange: (on: boolean) => void
 }
 
 export function SettingsPage({
@@ -27,6 +29,8 @@ export function SettingsPage({
   onThemeChange,
   langPref,
   onLangChange,
+  autosave,
+  onAutosaveChange,
 }: SettingsPageProps) {
   return (
     <div className="settings">
@@ -62,6 +66,22 @@ export function SettingsPage({
           }))}
           value={themePref}
           onChange={(value) => onThemeChange(value as ThemePref)}
+        />
+      </section>
+      <section className="setting-row">
+        <div>
+          <h2>{t('desktop.settings.autosave')}</h2>
+          <p className="hint">{t('desktop.settings.autosaveHint')}</p>
+        </div>
+        <SegmentedControl
+          role="group"
+          ariaLabel={t('desktop.settings.autosave')}
+          options={[
+            { value: 'on', label: t('pref.on') },
+            { value: 'off', label: t('pref.off') },
+          ]}
+          value={autosave ? 'on' : 'off'}
+          onChange={(value) => onAutosaveChange(value === 'on')}
         />
       </section>
       <h2 className="settings-section-title">{t('desktop.settings.vaultBridge')}</h2>

@@ -11,7 +11,8 @@ import { MeetingMeta } from './MeetingMeta'
 import { Select, type Option, type Tone } from './Select'
 import { activeSponsorLinks } from './sponsor'
 import { NoteTree } from './NoteTree'
-import { saveTarget } from './saveTarget'
+import { saveTarget, settleSaved } from './saveTarget'
+import { loadAutosave } from './editorPrefs'
 import { drainSpool } from './spool'
 import { buildTree, folderPaths, withEmptyFolders } from './tree'
 import { inboxSearchResults } from './sidebarResults'
@@ -223,6 +224,16 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'notes' | 'inbox'>('notes')
   const [dirty, setDirty] = useState(false)
+  const [autosave, setAutosave] = useState(loadAutosave)
+  // Bumped only when a different note is opened, so the editor remounts then
+  // and never mid-typing — a save can change the note's id (a delivered
+  // meeting becomes its copy), which keying by id used to turn into a jump.
+  const [editorKey, setEditorKey] = useState(0)
+  // The note as last rendered, for a save to see what was typed during its
+  // write, and the write in flight, so two saves never race into two copies.
+  const noteRef = useRef<VaultNote | null>(null)
+  noteRef.current = note
+  const savingRef = useRef<Promise<boolean> | null>(null)
   // Search fell back to titles because the SQLite index would not open.
   const [indexDown, setIndexDown] = useState(false)
   // The duplicate-key warning already shown, so it is not repeated per poll.
@@ -282,6 +293,7 @@ export default function App() {
       listen<SettingsPreferences>(SETTINGS_PREFERENCES_EVENT, ({ payload }) => {
         if (payload.themePref) setThemePref(payload.themePref)
         if (payload.langPref) setLangPref(payload.langPref)
+        if (payload.autosave !== undefined) setAutosave(payload.autosave)
       }),
     ])
       .then((stop) => {
@@ -418,8 +430,11 @@ export default function App() {
 
   /** Run `action`, unless there are unsaved edits to resolve first. */
   function guard(action: () => Promise<void>) {
-    if (dirty) setPending(() => action)
-    else void action()
+    if (!dirty) return void action()
+    // With autosave the edits are kept, not asked about; only a failed write
+    // falls back to the question.
+    if (!autosave) return setPending(() => action)
+    void save(true).then((ok) => (ok ? action() : setPending(() => action)))
   }
 
   async function resume(discard: boolean) {
@@ -436,6 +451,7 @@ export default function App() {
     setSelected(rel)
     setTarget(null)
     setNote(n)
+    setEditorKey((k) => k + 1)
     setDirty(false)
     setError(null)
   }
@@ -496,19 +512,33 @@ export default function App() {
     setTarget(selected ? selected.split('/').slice(0, -1).join('/') : null)
     setSelected(null)
     setNote(fresh)
+    setEditorKey((k) => k + 1)
     setDirty(false)
     setError(null)
   }
 
-  async function save() {
-    if (!vault || !note) return
+  /** Write the open note. `silent` is autosave: no toast unless a copy was made. */
+  function save(silent = false): Promise<boolean> {
+    // ponytail: joins the write in flight rather than queueing another; the
+    // settled note stays dirty if typing happened, which schedules the next.
+    if (savingRef.current) return savingRef.current
+    const run = writeOpenNote(silent).finally(() => {
+      savingRef.current = null
+    })
+    savingRef.current = run
+    return run
+  }
+
+  async function writeOpenNote(silent: boolean): Promise<boolean> {
+    if (!vault || !note) return false
+    const sent = note
     try {
       // Where this goes and what it writes lives in `saveTarget`, which is
       // pure and has tests: the rule was three nested ternaries here and was
       // wrong twice — once writing a second file for a note that already had
       // one, once making a fresh copy of a meeting on every single save.
       const { rel, note: toWrite, copied } = saveTarget({
-        note,
+        note: sent,
         selected,
         target,
         relPath: (n) => vault.relPath(n),
@@ -520,15 +550,34 @@ export default function App() {
       // its session key and misses.
       setSelected(rel)
       setTarget(null)
-      setNote({ ...toWrite })
-      setDirty(false)
+      const current = noteRef.current
+      // Another note was opened, or this one trashed, while the file was
+      // written: leave whatever is on screen now alone.
+      if (current && current.id === sent.id) {
+        const settled = settleSaved(current, sent, { ...toWrite })
+        setNote(settled.note)
+        setDirty(settled.dirty)
+      }
       await refresh(vault)
       setError(null)
-      toast('success', copied ? t('desktop.toast.copiedToNotes') : t('desktop.toast.saved'))
+      if (copied) toast('success', t('desktop.toast.copiedToNotes'))
+      else if (!silent) toast('success', t('desktop.toast.saved'))
+      return true
     } catch (e) {
       setError(String(e))
+      return false
     }
   }
+
+  // Autosave: a quiet moment after the last edit. An untouched draft is left
+  // unwritten — it only becomes a file once something was typed.
+  useEffect(() => {
+    if (!autosave || !dirty || !note || pending) return
+    if (!note.title.trim() && !note.body.trim()) return
+    const timer = setTimeout(() => void save(true), 800)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- save reads the same note
+  }, [autosave, dirty, note, pending])
 
   function trash() {
     if (!vault || !note || pending) return
@@ -971,12 +1020,13 @@ export default function App() {
                 <MeetingMeta note={note} vault={vault} />
               )}
               <TicketFields note={note} onChange={(patch) => { setNote({ ...note, ...patch }); setDirty(true) }} />
-              {/* Keyed by the note id, not its path: the editor owns its
-                  document, so opening another note must remount it — but the
-                  first save of a new note, which is the moment a path appears,
-                  must not, or the cursor jumps out from under the typing. */}
+              {/* Keyed by which note was opened, not its id or path: the
+                  editor owns its document, so opening another note must
+                  remount it — but a save, which can give the note a path or
+                  (for a meeting's copy) a new id, must not, or the cursor
+                  jumps out from under the typing. */}
               <NoteEditor
-                key={note.id}
+                key={editorKey}
                 value={note.body}
                 onChange={(body) => {
                   setNote({ ...note, body })
@@ -986,7 +1036,9 @@ export default function App() {
               <div className="editor-actions">
                 <span className="meta">
                   {dirty
-                    ? t('desktop.editor.unsaved')
+                    ? autosave
+                      ? t('desktop.editor.saving')
+                      : t('desktop.editor.unsaved')
                     : t('desktop.editor.updated', {
                         date: formatDate(note.updatedAt) || '—',
                       })}
@@ -1011,7 +1063,7 @@ export default function App() {
                     meeting it never overwrites the archive, it makes the note
                     you go on editing. Removing Save here would leave no way to
                     act on a meeting at all. */}
-                <Button type="button" variant="primary" onClick={save}>
+                <Button type="button" variant="primary" onClick={() => void save()}>
                   {note.platform && note.platform !== 'manual'
                     ? t('desktop.editor.saveCopy')
                     : t('desktop.editor.save')}

@@ -10,4 +10,5 @@ export type SettingsAction = 'move-vault' | 'reset-vault'
 export interface SettingsPreferences {
   themePref?: ThemePref
   langPref?: LangPref
+  autosave?: boolean
 }

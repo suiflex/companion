@@ -41,6 +41,7 @@ export const en = {
   // -- desktop: editor ------------------------------------------------------
   'desktop.editor.titlePlaceholder': 'Note title',
   'desktop.editor.unsaved': 'unsaved',
+  'desktop.editor.saving': 'saving…',
   'desktop.editor.updated': 'updated {date}',
   'desktop.editor.trash': 'Move to trash',
   'desktop.editor.save': 'Save',
@@ -85,6 +86,9 @@ export const en = {
   'desktop.settings.language': 'Language',
   'desktop.settings.languageHint':
     '“Follow system” uses your operating system’s language. This changes the interface only — meeting notes keep the language they were spoken in.',
+  'desktop.settings.autosave': 'Autosave',
+  'desktop.settings.autosaveHint':
+    'Save edits a moment after you stop typing. Off: save with the Save button, and leaving a note with unsaved edits asks first.',
   'desktop.settings.vaultBridge': 'Vault & bridge',
   'desktop.settings.vaultLocation': 'Vault location',
   'desktop.settings.vaultHint':
@@ -102,6 +106,8 @@ export const en = {
   'pref.system': 'Follow system',
   'pref.light': 'Light',
   'pref.dark': 'Dark',
+  'pref.on': 'On',
+  'pref.off': 'Off',
   'lang.en': 'English',
   'lang.id': 'Indonesian',
   'meetingLang.keep': 'Don’t change (auto-detect)',
