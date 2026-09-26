@@ -48,6 +48,15 @@ body,
   margin: 0;
 }
 
+/* Every pane scrolls on its own; the page itself never does. Without this a
+   child a few pixels too wide let the whole window slide sideways. `clip`
+   rather than `hidden`: a hidden box can still be scrolled by focus or
+   scrollIntoView, which is exactly how the window got shifted. */
+html,
+body {
+  overflow: clip;
+}
+
 body {
   background: var(--bg);
   color: var(--fg);
