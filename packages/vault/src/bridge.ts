@@ -26,6 +26,21 @@ export interface BridgeBatch {
   entries: BatchLine[]
   /** Optional preformatted note body (e.g. a prior AI summary). */
   markdown?: string
+  /**
+   * Set by a manual re-export: `markdown` replaces the body of a note that
+   * already exists. Safe because a delivered note is an archive — editing
+   * one in the app makes a copy — so the body is still what the extension
+   * last sent, unless someone edited the file outside the app.
+   */
+  replaceBody?: boolean
+  /**
+   * `entries` is the whole transcript, not the lines since the last delivery.
+   * When the note already exists its sidecar has them, so they are skipped
+   * rather than appended a second time.
+   */
+  snapshot?: boolean
+  /** Meeting tags from the extension, merged into the note's frontmatter tags. */
+  tags?: string[]
 }
 
 export interface BridgeState {
@@ -72,8 +87,19 @@ export async function applyBatch(
     }
   }
   const sessionKey = batch.sessionKey ?? sessionKeyFor(batch.roomId, batch.startedAt)
-  const all = await deps.vault.readAll()
-  const existing = all.find((n) => n.sessionKey === sessionKey)
+  // Found together with its path: the user may have moved the note to
+  // another folder, and `writeNote` would derive the original path and lay
+  // down a second file there.
+  let existing: VaultNote | undefined
+  let existingRel: string | undefined
+  for (const rel of await deps.vault.listNotes()) {
+    const candidate = await deps.vault.readNote(rel)
+    if (candidate.sessionKey === sessionKey) {
+      existing = candidate
+      existingRel = rel
+      break
+    }
+  }
   const id = uuidV7()
   const note: VaultNote = existing ?? {
     id,
@@ -91,16 +117,22 @@ export async function applyBatch(
     title: '',
     body: '',
   }
-  if (batch.markdown !== undefined && !existing) {
+  if (batch.markdown !== undefined && (!existing || batch.replaceBody)) {
     // First delivery carries the (possibly AI-cleaned) note body. The writer
     // synthesizes the `# heading`, so split it out of the markdown body.
     const split = splitMarkdown(batch.markdown)
     note.title = split.title || batch.roomId
     note.body = split.body
   }
+  if (batch.tags?.length) {
+    // ponytail: merge only — a tag removed in the extension stays in the note
+    note.tags = [...new Set([...(note.tags ?? []), ...batch.tags])]
+  }
   note.updatedAt = deps.now()
-  await deps.vault.writeNote(note)
-  for (const line of batch.entries) {
+  if (existingRel) await deps.vault.writeNoteAt(existingRel, note)
+  else await deps.vault.writeNote(note)
+  const lines = existing && batch.snapshot ? [] : batch.entries
+  for (const line of lines) {
     await deps.vault.appendTranscript(note.id, JSON.stringify(line))
   }
   state.seen[batch.operationId] = deps.now()
