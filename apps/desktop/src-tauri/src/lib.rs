@@ -92,6 +92,15 @@ pub fn run() {
 
             Ok(())
         })
+        // Settings is a second window that only talks to `main`. Left open
+        // after `main` closes, it keeps the process alive with no way back to
+        // the notes and its vault buttons emit into nothing — so `main` going
+        // away ends the app, as it did when it was the only window.
+        .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+                window.app_handle().exit(0);
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             vault::vault_root,
             vault::set_vault_root,
