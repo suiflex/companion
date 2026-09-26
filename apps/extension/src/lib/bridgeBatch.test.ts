@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Meeting } from '@meetcc/shared';
+import type { Analysis, Meeting } from '@meetcc/shared';
 import { toBridgeBatch } from './bridgeBatch';
 
 const meeting = (over: Partial<Meeting> = {}): Meeting => ({
@@ -50,5 +50,30 @@ describe('toBridgeBatch', () => {
     };
     expect(toBridgeBatch(meeting(), 0, analysis).markdown).toContain('Ringkasan rapat.');
     expect(toBridgeBatch(meeting(), 1, analysis).markdown).toBeUndefined();
+  });
+});
+
+describe('toBridgeBatch resend', () => {
+  const analysis: Analysis = {
+    executiveSummary: 'Ringkasan baru.',
+    timeline: [],
+    keyDiscussions: [],
+    decisions: [],
+    actionItems: [],
+    risks: [],
+    openQuestions: [],
+    nextSteps: [],
+    diagrams: [],
+  };
+
+  it('a manual full resend carries the body and marks the transcript as a snapshot', () => {
+    const batch = toBridgeBatch(meeting(), 0, analysis, true);
+    expect(batch.markdown).toBeTruthy();
+    expect(batch.replaceBody).toBe(true);
+    expect(batch.snapshot).toBe(true);
+  });
+
+  it('carries meeting tags', () => {
+    expect(toBridgeBatch(meeting({ tags: ['vault'] }), 0).tags).toEqual(['vault']);
   });
 });

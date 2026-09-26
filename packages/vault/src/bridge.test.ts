@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it } from 'vitest'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, renameSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { type Vault } from './vault'
@@ -110,4 +110,43 @@ it('still accepts a batch that carries its own session key', async () => {
     batch({ roomId: '', startedAt: '', sessionKey: 'meet/abc#2026-08-28T14:00' }),
   )
   expect(res.status).toBe('ok')
+})
+
+it('updates a delivered note where the user moved it instead of writing a second file', async () => {
+  const now = () => '2026-09-01T10:00:00Z'
+  await applyBatch({ vault, now }, batch({ markdown: '# Gate review\n\nAwal.' }))
+  const [rel] = await vault.listNotes()
+  const moved = `Projects/${rel.split('/').pop()}`
+  mkdirSync(join(dir, 'Projects'))
+  renameSync(join(dir, rel), join(dir, moved))
+
+  await applyBatch({ vault, now }, batch({ operationId: 'op-2', entries: [] }))
+  expect(await vault.listNotes()).toEqual([moved])
+})
+
+it('a manual resend replaces the body without appending the transcript again', async () => {
+  const now = () => '2026-09-01T10:00:00Z'
+  await applyBatch({ vault, now }, batch({ markdown: '# Gate review\n\nDraf.' }))
+  await applyBatch(
+    { vault, now },
+    batch({ operationId: 'op-2', markdown: '# Gate review\n\nRingkasan baru.', replaceBody: true, snapshot: true }),
+  )
+  const [note] = await vault.readAll()
+  expect(note.body).toBe('Ringkasan baru.')
+  expect(await vault.readTranscript(note.id)).toHaveLength(1)
+})
+
+it('a later sweep never replaces the body', async () => {
+  const now = () => '2026-09-01T10:00:00Z'
+  await applyBatch({ vault, now }, batch({ markdown: '# Gate review\n\nDraf.' }))
+  await applyBatch({ vault, now }, batch({ operationId: 'op-2', markdown: '# Gate review\n\nLain.' }))
+  const [note] = await vault.readAll()
+  expect(note.body).toBe('Draf.')
+})
+
+it('merges meeting tags into the note tags', async () => {
+  const now = () => '2026-09-01T10:00:00Z'
+  await applyBatch({ vault, now }, batch({ tags: ['vault', 'rapat'] }))
+  const [note] = await vault.readAll()
+  expect(note.tags).toEqual(['rapat', 'vault'])
 })
