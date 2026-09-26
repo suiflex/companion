@@ -85,7 +85,11 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.settings.autosave': 'Simpan otomatis',
   'desktop.settings.autosaveHint':
     'Simpan perubahan sesaat setelah berhenti mengetik. Mati: simpan lewat tombol Simpan, dan meninggalkan nota yang belum disimpan akan ditanya dulu.',
-  'desktop.settings.vaultBridge': 'Vault & jembatan',
+  'desktop.settings.section.general': 'Umum',
+  'desktop.settings.section.editor': 'Editor',
+  'desktop.settings.section.vault': 'Vault',
+  'desktop.settings.section.browsers': 'Browser',
+  'desktop.settings.section.ai': 'Penyedia AI',
   'desktop.settings.vaultLocation': 'Lokasi vault',
   'desktop.settings.vaultHint':
     '{count} nota. Semua berkas .md biasa — bisa dibuka editor apa pun, dan aman disalin atau di-backup seperti folder lain.',

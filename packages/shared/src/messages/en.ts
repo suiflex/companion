@@ -89,7 +89,11 @@ export const en = {
   'desktop.settings.autosave': 'Autosave',
   'desktop.settings.autosaveHint':
     'Save edits a moment after you stop typing. Off: save with the Save button, and leaving a note with unsaved edits asks first.',
-  'desktop.settings.vaultBridge': 'Vault & bridge',
+  'desktop.settings.section.general': 'General',
+  'desktop.settings.section.editor': 'Editor',
+  'desktop.settings.section.vault': 'Vault',
+  'desktop.settings.section.browsers': 'Browsers',
+  'desktop.settings.section.ai': 'AI provider',
   'desktop.settings.vaultLocation': 'Vault location',
   'desktop.settings.vaultHint':
     '{count} notes. All ordinary .md files — openable in any editor, and safe to copy or back up like any other folder.',

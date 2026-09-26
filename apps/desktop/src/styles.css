@@ -1356,17 +1356,70 @@ body {
   box-sizing: border-box;
   height: 100%;
   min-width: 0;
-  overflow-y: auto;
-  padding: 28px 32px;
   background: var(--bg);
 }
 
-.settings-window .settings {
-  margin: 0 auto;
+/* System-settings layout: sections on the left, one at a time on the right,
+   each scrolling on its own so the nav never scrolls away. */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  height: 100%;
 }
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 28px 12px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.settings-nav-item {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: 500 13px/1.3 var(--ui-font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.settings-nav-item:hover { background: var(--bg-raised); color: var(--fg); }
+
+.settings-nav-item.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.settings-nav-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.settings-window .settings {
+  box-sizing: border-box;
+  max-width: none;
+  overflow-y: auto;
+  padding: 28px 36px 40px;
+}
+
+.settings-window .settings > * { max-width: 640px; }
+
 .settings {
   max-width: 640px;
   padding: 8px 4px;
+}
+
+/* A choice's labels stay on one line; the hint beside it wraps instead. */
+.setting-row .ui-segmented { flex: none; white-space: nowrap; }
+
+@media (max-width: 860px) {
+  .setting-row { flex-wrap: wrap; }
 }
 
 .install-settings-section {
@@ -1386,14 +1439,6 @@ body {
   font-size: 13px;
   font-weight: 600;
   color: var(--fg);
-}
-
-.settings .settings-section-title {
-  margin: 24px 0 4px;
-  color: var(--accent);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
 }
 
 .setting-row {
