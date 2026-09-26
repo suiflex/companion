@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Meet Companion",
-  "version": "1.16.0",
+  "version": "1.16.1",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7kzk9W5bfjdLGpCIyood87dpByHWUyyEwKDHM0X1hzIVZ+ArAfEcyNA4HN3go+YaIeUOi1fa6XEOXoS9jlxkFG1vZPaTc8O02foWbCptBpk/y9dHsbh8tNLANWwdCOtAZkYrwDuKOVU2o+Qy9dwNFWmiSy2ulLPUpG1xOhYSLATBsHZHvmkdSR6jmk/LB8oOAfetToKcHCLztdSf1WjCn4xx75n+QAd97KrPjaazE/GKEm4np7h5icIuIYrtIBJ/NSW9s9ZV5D/5x/xmICMRxIvVXaJMX7ZrTBhPtSckO2TcMc2wjy1k7mDJeCqip9NWbunLGgdiR5I1kBLhslXUowIDAQAB",
   "description": "AI meeting assistant: captures Google Meet & Microsoft Teams captions, generates summaries, action items and meeting notes",
   "browser_specific_settings": {

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.16.1](https://github.com/suiflex/companion/compare/v1.16.0...v1.16.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **release:** ignore the unversioned extension zip alias ([8702bb6](https://github.com/suiflex/companion/commit/8702bb6da30e50e1e968ecd05984114133cddeae))
+* **release:** ignore the unversioned extension zip alias ([c2d8b81](https://github.com/suiflex/companion/commit/c2d8b81b871d08b5832a33a383232d46237b4999))
+
 ## [1.16.0](https://github.com/suiflex/companion/compare/v1.15.0...v1.16.0) (2026-09-26)
 
 
