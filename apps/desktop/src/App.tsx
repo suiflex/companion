@@ -15,7 +15,7 @@ import { saveTarget, settleSaved } from './saveTarget'
 import { loadAutosave } from './editorPrefs'
 import { drainSpool } from './spool'
 import { buildTree, folderPaths, withEmptyFolders } from './tree'
-import { inboxSearchResults } from './sidebarResults'
+import { hideCopiedOriginals, inboxSearchResults } from './sidebarResults'
 import { loadThemePref, type ThemePref } from './theme'
 import { NoteEditor } from './NoteEditor'
 import UpdateBanner from './UpdateBanner'
@@ -738,10 +738,12 @@ export default function App() {
   // Grouped view of the same notes the search filters over — when a query is
   // running the flat result list is what makes sense, so the tree is only the
   // resting state.
+  const notesTab = useMemo(() => hideCopiedOriginals(notes, notes), [notes])
+  const notesTabResults = useMemo(() => hideCopiedOriginals(filtered, notes), [filtered, notes])
   const tree = useMemo(
     () =>
       withEmptyFolders(
-        buildTree(notes.map((n) => ({
+        buildTree(notesTab.map((n) => ({
           rel: n.rel,
           title: n.title,
           platform: n.platform,
@@ -750,7 +752,7 @@ export default function App() {
         }))),
         folders,
       ),
-    [notes, folders],
+    [notesTab, folders],
   )
 
   // Notes the extension delivered, as opposed to ones written here. The split
@@ -828,7 +830,7 @@ export default function App() {
             <>
               <div className="sidebar-list-head">
                 <span className="kicker">{t('desktop.vault.kicker')}</span>
-                <span className="count">{t('desktop.vault.count', { count: notes.length })}</span>
+                <span className="count">{t('desktop.vault.count', { count: notesTab.length })}</span>
                 <span className="tip-wrap" data-tip={t('desktop.vault.newFolder')}>
                   <Button
                     type="button"
@@ -884,7 +886,7 @@ export default function App() {
                 </>
               ) : (
                 <ul className="note-list">
-                  {filtered.map((n) => (
+                  {notesTabResults.map((n) => (
                     <li key={n.rel || n.title}>
                       {n.rel ? (
                         <Button
@@ -907,7 +909,7 @@ export default function App() {
                       )}
                     </li>
                   ))}
-                  {filtered.length === 0 && <li className="empty-hint">{t('desktop.vault.noMatches')}</li>}
+                  {notesTabResults.length === 0 && <li className="empty-hint">{t('desktop.vault.noMatches')}</li>}
                 </ul>
               )}
             </>
