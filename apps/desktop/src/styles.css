@@ -1467,6 +1467,16 @@ body {
   color: var(--fg-muted);
 }
 
+.version-pill {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font: 600 11px/1.4 ui-monospace, Menlo, monospace;
+  vertical-align: middle;
+}
+
 /* A path is the one thing here a user may need to copy exactly. */
 .setting-path {
   margin: 0;

@@ -90,6 +90,7 @@ export const id: Record<keyof typeof en, string> = {
   'desktop.settings.section.vault': 'Vault',
   'desktop.settings.section.browsers': 'Browser',
   'desktop.settings.section.ai': 'Penyedia AI',
+  'desktop.settings.section.version': 'Versi',
   'desktop.settings.vaultLocation': 'Lokasi vault',
   'desktop.settings.vaultHint':
     '{count} nota. Semua berkas .md biasa — bisa dibuka editor apa pun, dan aman disalin atau di-backup seperti folder lain.',
@@ -775,5 +776,13 @@ export const id: Record<keyof typeof en, string> = {
     'Firefox belum bisa disambungkan dari sini. Add-on yang sudah ditandatangani tidak bisa dipasang manual, jadi belum ada yang bisa didaftarkan sampai listing di addons.mozilla.org terbit \u2014 itu sedang menyusul.',
 
   // -- desktop: updater -----------------------------------------------------
+  'desktop.version.current': 'Companion Desktop',
+  'desktop.version.hint': 'Pembaruan juga dicek setiap kali aplikasi dibuka.',
+  'desktop.version.check': 'Cek pembaruan',
+  'desktop.version.checking': 'Mengecek pembaruan…',
+  'desktop.version.upToDate': 'Kamu sudah memakai versi terbaru.',
+  'desktop.version.releases': 'Catatan rilis',
+  'desktop.version.releasesHint': 'Semua versi, lengkap dengan perubahannya dan unduhan untuk tiap platform.',
+  'desktop.version.openReleases': 'GitHub Releases',
   'desktop.update.available': 'Versi {version} tersedia.',
 };

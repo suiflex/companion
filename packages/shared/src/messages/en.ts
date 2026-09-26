@@ -94,6 +94,7 @@ export const en = {
   'desktop.settings.section.vault': 'Vault',
   'desktop.settings.section.browsers': 'Browsers',
   'desktop.settings.section.ai': 'AI provider',
+  'desktop.settings.section.version': 'Version',
   'desktop.settings.vaultLocation': 'Vault location',
   'desktop.settings.vaultHint':
     '{count} notes. All ordinary .md files — openable in any editor, and safe to copy or back up like any other folder.',
@@ -778,5 +779,13 @@ export const en = {
     'Firefox is not connected from here. A signed add-on cannot be side-loaded, so there is nothing to register until the listing on addons.mozilla.org is published \u2014 that is coming.',
 
   // -- desktop: updater -----------------------------------------------------
+  'desktop.version.current': 'Companion Desktop',
+  'desktop.version.hint': 'Updates are also checked each time the app starts.',
+  'desktop.version.check': 'Check for updates',
+  'desktop.version.checking': 'Checking for updates…',
+  'desktop.version.upToDate': 'You have the latest version.',
+  'desktop.version.releases': 'Release notes',
+  'desktop.version.releasesHint': 'Every version, with what changed and the downloads for each platform.',
+  'desktop.version.openReleases': 'GitHub Releases',
   'desktop.update.available': 'Version {version} is available.',
 } as const;

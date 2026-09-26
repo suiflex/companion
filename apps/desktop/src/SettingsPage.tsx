@@ -3,6 +3,7 @@ import { t, LANGS, type LangPref, type MessageKey } from '@meetcc/shared/i18n'
 import { Button, SegmentedControl } from '@meetcc/ui'
 import { AIProviderPanel } from './AIProviderPanel'
 import { InstallView } from './InstallView'
+import { VersionPanel } from './VersionPanel'
 import { langLabel, themeLabel } from './preferenceLabels'
 import type { ThemePref } from './theme'
 
@@ -27,6 +28,7 @@ const SECTIONS = {
   vault: 'desktop.settings.section.vault',
   browsers: 'desktop.settings.section.browsers',
   ai: 'desktop.settings.section.ai',
+  version: 'desktop.settings.section.version',
 } satisfies Record<string, MessageKey>
 
 type Section = keyof typeof SECTIONS
@@ -190,6 +192,8 @@ export function SettingsPage({
         )}
 
         {section === 'ai' && <AIProviderPanel />}
+
+        {section === 'version' && <VersionPanel />}
       </div>
     </div>
   )

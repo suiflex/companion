@@ -5,6 +5,9 @@
   "windows": ["settings"],
   "permissions": [
     "core:event:default",
+    "core:app:allow-version",
+    "updater:default",
+    "process:allow-restart",
     {
       "identifier": "http:default",
       "allow": [
