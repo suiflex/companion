@@ -5,10 +5,13 @@ import {
   appendAudit,
   saveContext,
   getContext,
+  getMeetingTags,
+  saveMeetingTags,
   getMiniContexts,
   watchStorage,
   MINI_CONTEXTS_KEY,
   CONTEXT_PREFIX,
+  MEETING_TAGS_PREFIX,
 } from '@meetcc/shared';
 import { db } from '../lib/db';
 import { toMarkdown } from '@meetcc/exporters/markdown';
@@ -183,7 +186,8 @@ function buildTagToContextsMap(contexts: MiniContext[]): Map<string, MiniContext
 
 function ContextCard({ meeting }: { meeting: Meeting }) {
   const [context, setContext] = useState(meeting.context ?? '');
-  const [open, setOpen] = useState(!meeting.context?.trim());
+  const [selectedTags, setSelectedTags] = useState<string[]>(meeting.tags ?? []);
+  const [open, setOpen] = useState(!meeting.context?.trim() && (!meeting.tags || meeting.tags.length === 0));
   const [saved, setSaved] = useState(false);
   const [availableContexts, setAvailableContexts] = useState<MiniContext[]>([]);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -204,22 +208,27 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
       if (alive) {
         const val = stored || meeting.context || '';
         setContext(val);
-        if (!val.trim()) {
-          setOpen(true);
-        }
+      }
+    });
+    void getMeetingTags(meeting.id).then((storedTags) => {
+      if (alive) {
+        setSelectedTags(storedTags || meeting.tags || []);
       }
     });
     return () => {
       alive = false;
     };
-  }, [meeting.id, meeting.context]);
+  }, [meeting.id, meeting.context, meeting.tags]);
 
   useEffect(() => {
     return watchStorage(() => {
       void getContext(meeting.id).then((ctx) => {
         if (ctx !== undefined) setContext(ctx);
       });
-    }, [CONTEXT_PREFIX + meeting.id]);
+      void getMeetingTags(meeting.id).then((tags) => {
+        if (tags !== undefined) setSelectedTags(tags);
+      });
+    }, [CONTEXT_PREFIX + meeting.id, MEETING_TAGS_PREFIX + meeting.id]);
   }, [meeting.id]);
 
   const tagToContexts = useMemo(() => buildTagToContextsMap(availableContexts), [availableContexts]);
@@ -244,27 +253,36 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
     toast('success', t('ext.summary.contextSaved'));
   };
 
-  const appendSnippets = async (snippets: string[]) => {
-    if (!snippets.length) return;
-    const added = snippets.join('\n');
-    const nextContext = context.trim() ? `${context.trim()}\n${added}` : added;
-    setContext(nextContext);
-    await saveContext(meeting.id, nextContext).catch(() => undefined);
-    await db('set-session-agenda', { id: meeting.id, agenda: nextContext }).catch(() => undefined);
-    toast('success', t('ext.header.contextInserted'));
-    setPopoverOpen(false);
+  const toggleTag = async (tag: string) => {
+    const lower = tag.toLowerCase();
+    const isAttached = selectedTags.some((t) => t.toLowerCase() === lower);
+    const nextTags = isAttached
+      ? selectedTags.filter((t) => t.toLowerCase() !== lower)
+      : [...selectedTags, lower];
+    setSelectedTags(nextTags);
+    await saveMeetingTags(meeting.id, nextTags).catch(() => undefined);
+    toast('success', t(isAttached ? 'ext.header.tagDetached' : 'ext.header.tagAttached', { tag }));
   };
 
-  const insertSingle = (ctx: MiniContext) => {
-    void appendSnippets([`[${ctx.term}]: ${ctx.definition}`]);
+  const isCtxActive = (ctx: MiniContext) => {
+    const termLower = ctx.term.toLowerCase();
+    return selectedTags.some(
+      (t) => t.toLowerCase() === termLower || ctx.tags.some((tg) => tg.toLowerCase() === t.toLowerCase())
+    );
   };
 
-  const insertTag = (tag: string) => {
-    const matches = tagToContexts.get(tag.toLowerCase()) ?? [];
-    void appendSnippets(matches.map((c) => `[${c.term}]: ${c.definition}`));
+  const toggleSingle = async (ctx: MiniContext) => {
+    const termLower = ctx.term.toLowerCase();
+    const isAttached = selectedTags.some((t) => t.toLowerCase() === termLower);
+    const nextTags = isAttached
+      ? selectedTags.filter((t) => t.toLowerCase() !== termLower)
+      : [...selectedTags, termLower];
+    setSelectedTags(nextTags);
+    await saveMeetingTags(meeting.id, nextTags).catch(() => undefined);
+    toast('success', t(isAttached ? 'ext.header.tagDetached' : 'ext.header.tagAttached', { tag: ctx.term }));
   };
 
-  const hasContext = !!context.trim();
+  const hasContext = !!context.trim() || selectedTags.length > 0;
 
   return (
     <div className="summary-context-card">
@@ -276,9 +294,11 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
         {hasContext && <span className="context-indicator" />}
       </span>
       <span className="summary-context-preview dim">
-        {hasContext
+        {context.trim()
           ? context.trim().slice(0, 45) + (context.trim().length > 45 ? '…' : '')
-          : t('ext.summary.contextHint')}
+          : selectedTags.length > 0
+            ? selectedTags.map((tg) => `#${tg}`).join(' ')
+            : t('ext.summary.contextHint')}
       </span>
       <span className="summary-context-arrow">{open ? '▲' : '▼'}</span></Button>
       {open && (
@@ -291,6 +311,26 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
             onBlur={handleSave}
             rows={3}
           />
+          {selectedTags.length > 0 && (
+            <div className="summary-active-tags-row">
+              <span className="summary-active-tags-label">{t('ext.header.activeTags')}:</span>
+              <div className="summary-active-tags-list">
+                {selectedTags.map((tg) => (
+                  <span key={tg} className="summary-active-tag-chip">
+                    #{tg}
+                    <Button
+                      type="button"
+                      className="summary-active-tag-remove"
+                      onClick={() => void toggleTag(tg)}
+                      aria-label={t('ext.header.close')}
+                    >
+                      ✕
+                    </Button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="summary-context-quick-insert">
             <span className="quick-insert-label">
               ✦ {t('ext.header.insertContext')}:
@@ -298,13 +338,14 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
             <div className="quick-insert-tags" title={t('ext.header.insertByTag')}>
               {uniqueTags.map((tg) => {
                 const count = tagCounts.get(tg) ?? 0;
+                const isAttached = selectedTags.some((t) => t.toLowerCase() === tg.toLowerCase());
                 return (
                   <Button key={tg}
                   type="button"
-                  className="quick-insert-tag-btn"
-                  onClick={() => void insertTag(tg)}
+                  className={`quick-insert-tag-btn ${isAttached ? 'active' : ''}`}
+                  onClick={() => void toggleTag(tg)}
                   title={t('ext.header.insertAllWithTag', { tag: tg, count })}>
-                    + #{tg} <span className="tag-count">({count})</span></Button>
+                    {isAttached ? '✓' : '+'} #{tg} <span className="tag-count">({count})</span></Button>
                 );
               })}
               {availableContexts.length > 0 && (
@@ -326,13 +367,18 @@ function ContextCard({ meeting }: { meeting: Meeting }) {
                         </Button>
                       </div>
                       <div className="summary-popover-item-list">
-                        {availableContexts.map((ctx) => (
-                          <Button key={ctx.id}
-                          type="button"
-                          className="summary-ctx-item-btn"
-                          onClick={() => void insertSingle(ctx)}><span className="ctx-item-term">{ctx.term}</span>
-                          <span className="dim ctx-item-def">{ctx.definition}</span></Button>
-                        ))}
+                        {availableContexts.map((ctx) => {
+                          const active = isCtxActive(ctx);
+                          return (
+                            <Button key={ctx.id}
+                            type="button"
+                            className={`summary-ctx-item-btn ${active ? 'active' : ''}`}
+                            onClick={() => void toggleSingle(ctx)}>
+                              <span className="ctx-item-term">{active ? '✓ ' : ''}{ctx.term}</span>
+                              <span className="dim ctx-item-def">{ctx.definition}</span>
+                            </Button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

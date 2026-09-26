@@ -2401,6 +2401,79 @@ body[data-theme='light'] .field-row input[list]::-webkit-calendar-picker-indicat
   color: var(--phosphor);
 }
 
+.quick-insert-tag-btn.active {
+  background: rgba(64, 219, 150, 0.15);
+  border-color: var(--phosphor);
+  color: var(--phosphor);
+  font-weight: 600;
+}
+
+.quick-insert-tag-btn.active .tag-count {
+  color: var(--phosphor);
+}
+
+.summary-active-tags-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.summary-active-tags-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--phosphor);
+}
+
+.summary-active-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.summary-active-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--phosphor);
+  background: var(--panel);
+  border: 1px solid var(--hairline-2);
+  border-radius: 99px;
+}
+
+.summary-active-tag-remove {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.summary-active-tag-remove:hover {
+  color: var(--err, #ff5c5c);
+}
+
+.summary-ctx-item-btn.active {
+  background: var(--hairline);
+  border-color: var(--phosphor);
+}
+
 .quick-insert-tag-btn .tag-count {
   font-size: 10px;
   color: var(--text-dim);

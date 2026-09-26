@@ -100,6 +100,7 @@ function createInitialStorage(): Record<string, unknown> {
     storage[`meta:${seed.id}`] = meta;
     storage[`title:${seed.id}`] = seed.title;
     storage[`context:${seed.id}`] = seed.context;
+    storage[`tags:${seed.id}`] = [];
     storage[`transcript:${seed.id}`] = entries;
     storage[`analysis:${seed.id}`] = analysis;
   }

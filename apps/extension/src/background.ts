@@ -44,6 +44,8 @@ import {
   loadAudit,
   loadChat,
   loadClean,
+  getMeetingTags,
+  getMiniContexts,
   isLive,
   loadMeetings,
   loadSettings,
@@ -95,10 +97,32 @@ async function loadMeetingForAI(id: string): Promise<Meeting | null> {
   const meeting = (await loadMeetings()).find((m) => m.id === id);
   if (!meeting) return null;
   const clean = await loadClean(id);
-  if (clean?.status !== 'done' || !clean.entries.length) return meeting;
   // §26: lines the user rejected fall back to the raw capture, and lines
   // captured after the cleanup ran are appended untouched
-  return { ...meeting, entries: effectiveClean(meeting.entries, clean) };
+  const baseEntries =
+    clean?.status !== 'done' || !clean.entries.length
+      ? meeting.entries
+      : effectiveClean(meeting.entries, clean);
+
+  // §context: Enrich context with terms from active tags / glossary for AI accuracy
+  const tags = meeting.tags ?? (await getMeetingTags(id));
+  let context = meeting.context ?? '';
+  if (tags && tags.length > 0) {
+    const miniContexts = await getMiniContexts();
+    const tagSet = new Set(tags.map((t) => t.toLowerCase()));
+    const matched = miniContexts.filter(
+      (c) =>
+        tagSet.has(c.term.toLowerCase()) ||
+        c.tags.some((tg) => tagSet.has(tg.toLowerCase())),
+    );
+    if (matched.length > 0) {
+      const glossaryLines = matched.map((c) => `[${c.term}]: ${c.definition}`);
+      const glossaryBlock = `Istilah & Konteks Tambahan:\n${glossaryLines.join('\n')}`;
+      context = context.trim() ? `${context.trim()}\n\n${glossaryBlock}` : glossaryBlock;
+    }
+  }
+
+  return { ...meeting, context, entries: baseEntries };
 }
 
 // The notification id IS the meeting id, so onClicked can open that meeting.
