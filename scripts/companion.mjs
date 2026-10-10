@@ -253,7 +253,7 @@ async function refreshCli(release) {
 
 async function downloadLatestDist(distDir, rel = null) {
   const release = rel || (await fetchLatestRelease());
-  const buf = await downloadAsset(release, /^meetcc-extension-v.*\.zip$/, 'meetcc-extension-v*.zip');
+  const buf = await downloadAsset(release, /^companion-chrome-v.*\.zip$/, 'companion-chrome-v*.zip');
 
   const tmp = `${distDir}.tmp-${process.pid}`;
   await mkdir(tmp, { recursive: true });

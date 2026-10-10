@@ -75,7 +75,7 @@ jobs:
               --source-dir apps/extension/dist-firefox \
               --artifacts-dir web-ext-artifacts \
               --amo-metadata docs/amo/amo-metadata.json \
-              --upload-source-code "meetcc-source-v${{ steps.meta.outputs.version }}.zip" || status=$?
+              --upload-source-code "companion-source-v${{ steps.meta.outputs.version }}.zip" || status=$?
             echo "::endgroup::"
             if [ "$status" -eq 0 ]; then
               echo "Submitted on attempt ${attempt}."

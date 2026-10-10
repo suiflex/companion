@@ -2,7 +2,7 @@
 // Builds the source archive AMO requires whenever the reviewed files are
 // minified — ours are, because apps/extension/dist is a vite bundle.
 //
-//   node scripts/pack-source.mjs   ->  meetcc-source-v<version>.zip
+//   node scripts/pack-source.mjs   ->  companion-source-v<version>.zip
 //
 // Contents are taken from `git ls-files`, so the archive is exactly the tracked
 // tree: no node_modules, no dist, no .env, nothing gitignored. A reviewer runs
@@ -37,9 +37,9 @@ async function main() {
     entries.push({ name, data: await readFile(join(ROOT, name)) });
   }
 
-  const out = join(ROOT, `meetcc-source-v${version}.zip`);
+  const out = join(ROOT, `companion-source-v${version}.zip`);
   await writeFile(out, makeZip(entries));
-  console.log(`Packed meetcc-source-v${version}.zip (${entries.length} files)`);
+  console.log(`Packed companion-source-v${version}.zip (${entries.length} files)`);
 }
 
 main().catch((e) => {

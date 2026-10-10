@@ -16,10 +16,15 @@ coverage/
 *.pem
 .env
 web-ext-artifacts/
+companion-chrome-*.zip
+companion-chrome.zip
+companion-firefox-*.zip
+companion-source-*.zip
 meetcc-extension-*.zip
 meetcc-extension.zip
 meetcc-extension-*.xpi
-meetcc-source-*.zip
+companion-chrome-*.xpi
+companion-firefox-*.xpi
 companion-native-host-v*.mjs
 **/src-tauri/target/
 **/src-tauri/gen/schemas/

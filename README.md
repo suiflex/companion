@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/suiflex/companion/releases/latest/download/meetcc-extension.zip"><img src="https://img.shields.io/github/v/release/suiflex/companion?color=238636&label=Download%20Extension%20(ZIP)&logo=googlechrome&logoColor=white&style=for-the-badge" alt="Download Chrome Extension (ZIP)" height="38"></a>
+  <a href="https://github.com/suiflex/companion/releases/latest/download/companion-chrome.zip"><img src="https://img.shields.io/github/v/release/suiflex/companion?color=238636&label=Download%20Extension%20(ZIP)&logo=googlechrome&logoColor=white&style=for-the-badge" alt="Download Chrome Extension (ZIP)" height="38"></a>
   <br>
   <sub><i>Chrome Web Store listing is currently pending Google verification. Download the latest Chromium extension zip directly using the button above.</i></sub>
 </p>
@@ -41,8 +41,8 @@ Two products, released together on one tag. Take one or both — neither needs t
 
 | | Latest | What you get |
 |---|---|---|
-| **Extension (Chromium)** | [![Download Latest ZIP](https://img.shields.io/badge/Download-Latest_ZIP-238636?style=flat-square&logo=googlechrome&logoColor=white)](https://github.com/suiflex/companion/releases/latest/download/meetcc-extension.zip) · [Releases](https://github.com/suiflex/companion/releases/latest) | `meetcc-extension.zip` / `meetcc-extension-v*.zip` (Chrome, Edge, Brave, Arc) |
-| **Extension (Firefox)** | [addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/meet-companion/) · [Releases](https://github.com/suiflex/companion/releases/latest) | Automatic updates via AMO, or `meetcc-extension-firefox-v*.zip` |
+| **Extension (Chrome / Chromium)** | [![Download Latest ZIP](https://img.shields.io/badge/Download-Latest_ZIP-238636?style=flat-square&logo=googlechrome&logoColor=white)](https://github.com/suiflex/companion/releases/latest/download/companion-chrome.zip) · [Releases](https://github.com/suiflex/companion/releases/latest) | `companion-chrome.zip` / `companion-chrome-v*.zip` (Chrome, Edge, Brave, Arc) |
+| **Extension (Firefox)** | [addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/meet-companion/) · [Releases](https://github.com/suiflex/companion/releases/latest) | Automatic updates via AMO, or `companion-firefox-v*.zip` |
 | **Companion Desktop** | [Releases · `v*`](https://github.com/suiflex/companion/releases?q=%22Meet+Companion%22) | `companion-desktop-<target-triple>` as `.dmg` / `.app.tar.gz` (macOS), `.AppImage` / `.deb` / `.rpm` (Linux), `.msi` / `-setup.exe` (Windows) |
 
 The extension is easiest through the terminal installer below, which also keeps
@@ -51,7 +51,7 @@ it updated. Firefox users get it from
 where Firefox handles updates itself.
 
 > **Manual Chrome / Chromium installation**:
-> 1. Download [`meetcc-extension.zip`](https://github.com/suiflex/companion/releases/latest/download/meetcc-extension.zip) (or from the [latest release](https://github.com/suiflex/companion/releases/latest)) and unzip it.
+> 1. Download [`companion-chrome.zip`](https://github.com/suiflex/companion/releases/latest/download/companion-chrome.zip) (or from the [latest release](https://github.com/suiflex/companion/releases/latest)) and unzip it.
 > 2. Open `chrome://extensions` (or `edge://extensions`, `brave://extensions`), toggle **Developer mode** on, click **Load unpacked**, and select the extracted directory.
 >
 > This ZIP is the latest GitHub release and may be newer than the version currently listed in the Chrome Web Store. The Web Store version updates through Chrome; for a ZIP-installed copy, use the manual update steps below.

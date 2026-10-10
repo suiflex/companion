@@ -37,7 +37,7 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/meet-companion/neeapigpheabagekbdfjdekgdicfckpn'
 const FIREFOX_ADDON_URL = 'https://addons.mozilla.org/en-US/firefox/addon/meet-companion/'
 const EXTENSION_ZIP_URL =
-  'https://github.com/suiflex/companion/releases/latest/download/meetcc-extension.zip'
+  'https://github.com/suiflex/companion/releases/latest/download/companion-chrome.zip'
 
 /** Links leave through Rust: an anchor would navigate the WebView itself. */
 const BADGE =
