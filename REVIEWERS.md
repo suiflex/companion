@@ -24,7 +24,7 @@ npm run pack -- firefox
 ```
 
 The reviewable extension is then at `apps/extension/dist-firefox/`, and
-`meetcc-extension-firefox-v<version>.zip` next to it is the same tree zipped.
+`companion-firefox-v<version>.zip` next to it is the same tree zipped.
 
 ## What `npm run pack -- firefox` does
 

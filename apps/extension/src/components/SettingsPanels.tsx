@@ -688,7 +688,7 @@ export function VersionPanel() {
               />
             </a>
             <a
-              href="https://github.com/suiflex/companion/releases/latest/download/meetcc-extension.zip"
+              href="https://github.com/suiflex/companion/releases/latest/download/companion-chrome.zip"
               target="_blank"
               rel="noreferrer"
               className="version-zip-badge"

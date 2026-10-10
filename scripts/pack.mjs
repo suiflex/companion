@@ -9,10 +9,10 @@
 // needs an event page instead of a service worker and gets its identity from
 // browser_specific_settings, so the `key` is stripped on the way out.
 //
-// Output lands at the repo root with the exact names the CI release step and
-// `companion update` already look for:
-//   meetcc-extension-v<version>.zip
-//   meetcc-extension-firefox-v<version>.zip
+// Output lands at the repo root with the exact names used by CI and
+// `companion update`:
+//   companion-chrome-v<version>.zip
+//   companion-firefox-v<version>.zip
 
 import { readFile, writeFile, readdir, mkdir, rm, cp } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -62,7 +62,7 @@ async function main() {
   const written = [];
 
   if (want('chrome')) {
-    const out = join(ROOT, `meetcc-extension-v${version}.zip`);
+    const out = join(ROOT, `companion-chrome-v${version}.zip`);
     await writeFile(out, makeZip(await collect(DIST)));
     written.push(out);
   }
@@ -78,7 +78,7 @@ async function main() {
       join(ffDir, 'manifest.json'),
       `${JSON.stringify(firefoxManifest(manifest), null, 2)}\n`,
     );
-    const out = join(ROOT, `meetcc-extension-firefox-v${version}.zip`);
+    const out = join(ROOT, `companion-firefox-v${version}.zip`);
     await writeFile(out, makeZip(await collect(ffDir)));
     written.push(out);
     console.log(`Firefox source tree: ${relative(ROOT, ffDir)}`);
