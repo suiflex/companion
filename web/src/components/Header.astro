@@ -1,0 +1,138 @@
+---
+import { navigation, links } from '@/data/site';
+import Icon from './Icon.astro';
+---
+
+<header class="site-header">
+  <div class="shell header-inner">
+    <a class="brand" href="#top">
+      <img src="/brand/logo-mark.svg" width="32" height="32" alt="" />
+      <span>
+        Companion<span class="brand-by">by Suiflex</span>
+      </span>
+    </a>
+    <nav class="desktop-nav" aria-label="Main navigation">
+      {navigation.map((item) => (
+        <a href={item.href}>{item.label}</a>
+      ))}
+    </nav>
+    <div class="header-actions">
+      <a
+        href={links.github}
+        class="icon-button github-header"
+        aria-label="Companion on GitHub"
+      >
+        <Icon name="GitHub" />
+      </a>
+      <button
+        type="button"
+        class="icon-button theme-toggle"
+        aria-label="Switch color theme"
+      >
+        <span class="sun-icon">
+          <Icon name="Sun" />
+        </span>
+        <span class="moon-icon">
+          <Icon name="Moon" />
+        </span>
+      </button>
+      <a class="header-download" href="#download">
+        Get Companion
+        <Icon name="ArrowDown" />
+      </a>
+      <button
+        type="button"
+        class="icon-button mobile-toggle"
+        aria-label="Open navigation"
+        aria-controls="mobile-navigation"
+        aria-expanded="false"
+      >
+        <span class="menu-icon">
+          <Icon name="Menu" />
+        </span>
+        <span class="close-icon">
+          <Icon name="X" />
+        </span>
+      </button>
+    </div>
+  </div>
+  <nav
+    id="mobile-navigation"
+    class="mobile-nav"
+    aria-label="Mobile navigation"
+    hidden
+  >
+    {navigation.map((item) => (
+      <a href={item.href}>
+        {item.label}
+        <Icon name="ArrowUpRight" size={16} />
+      </a>
+    ))}
+    <a href={links.discord}>
+      Discord
+      <Icon name="ArrowUpRight" size={16} />
+    </a>
+    <a href={links.github}>
+      GitHub
+      <Icon name="GitHub" size={16} />
+    </a>
+  </nav>
+</header>
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('.mobile-toggle');
+  const menu = document.querySelector<HTMLElement>('#mobile-navigation');
+  function closeMenu(returnFocus = false) {
+    if (!toggle || !menu) return;
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open navigation');
+    menu.hidden = true;
+    if (returnFocus) toggle.focus();
+  }
+  toggle?.addEventListener('click', () => {
+    if (!menu) return;
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute(
+      'aria-label',
+      open ? 'Close navigation' : 'Open navigation',
+    );
+    menu.hidden = !open;
+  });
+  menu?.addEventListener('click', (event) => {
+    if ((event.target as Element).closest('a')) closeMenu();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (
+      event.key === 'Escape' &&
+      toggle?.getAttribute('aria-expanded') === 'true'
+    )
+      closeMenu(true);
+  });
+  document.addEventListener('click', (event) => {
+    if (!(event.target as Element).closest('.site-header')) closeMenu();
+  });
+  matchMedia('(min-width: 1024px)').addEventListener('change', (event) => {
+    if (event.matches) closeMenu();
+  });
+  const themeToggle =
+    document.querySelector<HTMLButtonElement>('.theme-toggle');
+  function syncThemeLabel() {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    themeToggle?.setAttribute(
+      'aria-label',
+      dark ? 'Switch to light theme' : 'Switch to dark theme',
+    );
+  }
+  syncThemeLabel();
+  themeToggle?.addEventListener('click', () => {
+    const theme =
+      document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('companion-web-theme', theme);
+    } catch {
+      /* The theme still works when storage is blocked. */
+    }
+    syncThemeLabel();
+  });
+</script>

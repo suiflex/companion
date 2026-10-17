@@ -1,0 +1,55 @@
+---
+import { workflow } from '@/data/site';
+import Icon from '../Icon.astro';
+---
+
+<section
+  id="workflow"
+  class="section shell workflow-section"
+  aria-labelledby="workflow-heading"
+>
+  <div class="section-intro" data-reveal>
+    <h2 id="workflow-heading">From conversation to a useful record.</h2>
+    <p>From “what did we decide?” to knowing what comes next.</p>
+  </div>
+  <ol class="workflow-track">
+    {workflow.map((step, index) => (
+      <li data-reveal>
+        <div class="workflow-symbol">
+          <Icon name={step.icon} size={23} />
+          <span>{String(index + 1).padStart(2, '0')}</span>
+        </div>
+        <h3>{step.title}</h3>
+        <p>{step.detail}</p>
+      </li>
+    ))}
+  </ol>
+  <div class="bridge-note">
+    <Icon name="ArrowRight" size={18} />
+    <p>
+      Two independent apps. One optional connection.{' '}
+      <strong>Use the extension, the desktop app, or both.</strong>
+    </p>
+  </div>
+  <div class="platforms">
+    <p>Works where your meetings happen.</p>
+    <div class="platform-names">
+      <span>
+        <Icon name="Video" />
+        Google Meet
+      </span>
+      <span>
+        <Icon name="Video" />
+        Microsoft Teams
+      </span>
+      <span>
+        <Icon name="Video" />
+        Zoom Web
+      </span>
+    </div>
+    <p class="platform-note">
+      Browser captions, captured from the page. Enable captions in Zoom Web
+      first; full speaker names may not be available.
+    </p>
+  </div>
+</section>

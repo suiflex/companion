@@ -1,0 +1,29 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import Header from '@/components/Header.astro';
+import Hero from '@/components/sections/Hero.astro';
+import Workflow from '@/components/sections/Workflow.astro';
+import Features from '@/components/sections/Features.astro';
+import Desktop from '@/components/sections/Desktop.astro';
+import Privacy from '@/components/sections/Privacy.astro';
+import OpenSource from '@/components/sections/OpenSource.astro';
+import Download from '@/components/sections/Download.astro';
+import FAQ from '@/components/sections/FAQ.astro';
+import Footer from '@/components/Footer.astro';
+---
+
+<Layout>
+  <div id="top"></div>
+  <Header />
+  <main id="main">
+    <Hero />
+    <Workflow />
+    <Features />
+    <Desktop />
+    <Privacy />
+    <OpenSource />
+    <Download />
+    <FAQ />
+  </main>
+  <Footer />
+</Layout>

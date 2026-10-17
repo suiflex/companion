@@ -1,0 +1,24 @@
+---
+import { faqs } from '@/data/site';
+import Icon from '../Icon.astro';
+---
+
+<section class="section shell faq-section" aria-labelledby="faq-heading">
+  <div data-reveal>
+    <h2 id="faq-heading">Before you get started.</h2>
+    <p>Clarity before your first call.</p>
+  </div>
+  <div class="faq-list">
+    {faqs.map((faq) => (
+      <details name="faq">
+        <summary>
+          {faq.question}
+          <Icon name="ChevronDown" size={18} />
+        </summary>
+        <div class="faq-answer">
+          <p>{faq.answer}</p>
+        </div>
+      </details>
+    ))}
+  </div>
+</section>

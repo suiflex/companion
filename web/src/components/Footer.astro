@@ -1,0 +1,54 @@
+---
+import { links } from '@/data/site';
+import Icon from './Icon.astro';
+import LinkButton from './LinkButton.astro';
+---
+
+<section class="closing shell" aria-labelledby="closing-heading">
+  <img src="/brand/logo-mark.svg" alt="" width="48" height="48" />
+  <h2 id="closing-heading">Try Companion in your next meeting.</h2>
+  <LinkButton href="#download" icon="Download">
+    Find your Companion
+  </LinkButton>
+</section>
+<footer class="site-footer">
+  <div class="shell footer-main">
+    <a href="#top" class="brand">
+      <img src="/brand/logo-mark.svg" width="30" height="30" alt="" />
+      <span>
+        Companion<span class="brand-by">An open-source project by Suiflex</span>
+      </span>
+    </a>
+    <nav aria-label="Footer product links">
+      <span>Product</span>
+      <a href="#features">Features</a>
+      <a href="#desktop">Desktop</a>
+      <a href={links.releases}>Releases</a>
+      <a href={links.install}>Installation</a>
+    </nav>
+    <nav aria-label="Footer resources">
+      <span>Resources</span>
+      <a href={links.docs}>Documentation</a>
+      <a href={links.privacy}>Privacy policy</a>
+      <a href={links.license}>License</a>
+      <a href={`${links.github}/blob/develop/CHANGELOG.md`}>Changelog</a>
+    </nav>
+    <nav aria-label="Footer community links">
+      <span>Community</span>
+      <a href={links.github}>
+        GitHub
+        <Icon name="ArrowUpRight" size={13} />
+      </a>
+      <a href={links.contributing}>Contributing</a>
+      <a href={links.discord}>Discord</a>
+      <a href={links.issues}>Issues</a>
+      <a href={links.suiflex}>Suiflex</a>
+    </nav>
+  </div>
+  <div class="shell footer-bottom">
+    <span>Built for clarity. Kept by you.</span>
+    <span>
+      Apache License 2.0 · © {new Date().getFullYear()} Suiflex contributors
+    </span>
+  </div>
+</footer>

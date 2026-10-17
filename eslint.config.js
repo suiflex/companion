@@ -12,6 +12,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/dist-firefox/**',
       '**/node_modules/**',
+      'web/.astro/**',
       '**/src-tauri/target/**',
       'coverage/**',
       'docs/.obsidian/**',

@@ -1,0 +1,100 @@
+---
+import Icon from './Icon.astro';
+---
+
+<figure class="desktop-window">
+  <div class="window-chrome">
+    <span class="window-dots" aria-hidden="true">
+      <i></i>
+      <i></i>
+      <i></i>
+    </span>
+    <span>Companion Desktop</span>
+    <Icon name="Monitor" size={14} />
+  </div>
+  <div
+    class="desktop-scene"
+    role="img"
+    aria-label="Illustration based on Companion Desktop’s current interface: a vault tree beside an editable Markdown note. Example content shows a project brief and next steps."
+  >
+    <aside class="vault-tree" aria-hidden="true">
+      <div class="vault-name">
+        <img src="/brand/logo-mark.svg" width="22" height="22" alt="" />
+        My workspace
+      </div>
+      <div class="vault-search">
+        <Icon name="Search" size={13} />
+        Search notes<span>⌘ K</span>
+      </div>
+      <div class="vault-tabs">
+        <span>Notes</span>
+        <span>Incoming meetings</span>
+      </div>
+      <div class="tree-folder">
+        <Icon name="ChevronDown" size={13} />
+        <Icon name="FolderOpen" size={14} />
+        Projects
+      </div>
+      <div class="tree-note active">
+        <Icon name="FileText" size={13} />
+        Website launch plan
+      </div>
+      <div class="tree-note">
+        <Icon name="FileText" size={13} />
+        Research notes
+      </div>
+      <div class="tree-note">
+        <Icon name="FileText" size={13} />
+        Launch checklist
+      </div>
+      <div class="tree-folder">
+        <Icon name="ChevronDown" size={13} />
+        <Icon name="FolderOpen" size={14} />
+        Meetings
+      </div>
+      <div class="tree-note">
+        <Icon name="FileText" size={13} />
+        Architecture review
+      </div>
+      <div class="vault-location">
+        <Icon name="HardDrive" size={13} />
+        ~/Companion
+      </div>
+    </aside>
+    <div class="vault-document" aria-hidden="true">
+      <div class="document-breadcrumb">
+        Projects <span>/</span> Website launch plan.md
+        <Icon name="FileText" size={14} />
+      </div>
+      <div class="document-content">
+        <span class="document-label">PROJECT NOTES</span>
+        <h3>Website launch plan</h3>
+        <p>
+          One place for the project brief, research notes, and launch checklist.
+        </p>
+        <h4>The plan</h4>
+        <p>
+          Document the audience, collect the references, and prepare the first
+          draft for review.
+        </p>
+        <blockquote>The first draft is ready for review on Friday.</blockquote>
+        <h4>Next steps</h4>
+        <div class="document-check">
+          <span class="checked">✓</span>Collect the research notes
+        </div>
+        <div class="document-check">
+          <span></span>Write the first project brief
+        </div>
+        <div class="document-check">
+          <span></span>Share a Markdown copy with the team
+        </div>
+        <p class="document-file">
+          Plain text. A real file. Ready for your next idea.
+        </p>
+      </div>
+    </div>
+  </div>
+  <figcaption>
+    Interface illustration based on the current desktop app. Example content.
+  </figcaption>
+</figure>

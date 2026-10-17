@@ -1,0 +1,73 @@
+---
+import GitHub from '@/assets/github.svg';
+import {
+  ArrowUpRight,
+  ArrowRight,
+  ArrowDown,
+  Download,
+  Menu,
+  X,
+  Sun,
+  Moon,
+  Video,
+  Captions,
+  Sparkles,
+  Search,
+  FolderOpen,
+  FileText,
+  ShieldCheck,
+  Check,
+  HardDrive,
+  Monitor,
+  Globe,
+  ChevronDown,
+} from 'lucide-react';
+const icons = {
+  ArrowUpRight,
+  ArrowRight,
+  ArrowDown,
+  Download,
+  Menu,
+  X,
+  Sun,
+  Moon,
+  Video,
+  Captions,
+  Sparkles,
+  Search,
+  FolderOpen,
+  FileText,
+  ShieldCheck,
+  Check,
+  HardDrive,
+  Monitor,
+  Globe,
+  ChevronDown,
+};
+interface Props {
+  name: keyof typeof icons | 'GitHub';
+  size?: number;
+  class?: string;
+}
+const { name, size = 20, class: className } = Astro.props;
+const Icon = name === 'GitHub' ? null : icons[name];
+---
+
+{name === 'GitHub' ? (
+  <GitHub
+    width={size}
+    height={size}
+    class={className}
+    fill="currentColor"
+    aria-hidden="true"
+  />
+) : (
+  Icon && (
+    <Icon
+      size={size}
+      className={className}
+      strokeWidth={1.6}
+      aria-hidden="true"
+    />
+  )
+)}

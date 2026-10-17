@@ -1,0 +1,112 @@
+---
+import Icon from '../Icon.astro';
+import LinkButton from '../LinkButton.astro';
+import { links } from '@/data/site';
+---
+
+<section
+  id="download"
+  class="section download-section"
+  aria-labelledby="download-heading"
+>
+  <div class="shell">
+    <div class="section-intro" data-reveal>
+      <h2 id="download-heading">Bring Companion to your next meeting.</h2>
+      <p>Start in your browser. Add a desktop home when you’re ready.</p>
+    </div>
+    <div class="download-grid">
+      <article class="download-browser">
+        <div class="download-title">
+          <Icon name="Globe" size={24} />
+          <h3>The browser extension</h3>
+        </div>
+        <p>Capture captions, get AI notes, and search your meeting history.</p>
+        <a class="download-row" href={links.chrome}>
+          <div>
+            <strong>Chrome & Chromium</strong>
+            <span>Install from Chrome Web Store</span>
+          </div>
+          <Icon name="ArrowUpRight" />
+        </a>
+        <a class="download-row" href={links.firefox}>
+          <div>
+            <strong>Firefox</strong>
+            <span>Install from Mozilla Add-ons</span>
+          </div>
+          <Icon name="ArrowUpRight" />
+        </a>
+        <details class="install-details">
+          <summary>
+            Prefer the ZIP? Manual installation
+            <Icon name="ChevronDown" size={16} />
+          </summary>
+          <ol>
+            <li>
+              Get the Chrome extension ZIP from{' '}
+              <a href={links.releases}>GitHub Releases</a> and extract it.
+            </li>
+            <li>
+              Open your browser’s extensions page and enable Developer mode.
+            </li>
+            <li>
+              Choose <strong>Load unpacked</strong> and select the extracted
+              folder.
+            </li>
+          </ol>
+          <p>
+            To update, replace files in the same folder and reload the existing
+            extension. Export a backup first. Removing the extension can erase
+            your meetings.
+          </p>
+        </details>
+        <p class="fine-print">
+          Store installations receive browser-managed updates. Chromium ZIP
+          installs need manual updates.
+        </p>
+      </article>
+      <article class="download-desktop">
+        <div class="download-title">
+          <Icon name="Monitor" size={24} />
+          <h3>Companion Desktop</h3>
+        </div>
+        <p>
+          A local-first workspace for notes, research, and project documents.
+          Use it on its own or connect the browser extension.
+        </p>
+        {[
+          { name: 'macOS', detail: 'Apple Silicon or Intel · .dmg' },
+          { name: 'Windows', detail: 'x64 · .msi or setup .exe' },
+          { name: 'Linux', detail: 'x64 · AppImage, .deb, or .rpm' },
+        ].map((os) => (
+          <a class="download-row" href={links.releases}>
+            <div>
+              <strong>{os.name}</strong>
+              <span>{os.detail}</span>
+            </div>
+            <Icon name="ArrowUpRight" />
+          </a>
+        ))}
+        <div class="unsigned-note">
+          <Icon name="ShieldCheck" size={18} />
+          <p>
+            <strong>Desktop builds are unsigned.</strong> macOS and Windows
+            require manual first-launch steps. Linux ARM64 and Windows ARM64
+            builds are experimental and may not be available.
+            <a
+              href={`${links.install}#installing-companion-desktop-from-a-release`}
+            >
+              Read the installation instructions
+              <Icon name="ArrowUpRight" size={13} />
+            </a>
+          </p>
+        </div>
+      </article>
+    </div>
+    <div class="download-docs">
+      <p>Prefer building from source or the terminal installer?</p>
+      <LinkButton href={links.install} variant="text">
+        Open the installation guide
+      </LinkButton>
+    </div>
+  </div>
+</section>

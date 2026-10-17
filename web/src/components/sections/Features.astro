@@ -1,0 +1,127 @@
+---
+import { Image } from 'astro:assets';
+import summary from '@/assets/summary.png';
+import exportCover from '@/assets/export-cover.png';
+import Icon from '../Icon.astro';
+---
+
+<section id="features" class="section shell" aria-labelledby="features-heading">
+  <div class="section-intro" data-reveal>
+    <h2 id="features-heading">Find the decisions in the conversation.</h2>
+    <p>The useful parts of a conversation, ready for the work ahead.</p>
+  </div>
+  <div class="feature-main" data-reveal>
+    <div class="feature-copy">
+      <Icon name="Sparkles" size={28} />
+      <h3>
+        A clear head start.
+        <br />
+        After every meeting.
+      </h3>
+      <p>
+        Let your configured AI provider turn captured captions into an executive
+        summary, discussion timeline, decisions, action items, risks, and open
+        questions.
+      </p>
+      <ul class="check-list">
+        <li>
+          <Icon name="Check" size={16} />
+          Decisions and their context
+        </li>
+        <li>
+          <Icon name="Check" size={16} />
+          Action items with owners and due dates, when identified
+        </li>
+        <li>
+          <Icon name="Check" size={16} />
+          Raw captions preserved alongside AI cleanup
+        </li>
+      </ul>
+      <p class="fine-print">
+        Finished meetings can be analyzed automatically when AI is configured.
+        Always review AI output.
+      </p>
+    </div>
+    <figure class="summary-visual">
+      <Image
+        src={summary}
+        alt="Companion’s sample meeting showing its executive summary and discussion timeline."
+        widths={[360, 480, 640, 810]}
+        sizes="(max-width: 760px) 85vw, (max-width: 1280px) 48vw, 600px"
+        format="webp"
+        loading="lazy"
+      />
+      <figcaption>From the current extension, using sample data.</figcaption>
+    </figure>
+  </div>
+  <div class="feature-pair">
+    <article class="knowledge-feature" data-reveal>
+      <div class="feature-heading">
+        <Icon name="Search" size={24} />
+        <h3>
+          The answer might be
+          <br />
+          three meetings back.
+        </h3>
+        <p>
+          Search transcripts, decisions, and actions. Ask across meetings and
+          revisit open work from earlier conversations in the same room or
+          project.
+        </p>
+      </div>
+      <div
+        class="context-illustration"
+        role="img"
+        aria-label="Illustration of connected meeting context: a decision from a previous meeting carries forward as an open action in the next."
+      >
+        <div>
+          <Icon name="FileText" size={17} />
+          <span>
+            Architecture review<small>Decision recorded</small>
+          </span>
+          <Icon name="Check" size={16} />
+        </div>
+        <span class="context-connector"></span>
+        <div>
+          <Icon name="FileText" size={17} />
+          <span>
+            Next team sync<small>Open actions carried forward</small>
+          </span>
+          <Icon name="ArrowRight" size={16} />
+        </div>
+        <p>Context that travels with the conversation.</p>
+      </div>
+    </article>
+    <article class="export-feature" data-reveal>
+      <div class="feature-heading">
+        <Icon name="FileText" size={24} />
+        <h3>
+          Useful beyond
+          <br />
+          the browser tab.
+        </h3>
+        <p>
+          Export meeting notes as Markdown or PDF. Share a readable record, add
+          it to a project, or keep a copy in your own files.
+        </p>
+      </div>
+      <div class="export-visual">
+        <Image
+          src={exportCover}
+          alt="An actual Companion meeting-notes PDF cover, with meeting date and generated-by-AI label."
+          width={240}
+          format="webp"
+          loading="lazy"
+        />
+        <div class="file-formats">
+          <span>
+            .md<small>Plain Markdown</small>
+          </span>
+          <span>
+            .pdf<small>Ready to share</small>
+          </span>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>

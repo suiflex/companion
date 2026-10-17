@@ -1,0 +1,94 @@
+---
+import Icon from '../Icon.astro';
+import LinkButton from '../LinkButton.astro';
+import ProviderDemo from '../ProviderDemo';
+import { links } from '@/data/site';
+---
+
+<section
+  id="privacy"
+  class="section shell privacy-section"
+  aria-labelledby="privacy-heading"
+>
+  <div class="privacy-layout" data-reveal>
+    <div>
+      <span class="section-label">
+        <Icon name="ShieldCheck" size={16} />
+        LOCAL FIRST, BY DESIGN
+      </span>
+      <h2 id="privacy-heading">Know where your meeting data goes.</h2>
+      <p class="section-description">
+        Keep the archive on your machine. Choose where AI processing happens.
+        Know what leaves.
+      </p>
+      <LinkButton href={links.privacy} variant="text">
+        Read the privacy policy
+      </LinkButton>
+    </div>
+    <div class="privacy-facts">
+      <article>
+        <Icon name="HardDrive" />
+        <div>
+          <h3>Local capture. Local search.</h3>
+          <p>
+            Captions and the searchable meeting archive live in your browser
+            profile. Desktop notes live in your vault.
+          </p>
+        </div>
+      </article>
+      <article>
+        <Icon name="Globe" />
+        <div>
+          <h3>AI has a destination you choose.</h3>
+          <p>
+            Automatic analysis, questions, and document generation send relevant
+            text to your configured provider. Choose a local endpoint to keep
+            that processing on your machine.
+          </p>
+        </div>
+      </article>
+      <article>
+        <Icon name="ShieldCheck" />
+        <div>
+          <h3>No Companion account. No telemetry.</h3>
+          <p>
+            No author-operated meeting server or usage tracking. Optional
+            integrations contact their configured endpoints; the extension also
+            checks GitHub for releases.
+          </p>
+        </div>
+      </article>
+    </div>
+  </div>
+  <div class="ai-layout" data-reveal>
+    <div class="ai-copy">
+      <h2>Choose the AI that works for you.</h2>
+      <p>
+        Pick the provider that fits your work. Companion supports cloud APIs,
+        local models, and custom compatible endpoints.
+      </p>
+      <p class="fine-print">
+        The extension also has a Chrome built-in AI adapter, subject to browser
+        and device support. ChatGPT and Google account sign-in adapters use
+        vendor CLI backends that may change; availability and account
+        eligibility are not guaranteed.
+      </p>
+      <a
+        href={`${links.install}#connecting-an-ai-provider`}
+        class="inline-link"
+      >
+        Provider setup guide
+        <Icon name="ArrowUpRight" size={16} />
+      </a>
+    </div>
+    <div>
+      <ProviderDemo client:visible />
+      <noscript>
+        <p>
+          Local options: Ollama, LM Studio, custom endpoints. Cloud options:
+          OpenAI, Gemini, Anthropic, Azure OpenAI, and OpenRouter.
+        </p>
+      </noscript>
+    </div>
+  </div>
+</section>

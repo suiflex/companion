@@ -1,0 +1,65 @@
+---
+import Icon from '../Icon.astro';
+import LinkButton from '../LinkButton.astro';
+import { links } from '@/data/site';
+---
+
+<section
+  id="open-source"
+  class="section shell"
+  aria-labelledby="open-source-heading"
+>
+  <div class="open-source-layout" data-reveal>
+    <div class="source-symbol" aria-hidden="true">
+      <img
+        src="/brand/logo-light.svg"
+        width="336"
+        height="64"
+        alt=""
+        class="source-logo-light"
+      />
+      <img
+        src="/brand/logo-dark.svg"
+        width="336"
+        height="64"
+        alt=""
+        class="source-logo-dark"
+      />
+      <span>A project by Suiflex. Apache License 2.0.</span>
+    </div>
+    <div>
+      <h2 id="open-source-heading">Open source, from the first line.</h2>
+      <p>
+        Read the code behind the promise. Meet Companion is an independent
+        open-source project maintained by Suiflex, with room for your ideas,
+        fixes, and contributions.
+      </p>
+      <div class="button-row">
+        <LinkButton href={links.github} icon="GitHub">
+          Star on GitHub
+        </LinkButton>
+        <LinkButton href={links.contributing} variant="text">
+          Become a contributor
+        </LinkButton>
+      </div>
+      <div class="source-links">
+        <a href={links.discord}>
+          Join Discord
+          <Icon name="ArrowUpRight" size={14} />
+        </a>
+        <a href={links.github}>
+          Explore source code
+          <Icon name="ArrowUpRight" size={14} />
+        </a>
+        <a href={links.issues}>
+          Report an issue
+          <Icon name="ArrowUpRight" size={14} />
+        </a>
+        <a href={links.license}>
+          Apache 2.0 license
+          <Icon name="ArrowUpRight" size={14} />
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

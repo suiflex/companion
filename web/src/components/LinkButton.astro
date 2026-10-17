@@ -1,0 +1,20 @@
+---
+import Icon from './Icon.astro';
+interface Props {
+  href: string;
+  variant?: 'primary' | 'secondary' | 'text';
+  icon?: 'Download' | 'GitHub' | 'ArrowRight' | 'ArrowUpRight';
+  class?: string;
+}
+const {
+  href,
+  variant = 'primary',
+  icon = 'ArrowUpRight',
+  class: className = '',
+} = Astro.props;
+---
+
+<a href={href} class:list={['button', `button-${variant}`, className]}>
+  <slot />
+  <Icon name={icon} size={18} />
+</a>

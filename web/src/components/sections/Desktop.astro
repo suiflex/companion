@@ -1,0 +1,71 @@
+---
+import DesktopWindow from '../DesktopWindow.astro';
+import LinkButton from '../LinkButton.astro';
+import Icon from '../Icon.astro';
+---
+
+<section
+  id="desktop"
+  class="section desktop-section"
+  aria-labelledby="desktop-heading"
+>
+  <div class="shell">
+    <div class="section-intro" data-reveal>
+      <span class="section-label">
+        <Icon name="Monitor" size={16} />
+        COMPANION DESKTOP
+      </span>
+      <h2 id="desktop-heading">A workspace for your own knowledge.</h2>
+      <p>
+        Notes, research, project plans, and everyday ideas. Write and organize
+        them in a local-first workspace you can use entirely on its own.
+        <br class="desktop-break" /> Your Markdown files stay yours.
+      </p>
+    </div>
+    <div data-reveal>
+      <DesktopWindow />
+    </div>
+    <div class="desktop-benefits">
+      <div>
+        <Icon name="FileText" />
+        <h3>Make room for your ideas.</h3>
+        <p>
+          Write formatted notes, project documents, and checklists. Add images
+          and attachments, or sketch an idea on a whiteboard.
+        </p>
+      </div>
+      <div>
+        <Icon name="FolderOpen" />
+        <h3>Build your knowledge library.</h3>
+        <p>
+          Arrange notes in folders and find them with full-text search. Your
+          notes are plain Markdown files you can back up or open in another
+          editor.
+        </p>
+      </div>
+      <div>
+        <Icon name="Sparkles" />
+        <h3>Work with your own context.</h3>
+        <p>
+          With an AI provider configured, ask about your vault, draft documents,
+          and review proposed edits before applying them.
+        </p>
+      </div>
+    </div>
+    <div class="bridge-note">
+      <Icon name="ArrowRight" size={18} />
+      <p>
+        <strong>Bring meetings into your workspace when you want.</strong>{' '}
+        Connect the optional browser bridge to deliver finished meeting notes
+        into your vault. No extension is needed for writing and organizing
+        notes.
+      </p>
+    </div>
+    <div class="desktop-bottom">
+      <LinkButton href="#download" variant="secondary" icon="Download">
+        Find your desktop download
+      </LinkButton>
+      <p>macOS, Windows, and Linux. Unsigned builds; setup steps below.</p>
+    </div>
+  </div>
+</section>

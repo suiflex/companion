@@ -1,0 +1,75 @@
+---
+import { Image } from 'astro:assets';
+import dashboard from '@/assets/extension.png';
+import LinkButton from '../LinkButton.astro';
+import Icon from '../Icon.astro';
+import { links } from '@/data/site';
+---
+
+<section class="hero shell" aria-labelledby="hero-heading">
+  <div class="hero-copy">
+    <h1 id="hero-heading">
+      Your meetings,
+      <br />
+      made <em>useful.</em>
+    </h1>
+    <p>
+      Capture the conversation. Find the decisions.
+      <br class="desktop-break" /> Keep the notes, with your choice of AI and a
+      place to call your own.
+    </p>
+    <div class="button-row">
+      <LinkButton href="#download" icon="Download">
+        Get Companion
+      </LinkButton>
+      <a class="hero-source" href={links.github}>
+        Explore the source
+        <Icon name="ArrowUpRight" size={16} />
+      </a>
+    </div>
+  </div>
+  <figure class="hero-product">
+    <div class="window-chrome">
+      <span class="window-dots" aria-hidden="true">
+        <i></i>
+        <i></i>
+        <i></i>
+      </span>
+      <span>Companion / meeting workspace</span>
+      <span class="window-local">
+        <Icon name="HardDrive" size={12} />
+        Saved on this machine
+      </span>
+    </div>
+    <Image
+      src={dashboard}
+      alt="Current Companion extension with a sample meeting: searchable history, AI summary and timeline, and the captured transcript side by side."
+      widths={[480, 640, 960, 1200, 1440]}
+      sizes="(max-width: 760px) 100vw, (max-width: 1280px) 92vw, 1180px"
+      format="webp"
+      quality={82}
+      loading="eager"
+      fetchpriority="high"
+      class="dashboard-image"
+    />
+    <figcaption>
+      Actual Companion interface, with sample meeting data. Notes follow the
+      meeting’s language.
+    </figcaption>
+  </figure>
+  <div class="availability">
+    <span>
+      <Icon name="Globe" size={16} />
+      Chrome / Chromium · Firefox
+    </span>
+    <span class="availability-divider" aria-hidden="true"></span>
+    <span>
+      <Icon name="Monitor" size={16} />
+      macOS · Windows · Linux
+    </span>
+    <a href={links.license}>
+      Open source · Apache 2.0
+      <Icon name="ArrowUpRight" size={12} />
+    </a>
+  </div>
+</section>
