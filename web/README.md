@@ -63,6 +63,8 @@ Deploy only `web/dist/`. No Node server is required after building. Hosting must
 
 The site uses Workers Static Assets through `web/wrangler.jsonc`. No Cloudflare Astro adapter or Worker script is needed for this static build. The Wrangler CLI is pinned in the website's own lockfile.
 
+After correcting the root directory, confirm the next build log shows `companion-web` as the package being built.
+
 In **Workers & Pages → your Worker → Settings → Build**, use:
 
 | Setting                   | Value                                                      |
