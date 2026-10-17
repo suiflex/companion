@@ -10,6 +10,7 @@ dist-firefox/
 .omp/
 coverage/
 .vitest/
+.wrangler/
 .obsidian/
 
 # signing material and packaged artifacts — never committed

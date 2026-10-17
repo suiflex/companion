@@ -1,7 +1,7 @@
 .PHONY: help install \
 	check-all check-all-js ci ci-js ci-rust test test-coverage test-vault typecheck typecheck-desktop lint \
 	rust-fmt rust-fmt-fix rust-lint rust-check \
-	build build-extension build-desktop build-host build-mcp build-sync \
+	build build-extension build-desktop build-host build-mcp build-sync build-web deploy-web-check \
 	smoke smoke-desktop smoke-host smoke-mcp smoke-sync \
 	pack pack-source sign-firefox lint-firefox sync-start \
 	dev dev-extension dev-desktop tauri tauri-dev tauri-bundle native-host-install
@@ -91,6 +91,13 @@ rust-check: ## cargo check, with and without the test-only wdio feature
 
 build: ## Full monorepo build (extension + mcp + sync-server)
 	npm run build
+
+build-web: ## Install and build the isolated static website
+	$(MAKE) -C web install
+	$(MAKE) -C web build
+
+deploy-web-check: ## Validate Cloudflare deployment from the repository root without publishing
+	npx --yes wrangler@4.151.1 deploy --dry-run
 
 build-extension: ## Build the extension bundle only
 	npm run build -w apps/extension
