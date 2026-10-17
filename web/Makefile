@@ -1,4 +1,4 @@
-.PHONY: install deps dev build preview check lint format format-check verify test audit capture assets links
+.PHONY: install deps dev build preview deploy deploy-check check lint format format-check verify test audit capture assets links
 
 install:
 	npm ci
@@ -10,6 +10,10 @@ build:
 	npm run build
 preview:
 	npm run preview
+deploy:
+	npm run deploy
+deploy-check:
+	npm run deploy:check
 check:
 	npm run check
 lint:

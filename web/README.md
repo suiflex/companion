@@ -57,7 +57,39 @@ make -C web preview
 
 The example domain is documentation only. No production domain is assumed. `SITE_URL` supplies canonical, Open Graph URL, absolute social image URL, structured-data URL, and sitemap location. Local builds work without it, but omit canonical/site URLs and emit an empty sitemap; **set it before deploying**. Invalid origins fail configuration validation.
 
-Deploy only `web/dist/`. No Node server is required after building. For Cloudflare Pages, Netlify or Vercel, set the project root to `web`, the install command to `make install`, build command to `make build`, output directory to `dist`, and environment variable `SITE_URL` to the public origin. Set Node to 22.22+ and use the committed local lockfile. Hosting must serve the generated `robots.txt` and `sitemap.xml` unchanged. This task does not publish a deployment.
+Deploy only `web/dist/`. No Node server is required after building. Hosting must serve the generated `robots.txt` and `sitemap.xml` unchanged.
+
+### Cloudflare Workers Builds
+
+The site uses Workers Static Assets through `web/wrangler.jsonc`. No Cloudflare Astro adapter or Worker script is needed for this static build. The Wrangler CLI is pinned in the website's own lockfile.
+
+In **Workers & Pages → your Worker → Settings → Build**, use:
+
+| Setting                   | Value                                                      |
+| ------------------------- | ---------------------------------------------------------- |
+| Root directory            | `web`                                                      |
+| Build command             | `make build`                                               |
+| Deploy command            | `make deploy`                                              |
+| Build variable `SITE_URL` | Your actual public origin                                  |
+| Node version              | 22.22+; Node 24 is also compatible with the package engine |
+
+Cloudflare installs dependencies from `web/package-lock.json` once the root is set to `web`. The configuration's `name` is `companion-web`; **match it to the existing Worker name in the dashboard before deploying**, or name the dashboard Worker `companion-web`. Changing this name does not change `SITE_URL`; set that separately to the public domain you use. The asset directory is `dist`, relative to the configuration file.
+
+Before publishing, validate locally from the repository root:
+
+```sh
+make -C web install
+SITE_URL=https://your-domain.example make -C web verify
+make -C web deploy-check
+```
+
+`deploy-check` runs Wrangler with `--dry-run` and validates the static deployment configuration; it does not upload or publish. Wrangler's temporary state under `.wrangler/` is ignored. `make -C web deploy` publishes and requires Cloudflare authentication. Run it only when ready to publish.
+
+If logs show `meet-cc-monorepo` or `@meetcc/extension` during the website build, the root directory is still wrong. Root `npm run build` builds the extension and backend tools; it does not build this website. Running `npx wrangler deploy` there triggers workspace auto-detection instead of using the website configuration. After correcting the root, clear the old build cache and retry. See Cloudflare's [monorepo setup](https://developers.cloudflare.com/workers/ci-cd/builds/advanced-setups/#monorepos) and [static assets documentation](https://developers.cloudflare.com/workers/static-assets/).
+
+### Cloudflare Pages, Netlify or Vercel
+
+For static hosting, set the project root to `web`, install command to `make install` where configurable, build command to `make build`, output directory to `dist`, and build variable `SITE_URL` to the public origin. Cloudflare **Pages** publishes that output directly and does not use the Workers `make deploy` command. Use Node 22.22+ and the committed website lockfile.
 
 ## Content and download maintenance
 

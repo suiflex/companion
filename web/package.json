@@ -10,6 +10,8 @@
     "dev": "astro dev --host 127.0.0.1",
     "build": "astro build",
     "preview": "astro preview --host 127.0.0.1 --ignore-lock",
+    "deploy": "wrangler deploy",
+    "deploy:check": "wrangler deploy --dry-run",
     "check": "astro check",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -50,6 +52,7 @@
     "prettier-plugin-astro": "1.1.1",
     "sharp": "0.35.5",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.71.2"
+    "typescript-eslint": "8.71.2",
+    "wrangler": "4.151.1"
   }
 }
