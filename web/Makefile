@@ -1,9 +1,9 @@
 .PHONY: install deps dev build preview deploy deploy-check check lint format format-check verify test audit capture assets links
 
 install:
-	npm ci
+	npm ci --legacy-peer-deps=false
 deps:
-	npm install
+	npm install --legacy-peer-deps=false
 dev:
 	npm run dev
 build:
