@@ -791,6 +791,18 @@ input:focus-visible {
   gap: 18px;
 }
 
+/* The meeting column scrolls as a whole, so the summary inside it must not be
+   a second scroller: with `flex: 1` its basis is 0 and `overflow-y: auto`
+   drops its automatic minimum height, so once the document panel above it
+   grew — a generated notulen with its scope list — the free space ran out and
+   the summary collapsed to nothing. Executive Summary, the first section, was
+   the one that disappeared. Fixed height off its own content; `.meeting-view`
+   scrolls past it. */
+.meeting-view > .summary-body {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
 .sum-section h3 {
   margin: 0 0 6px;
   font-size: 11px;
