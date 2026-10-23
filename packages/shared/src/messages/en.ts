@@ -234,6 +234,11 @@ export const en = {
   'ext.sidebar.mergeTarget': 'Keep as main meeting',
   'ext.sidebar.mergeSelectedMeetings': 'Merge {count} meetings',
   'ext.sidebar.mergingMeetings': 'Merging meetings…',
+  'ext.sidebar.confirmMergeTitle': 'Confirm meeting merge',
+  'ext.sidebar.confirmMergeAction': 'Merge meetings',
+  'ext.sidebar.cancelMerge': 'Cancel',
+  'ext.sidebar.liveMeetingMergeWarning':
+    'The destination meeting is still live. New transcript lines will continue to be captured in it.',
   'ext.sidebar.confirmMergeMeetings':
     'Merge {count} meetings into “{target}”? Their transcripts will be combined by time. The source meetings listed below will be deleted, and generated results on the destination will be cleared so you can regenerate them.\n\n{sources}',
   'ext.sidebar.meetingsMerged': 'Merged {sources} meetings into one transcript ({entries} lines).',
