@@ -13,6 +13,14 @@ import { resolveTheme, watchSystemTheme, type ThemePref } from '../lib/theme'
 import { locale, t } from '@meetcc/shared/i18n'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import {
   ArrowRightLeft,
@@ -148,6 +156,7 @@ export function Sidebar({
   const [exporting, setExporting] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [merging, setMerging] = useState(false)
+  const [mergeConfirmationOpen, setMergeConfirmationOpen] = useState(false)
   const [mergeTarget, setMergeTarget] = useState('')
   // P2.3 — project grouping. The mapping lives in the index, so a failed load
   // just means the filter is unavailable, never an empty meeting list.
@@ -206,19 +215,32 @@ export function Sidebar({
     })
   }
   const cancelSelection = () => {
+    setMergeConfirmationOpen(false)
     setSelecting(false)
     setSelectedMeetings(new Set())
   }
   const selectedForMerge = meetings.filter((meeting) => selectedMeetings.has(meeting.id))
-  const defaultMergeTarget = selectedMeetings.has(selectedId ?? '')
-    ? selectedId!
-    : selectedForMerge[0]?.id ?? ''
-  const mergeTargetId = selectedMeetings.has(mergeTarget) ? mergeTarget : defaultMergeTarget
-  const mergeSourcesLive = selectedForMerge.some(
-    (meeting) => meeting.id !== mergeTargetId && isLive(meeting, now),
-  )
+  const liveMergeTarget = selectedForMerge.find((meeting) => isLive(meeting, now))
+  const defaultMergeTarget =
+    liveMergeTarget?.id ??
+    (selectedMeetings.has(selectedId ?? '') ? selectedId! : selectedForMerge[0]?.id ?? '')
+  const mergeTargetId = liveMergeTarget?.id ?? (selectedMeetings.has(mergeTarget) ? mergeTarget : defaultMergeTarget)
+  const mergeSourceNames: string[] = []
+  let mergeSourcesLive = false
+  for (const meeting of selectedForMerge) {
+    if (meeting.id === mergeTargetId) continue
+    if (isLive(meeting, now)) mergeSourcesLive = true
+    mergeSourceNames.push(titles[meeting.id] || displayMeetingId(meeting.id))
+  }
+  const mergeSourceList = [
+    ...mergeSourceNames.slice(0, 5),
+    ...(mergeSourceNames.length > 5
+      ? [t('ext.sidebar.moreMeetingNames', { count: mergeSourceNames.length - 5 })]
+      : []),
+  ].join('\n')
   const mergeSelected = async () => {
     if (selectedForMerge.length < 2 || !mergeTargetId || mergeSourcesLive || merging) return
+    setMergeConfirmationOpen(false)
     setMerging(true)
     try {
       if (await onMergeMeetings([...selectedMeetings], mergeTargetId)) cancelSelection()
@@ -530,7 +552,7 @@ export function Sidebar({
                     <select
                       className="h-7 rounded-md border border-border/60 bg-muted/30 px-2 text-xs text-foreground outline-none focus:border-ring"
                       value={mergeTargetId}
-                      disabled={exporting || deleting || merging}
+                      disabled={!!liveMergeTarget || exporting || deleting || merging}
                       onChange={(event) => setMergeTarget(event.target.value)}
                     >
                       {selectedForMerge.map((meeting) => (
@@ -549,7 +571,7 @@ export function Sidebar({
                     variant="outline"
                     className="mt-2 w-full gap-1 text-xs"
                     disabled={selectedForMerge.length < 2 || mergeSourcesLive || exporting || deleting || merging}
-                    onClick={() => void mergeSelected()}
+                    onClick={() => setMergeConfirmationOpen(true)}
                   >
                     <Merge className="size-3" />
                     {merging
@@ -586,6 +608,40 @@ export function Sidebar({
           </>
         )}
       </div>
+      <Dialog open={mergeConfirmationOpen} onOpenChange={setMergeConfirmationOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('ext.sidebar.confirmMergeTitle')}</DialogTitle>
+            <DialogDescription className="whitespace-pre-wrap">
+              {t('ext.sidebar.confirmMergeMeetings', {
+                count: selectedForMerge.length,
+                target: titles[mergeTargetId] || displayMeetingId(mergeTargetId),
+                sources: mergeSourceList,
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          {liveMergeTarget && (
+            <p className="m-0 text-sm text-warning">{t('ext.sidebar.liveMeetingMergeWarning')}</p>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setMergeConfirmationOpen(false)}
+              disabled={merging}
+            >
+              {t('ext.sidebar.cancelMerge')}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void mergeSelected()}
+              disabled={merging || mergeSourcesLive}
+            >
+              {merging ? t('ext.sidebar.mergingMeetings') : t('ext.sidebar.confirmMergeAction')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="sidebar-bottom">
         <div className="sidebar-foot flex items-center gap-1">
