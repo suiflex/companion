@@ -242,25 +242,6 @@ function Shell({ initialMeeting }: { initialMeeting: string | null }) {
     return failed;
   };
   const handleMergeMeetings = async (ids: string[], targetId: string): Promise<boolean> => {
-    const targetLabel = titles[targetId] || displayMeetingId(targetId);
-    const sourceNames: string[] = [];
-    for (const id of ids) {
-      if (id !== targetId) sourceNames.push(titles[id] || displayMeetingId(id));
-    }
-    const shownSources = sourceNames.slice(0, 5).join('\n');
-    const moreSources =
-      sourceNames.length > 5
-        ? `\n${t('ext.sidebar.moreMeetingNames', { count: sourceNames.length - 5 })}`
-        : '';
-    const confirmed = window.confirm(
-      t('ext.sidebar.confirmMergeMeetings', {
-        count: ids.length,
-        target: targetLabel,
-        sources: shownSources + moreSources,
-      }),
-    );
-    if (!confirmed) return false;
-
     try {
       const result = await mergeStoredMeetings(parseMeetingMergeSelection(ids, targetId));
       await db('sync-index');

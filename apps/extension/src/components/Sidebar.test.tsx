@@ -118,7 +118,7 @@ describe('sidebar multi-meeting export', () => {
     expect(screen.queryByRole('checkbox', { name: /Project Sync/ })).toBeNull()
   })
 
-  it('merges any selected number into the explicitly chosen destination', async () => {
+  it('defaults a live meeting as the destination and requires modal confirmation', async () => {
     const onMergeMeetings = vi.fn(async () => true)
     vi.stubGlobal('chrome', {
       storage: { local: { get: vi.fn(async () => ({})), set: vi.fn(async () => undefined) } },
@@ -130,10 +130,15 @@ describe('sidebar multi-meeting export', () => {
     await user.click(screen.getByRole('checkbox', { name: /Project Sync 1/ }))
     await user.click(screen.getByRole('checkbox', { name: /Project Sync 2/ }))
     await user.click(screen.getByRole('checkbox', { name: /Project Sync 3/ }))
-    await user.selectOptions(screen.getByLabelText(t('ext.sidebar.mergeTarget')), 'project-sync-3')
-    await user.click(
-      screen.getByRole('button', { name: t('ext.sidebar.mergeSelectedMeetings', { count: 3 }) }),
-    )
+
+    const target = screen.getByLabelText(t('ext.sidebar.mergeTarget')) as HTMLSelectElement
+    expect(target.value).toBe('project-sync-3')
+    expect(target.disabled).toBe(true)
+    await user.click(screen.getByRole('button', { name: t('ext.sidebar.mergeSelectedMeetings', { count: 3 }) }))
+
+    expect(screen.getByText(t('ext.sidebar.liveMeetingMergeWarning'))).toBeTruthy()
+    expect(onMergeMeetings).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: t('ext.sidebar.confirmMergeAction') }))
 
     await waitFor(() =>
       expect(onMergeMeetings).toHaveBeenCalledWith(
@@ -143,22 +148,22 @@ describe('sidebar multi-meeting export', () => {
     )
     expect(screen.queryByRole('checkbox', { name: /Project Sync/ })).toBeNull()
   })
-  it('blocks merging an active source into an ended destination', async () => {
+
+  it('does not merge when the confirmation modal is cancelled', async () => {
+    const onMergeMeetings = vi.fn(async () => true)
     vi.stubGlobal('chrome', {
       storage: { local: { get: vi.fn(async () => ({})), set: vi.fn(async () => undefined) } },
     })
     const user = userEvent.setup()
-    renderSidebar(vi.fn(async () => []))
+    renderSidebar(vi.fn(async () => []), async () => [], onMergeMeetings)
 
     await user.click(screen.getByRole('button', { name: t('ext.sidebar.selectMeetings') }))
     await user.click(screen.getByRole('checkbox', { name: /Project Sync 1/ }))
-    await user.click(screen.getByRole('checkbox', { name: /Project Sync 3/ }))
-    await user.selectOptions(screen.getByLabelText(t('ext.sidebar.mergeTarget')), 'project-sync-1')
+    await user.click(screen.getByRole('checkbox', { name: /Project Sync 2/ }))
+    await user.click(screen.getByRole('button', { name: t('ext.sidebar.mergeSelectedMeetings', { count: 2 }) }))
+    await user.click(screen.getByRole('button', { name: t('ext.sidebar.cancelMerge') }))
 
-    expect(screen.getByText(t('ext.sidebar.liveSourceMergeBlocked'))).toBeTruthy()
-    expect(
-      screen.getByRole('button', { name: t('ext.sidebar.mergeSelectedMeetings', { count: 2 }) }),
-    ).toHaveProperty('disabled', true)
+    expect(onMergeMeetings).not.toHaveBeenCalled()
   })
 
   it('cancels selection and clears all checked meetings', async () => {
