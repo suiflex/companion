@@ -25,6 +25,16 @@ const PNG =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEUlEQVR4nGM4oaHxH4QZYAwASgQIXRyHR0QAAAAASUVORK5CYII=';
 
 describe('toPdf', () => {
+  it('adds clickable product links to the branded cover and content pages', async () => {
+    const output = await toPdf(meeting, analysis).text()
+    for (const url of [
+      'https://companion.suiflex.dev',
+      'https://chromewebstore.google.com/detail/meet-companion/neeapigpheabagekbdfjdekgdicfckpn',
+      'https://addons.mozilla.org/en-US/firefox/addon/meet-companion/',
+    ]) {
+      expect(output.split(`/URI (${url})`).length - 1).toBeGreaterThan(1)
+    }
+  })
   it('produces a non-trivial PDF blob with page-break handling', async () => {
     const blob = toPdf(meeting, analysis);
     expect(blob.type).toBe('application/pdf');

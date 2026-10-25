@@ -93,15 +93,40 @@ export function drawCover(
   pdf.text(new Date().toLocaleString(locale()), M, 276)
   pdf.text('powered by suiflex', M, 282)
 }
+/** Add clickable product links to every page, including the branded cover. */
+function drawProductLinks(pdf: jsPDF, page: number, pageH: number): void {
+  pdf.setPage(page)
+  pdf.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...DIM)
+  const y = pageH - 4
+  const links = [
+    { text: 'companion.suiflex.dev', url: 'https://companion.suiflex.dev', x: M },
+    {
+      text: 'Chrome Web Store',
+      url: 'https://chromewebstore.google.com/detail/meet-companion/neeapigpheabagekbdfjdekgdicfckpn',
+      x: 64,
+    },
+    {
+      text: 'Firefox Add-ons',
+      url: 'https://addons.mozilla.org/en-US/firefox/addon/meet-companion/',
+      x: 112,
+    },
+  ]
+  for (const link of links) {
+    pdf.text(link.text, link.x, y)
+    pdf.link(link.x, y - 3, pdf.getTextWidth(link.text), 4, { url: link.url })
+  }
+}
 
 /** Branding footer on every content page; orientation-aware (diagram pages
  *  may be landscape) — reads the real page box instead of assuming portrait. */
 export function drawFooters(pdf: jsPDF, label: string): void {
   const pages = pdf.getNumberOfPages()
-  for (let i = 2; i <= pages; i++) {
+  for (let i = 1; i <= pages; i++) {
     pdf.setPage(i)
     const pageW = pdf.internal.pageSize.getWidth()
     const pageH = pdf.internal.pageSize.getHeight()
+    drawProductLinks(pdf, i, pageH)
+    if (i === 1) continue
     pdf
       .setFont('helvetica', 'normal')
       .setFontSize(8)
