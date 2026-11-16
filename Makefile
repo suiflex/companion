@@ -130,12 +130,17 @@ pack: ## Pack the Chromium and Firefox zips
 # Local test builds, one folder per day so they never mix with release zips
 # at the root. exports/ is gitignored. A rerun on the same day overwrites.
 EXPORT_DIR = exports/$(shell date +%Y-%m-%d)
+# Chromium loads a folder (Load unpacked), Firefox a zip (Load Temporary Add-on).
+# Expanded at recipe time, after build-extension has written dist/.
+EXPORT_CHROME = $(EXPORT_DIR)/companion-chrome-v$(shell node -p "require('./apps/extension/dist/manifest.json').version")
 
-export-ext: build-extension ## Build + pack both test zips into exports/YYYY-MM-DD/
-	PACK_OUT=$(EXPORT_DIR) node scripts/pack.mjs
+export-ext: export-chrome export-firefox ## Build both test exports into exports/YYYY-MM-DD/
 
-export-chrome: build-extension ## Build + pack the Chromium test zip into exports/YYYY-MM-DD/
-	PACK_OUT=$(EXPORT_DIR) node scripts/pack.mjs chrome
+export-chrome: build-extension ## Build the unpacked Chromium test folder into exports/YYYY-MM-DD/
+	rm -rf "$(EXPORT_CHROME)"
+	mkdir -p "$(EXPORT_DIR)"
+	cp -R apps/extension/dist "$(EXPORT_CHROME)"
+	@echo "Load unpacked: $(EXPORT_CHROME)"
 
 export-firefox: build-extension ## Build + pack the Firefox test zip into exports/YYYY-MM-DD/
 	PACK_OUT=$(EXPORT_DIR) node scripts/pack.mjs firefox
