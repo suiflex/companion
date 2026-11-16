@@ -32,14 +32,15 @@ make rust-check     # cargo check, with and without the wdio feature
 make rust-test      # cargo test for the desktop crate
 make tauri-dev      # run the desktop app with a window
 
-make export-ext     # test zips (chrome + firefox) into exports/YYYY-MM-DD/
-make export-chrome  # Chromium test zip only
-make export-firefox # Firefox test zip only
+make export-ext     # test builds (chrome + firefox) into exports/YYYY-MM-DD/
+make export-chrome  # unpacked Chromium folder, for Load unpacked
+make export-firefox # Firefox zip, for Load Temporary Add-on
 ```
 
-Test zips go to `exports/YYYY-MM-DD/` (gitignored) through `PACK_OUT` in
-`scripts/pack.mjs`; `make pack` still writes release zips to the root, where
-CI and `companion update` expect them. Keep the two apart.
+Test builds go to `exports/YYYY-MM-DD/` (gitignored): Chromium as a copy of
+`dist/`, Firefox through `PACK_OUT` in `scripts/pack.mjs`. `make pack` still
+writes release zips to the root, where CI and `companion update` expect them.
+Keep the two apart. An export holds whatever branch is checked out.
 
 `make ci` is `ci-js` plus `ci-rust`, split along the toolchain boundary so CI
 can run them on separate runners — only one half needs a Rust toolchain and
