@@ -40,3 +40,6 @@ suitest-output/
 .forgeguard/
 .mcp.json
 mcp.json
+
+# local binary for testing extension
+exports/
