@@ -13,15 +13,19 @@
 // `companion update`:
 //   companion-chrome-v<version>.zip
 //   companion-firefox-v<version>.zip
+//
+// PACK_OUT=<dir> writes them there instead (relative to the repo root);
+// `make export-ext` uses it for dated local test builds under exports/.
 
 import { readFile, writeFile, readdir, mkdir, rm, cp } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join, dirname, relative, sep } from 'node:path';
+import { join, dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeZip } from './zip.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'apps', 'extension', 'dist');
+const OUT = process.env.PACK_OUT ? resolve(ROOT, process.env.PACK_OUT) : ROOT;
 
 /** Every file under `dir`, as zip entries with forward-slash paths. */
 async function collect(dir) {
@@ -60,9 +64,10 @@ async function main() {
   const manifest = JSON.parse(await readFile(join(DIST, 'manifest.json'), 'utf8'));
   const { version } = manifest;
   const written = [];
+  await mkdir(OUT, { recursive: true });
 
   if (want('chrome')) {
-    const out = join(ROOT, `companion-chrome-v${version}.zip`);
+    const out = join(OUT, `companion-chrome-v${version}.zip`);
     await writeFile(out, makeZip(await collect(DIST)));
     written.push(out);
   }
@@ -78,7 +83,7 @@ async function main() {
       join(ffDir, 'manifest.json'),
       `${JSON.stringify(firefoxManifest(manifest), null, 2)}\n`,
     );
-    const out = join(ROOT, `companion-firefox-v${version}.zip`);
+    const out = join(OUT, `companion-firefox-v${version}.zip`);
     await writeFile(out, makeZip(await collect(ffDir)));
     written.push(out);
     console.log(`Firefox source tree: ${relative(ROOT, ffDir)}`);
