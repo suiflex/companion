@@ -521,12 +521,13 @@ function meetCcButton() {
     )
 }
 // Meet UI seen 2026-11: no CC toggle in the toolbar. "Captions and
-// translation" opens a dialog, and captions turn on from its "Live captions"
-// chip. Its pressed state is the panel, not captions — ccOn reads the
-// captions region instead, which this UI still mounts as KPn5nb/.vNKgIf.
-// ponytail: English labels only (verified); add other locales when seen.
+// translation" opens a dialog, and the "Live captions" chip inside it is the
+// old toggle moved: aria-label "Turn on captions", icon closed_caption_off —
+// so meetCcButton finds it once the dialog is open. The panel button's
+// pressed state is the panel, not captions; ccOn reads the captions region,
+// which this UI still mounts as KPn5nb/.vNKgIf.
+// ponytail: English panel label only (verified); add other locales when seen.
 const MEET_CC_PANEL = /^captions and translation/i
-const MEET_LIVE_CC = /live captions/i
 function meetCcPanelButton() {
   return [...document.querySelectorAll('button[aria-label]')].find((b) =>
     MEET_CC_PANEL.test(b.getAttribute('aria-label')),
@@ -540,24 +541,16 @@ async function meetEnableCcViaPanel(panel) {
       panel.click()
       await sleep(600)
     }
-    // Only an element whose own text names live captions: never the
-    // "Translate speech" chip beside it.
-    const chip = [
-      ...document.querySelectorAll('button, [role="switch"], [role="checkbox"]'),
-    ].find(
-      (el) =>
-        el !== panel &&
-        (MEET_LIVE_CC.test(el.textContent || '') ||
-          MEET_LIVE_CC.test(el.getAttribute('aria-label') || '')),
-    )
+    // Matched by its captions icon/label, never by position: the
+    // "Translate speech" chip sits right beside it.
+    const chip = meetCcButton()
     ccClicks++
     // The captions region may only mount once someone speaks, so ccOn can be
     // false with captions already on: never click a chip that reads as on.
     const chipOn =
       chip &&
       (chip.getAttribute('aria-pressed') === 'true' ||
-        chip.getAttribute('aria-checked') === 'true' ||
-        /^(check|done)\b/.test(chip.textContent.trim()))
+        MEET_CC_OFF_LABEL.test(chip.getAttribute('aria-label') || ''))
     if (chipOn) {
       console.log(TAG, 'Live captions already on, waiting for speech.')
     } else if (chip) {
