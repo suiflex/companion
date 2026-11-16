@@ -3,7 +3,7 @@
 	rust-fmt rust-fmt-fix rust-lint rust-check \
 	build build-extension build-desktop build-host build-mcp build-sync build-web deploy-web-check \
 	smoke smoke-desktop smoke-host smoke-mcp smoke-sync \
-	pack pack-source sign-firefox lint-firefox sync-start \
+	pack pack-source export-ext export-chrome export-firefox sign-firefox lint-firefox sync-start \
 	dev dev-extension dev-desktop tauri tauri-dev tauri-bundle native-host-install
 
 # The command surface for this repository.
@@ -126,6 +126,19 @@ sync-start: build-sync ## Run the sync server (COMPANION_TOKEN=... make sync-sta
 
 pack: ## Pack the Chromium and Firefox zips
 	npm run pack
+
+# Local test builds, one folder per day so they never mix with release zips
+# at the root. exports/ is gitignored. A rerun on the same day overwrites.
+EXPORT_DIR = exports/$(shell date +%Y-%m-%d)
+
+export-ext: build-extension ## Build + pack both test zips into exports/YYYY-MM-DD/
+	PACK_OUT=$(EXPORT_DIR) node scripts/pack.mjs
+
+export-chrome: build-extension ## Build + pack the Chromium test zip into exports/YYYY-MM-DD/
+	PACK_OUT=$(EXPORT_DIR) node scripts/pack.mjs chrome
+
+export-firefox: build-extension ## Build + pack the Firefox test zip into exports/YYYY-MM-DD/
+	PACK_OUT=$(EXPORT_DIR) node scripts/pack.mjs firefox
 
 pack-source: ## Pack the source archive AMO requires
 	npm run pack:source
