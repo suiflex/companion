@@ -227,7 +227,12 @@ function ccOn() {
     return !!document.querySelector('.live-transcription-subtitle__overlay-container') ||
       /hide (captions|subtitles|text)|sembunyikan teks/i.test(label)
   }
-  return !!document.querySelector('div[jscontroller="KPn5nb"], .vNKgIf')
+  if (document.querySelector('div[jscontroller="KPn5nb"], .vNKgIf')) return true
+  // Region classes rotate; the toggle's own state does not, and reading it
+  // keeps the auto-enable tick from clicking captions back off.
+  const btn = meetCcButton()
+  return btn?.getAttribute('aria-pressed') === 'true' ||
+    MEET_CC_OFF_LABEL.test(btn?.getAttribute('aria-label') || '')
 }
 
 function knownRows() {
@@ -501,11 +506,19 @@ function zoomOpenParticipants() {
     zoomOpenClicks++
   }
 }
+// Meet's CC control: the material icon ligature first, then its aria-label
+// ("Turn on captions (c)" / "Aktifkan teks"), for toolbars that render the
+// icon as a <span> or an SVG without ligature text.
+const MEET_CC_LABEL = /^(turn (on|off) captions|(aktifkan|nonaktifkan) teks)/i
+const MEET_CC_OFF_LABEL = /^(turn off captions|nonaktifkan teks)/i
 function meetCcButton() {
-  const icon = [...document.querySelectorAll('button i')].find((i) =>
+  const icon = [...document.querySelectorAll('button i, button span')].find((i) =>
     i.textContent.trim().startsWith('closed_caption'),
   )
-  return icon?.closest('button')
+  return icon?.closest('button') ||
+    [...document.querySelectorAll('button[aria-label]')].find((b) =>
+      MEET_CC_LABEL.test(b.getAttribute('aria-label')),
+    )
 }
 // still in the call = the toolbar control we would click is mounted
 const inCallToolbar = () => !!(ZOOM ? zoomCcButton() : TEAMS ? document.querySelector(TEAMS_MORE) : meetCcButton())
