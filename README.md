@@ -185,7 +185,7 @@ for you; Zoom Web is not.
 
 | Platform | Captions turned on | What you do | Speaker names |
 | --- | --- | --- | --- |
-| **Google Meet** | Automatically — the extension clicks the CC button | Nothing | Full names |
+| **Google Meet** | Automatically — the CC button, or Captions and translation → Live captions in the newer toolbar | Nothing | Full names |
 | **Microsoft Teams** | Automatically — More → Language and speech → Turn on live captions | Nothing; if the menu is not found, turn captions on once yourself | Full names |
 | **Zoom Web** | **Manually** — the extension never toggles Zoom's captions | Click **Captions / Show captions** in the Zoom toolbar after you join | Full names when the participants pane opens, otherwise initials |
 
