@@ -17,6 +17,7 @@ import {
 import { DEFAULT_OAUTH, type OAuthSettings, type Settings } from '@meetcc/shared';
 
 import { useToast } from '@meetcc/ui';
+import { requestHostAccess } from '../lib/hostAccess';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 /** A device code stops being approvable after 15 minutes. */
@@ -62,11 +63,8 @@ export function SignInPanel({
    *  setting they forgot to save. */
   const store = (oauth: OAuthSettings) => onPersist(oauth);
 
-  const grant = async (): Promise<boolean> => {
-    const origins = ORIGINS[provider];
-    if (await chrome.permissions.contains({ origins })) return true;
-    return chrome.permissions.request({ origins });
-  };
+  const grant = async (): Promise<boolean> =>
+    (await requestHostAccess(ORIGINS[provider])) === 'granted';
 
   const fail = (e: unknown) => toast('error', (e as Error).message);
 

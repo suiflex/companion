@@ -23,6 +23,7 @@ import { SignInPanel } from './SignInPanel';
 import { t, LANGS, type LangPref } from '@meetcc/shared/i18n';
 import { applyLang, loadLangPref, saveLangPref } from '../lib/lang';
 import { loadMeetingLangPref, saveMeetingLangPref, type MeetingLangPref } from '../lib/meetingLang';
+import { grantHostAccess, hostsLabel } from '../lib/hostAccess';
 import { useToast } from '@meetcc/ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -161,27 +162,14 @@ export function SettingsView({
    *  user just configured are requested here, where the click is the gesture
    *  Chrome requires. Declining only means those calls will fail, so it is a
    *  warning, not a blocked save. */
-  const grantOrigins = async (next: Settings): Promise<boolean> => {
-    const origins = requiredOrigins(next);
-    if (!origins.length) return true;
-    try {
-      if (await chrome.permissions.contains({ origins })) return true;
-      const granted = await chrome.permissions.request({ origins });
-      if (!granted) {
-        toast('error', 'Izin akses endpoint ditolak — panggilan ke layanan itu akan gagal.');
-        return false;
-      }
-      return true;
-    } catch (e) {
-      toast('error', t('ext.settings.permissionFailed', { error: (e as Error).message }));
-      return false;
-    }
-  };
+  const grantOrigins = (next: Settings) => grantHostAccess(requiredOrigins(next), toast);
 
-  /** The click is the gesture Chrome wants before it will grant the origin. */
+  /** The click is the gesture Chrome wants before it will grant the origin.
+   *  Without the grant the fetch can only fail on CORS, so it is not sent. */
   const refreshModels = async () => {
-    await grantOrigins(settings);
-    await loadModels(settings);
+    if (await grantOrigins(settings)) return loadModels(settings);
+    setModels(PROVIDER_PRESETS[settings.provider]?.models ?? []);
+    setModelsNote(t('ext.provider.modelsNeedAccess', { hosts: hostsLabel(requiredOrigins(settings)) }));
   };
 
   /** Sign-in persists its own tokens; it reads the newest form state so an edit
@@ -213,7 +201,7 @@ export function SettingsView({
   const test = async () => {
     const problem = validateSettings(settings);
     if (problem) return toast('error', problem);
-    await grantOrigins(settings);
+    if (!(await grantOrigins(settings))) return;
     setTesting(true);
     try {
       const client = createClient(resolveConfig(settings));
