@@ -178,6 +178,20 @@ native-host setup and the Settings toggle:
 3. **Analyze** (`@meetcc/ai`): structured-JSON completion → validated `Analysis`. Retry on transient failures, rate-limited (6 runs / 10 min). A transcript too long for one request is split into chunks, analyzed in bounded parallel and folded back together (map-reduce) — a failing chunk is skipped, not fatal.
 4. **Deliver**: record saved (`analysis:<id>`), the meeting gets a name derived from its executive summary (`title:<id>`, renameable in the toolbar), UI updates via storage events, and a Chrome notification fires — clicking it opens that meeting. Markdown/PDF generated on demand (PDF code-split, lazy-loaded).
 
+### Captions per platform
+
+Capture reads captions, so captions must be on. Meet and Teams are switched on
+for you; Zoom Web is not.
+
+| Platform | Captions turned on | What you do | Speaker names |
+| --- | --- | --- | --- |
+| **Google Meet** | Automatically — the CC button, or Captions and translation → Live captions in the newer toolbar | Nothing | Full names |
+| **Microsoft Teams** | Automatically — More → Language and speech → Turn on live captions | Nothing; if the menu is not found, turn captions on once yourself | Full names |
+| **Zoom Web** | **Manually** — the extension never toggles Zoom's captions | Click **Captions / Show captions** in the Zoom toolbar after you join | Full names when the participants pane opens, otherwise initials |
+
+On every platform, captions you turn off yourself stay off until you turn them
+back on; capture pauses in the meantime.
+
 ## Local knowledge base (SQLite + FTS5, no embeddings)
 
 `chrome.storage.local` stays the capture write-path and the rollback copy. On top

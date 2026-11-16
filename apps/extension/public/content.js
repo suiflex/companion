@@ -227,7 +227,12 @@ function ccOn() {
     return !!document.querySelector('.live-transcription-subtitle__overlay-container') ||
       /hide (captions|subtitles|text)|sembunyikan teks/i.test(label)
   }
-  return !!document.querySelector('div[jscontroller="KPn5nb"], .vNKgIf')
+  if (document.querySelector('div[jscontroller="KPn5nb"], .vNKgIf')) return true
+  // Region classes rotate; the toggle's own state does not, and reading it
+  // keeps the auto-enable tick from clicking captions back off.
+  const btn = meetCcButton()
+  return btn?.getAttribute('aria-pressed') === 'true' ||
+    MEET_CC_OFF_LABEL.test(btn?.getAttribute('aria-label') || '')
 }
 
 function knownRows() {
@@ -501,14 +506,73 @@ function zoomOpenParticipants() {
     zoomOpenClicks++
   }
 }
+// Meet's CC control: the material icon ligature first, then its aria-label
+// ("Turn on captions (c)" / "Aktifkan teks"), for toolbars that render the
+// icon as a <span> or an SVG without ligature text.
+const MEET_CC_LABEL = /^(turn (on|off) captions|(aktifkan|nonaktifkan) teks)/i
+const MEET_CC_OFF_LABEL = /^(turn off captions|nonaktifkan teks)/i
 function meetCcButton() {
-  const icon = [...document.querySelectorAll('button i')].find((i) =>
+  const icon = [...document.querySelectorAll('button i, button span')].find((i) =>
     i.textContent.trim().startsWith('closed_caption'),
   )
-  return icon?.closest('button')
+  return icon?.closest('button') ||
+    [...document.querySelectorAll('button[aria-label]')].find((b) =>
+      MEET_CC_LABEL.test(b.getAttribute('aria-label')),
+    )
+}
+// Meet UI seen 2026-11: no CC toggle in the toolbar. "Captions and
+// translation" opens a dialog, and the "Live captions" chip inside it is the
+// old toggle moved: aria-label "Turn on captions", icon closed_caption_off —
+// so meetCcButton finds it once the dialog is open. The panel button's
+// pressed state is the panel, not captions; ccOn reads the captions region,
+// which this UI still mounts as KPn5nb/.vNKgIf.
+// ponytail: English panel label only (verified); add other locales when seen.
+const MEET_CC_PANEL = /^captions and translation/i
+function meetCcPanelButton() {
+  return [...document.querySelectorAll('button[aria-label]')].find((b) =>
+    MEET_CC_PANEL.test(b.getAttribute('aria-label')),
+  )
+}
+async function meetEnableCcViaPanel(panel) {
+  if (ccBusy) return
+  ccBusy = true
+  try {
+    if (panel.getAttribute('aria-expanded') !== 'true') {
+      panel.click()
+      await sleep(600)
+    }
+    // Matched by its captions icon/label, never by position: the
+    // "Translate speech" chip sits right beside it.
+    const chip = meetCcButton()
+    ccClicks++
+    // The captions region may only mount once someone speaks, so ccOn can be
+    // false with captions already on: never click a chip that reads as on.
+    const chipOn =
+      chip &&
+      (chip.getAttribute('aria-pressed') === 'true' ||
+        MEET_CC_OFF_LABEL.test(chip.getAttribute('aria-label') || ''))
+    if (chipOn) {
+      console.log(TAG, 'Live captions already on, waiting for speech.')
+    } else if (chip) {
+      chip.click()
+      console.log(TAG, 'auto-enabled captions via panel, attempt', ccClicks)
+      await sleep(300)
+    } else {
+      const dialog = document.querySelector('[role="dialog"]')
+      console.warn(
+        TAG,
+        'Live captions chip not found. Panel:',
+        dialog ? dialog.outerHTML.slice(0, 3000) : 'NOT FOUND',
+      )
+    }
+    if (panel.getAttribute('aria-expanded') === 'true') panel.click() // close it again
+  } finally {
+    ccBusy = false
+  }
 }
 // still in the call = the toolbar control we would click is mounted
-const inCallToolbar = () => !!(ZOOM ? zoomCcButton() : TEAMS ? document.querySelector(TEAMS_MORE) : meetCcButton())
+const inCallToolbar = () =>
+  !!(ZOOM ? zoomCcButton() : TEAMS ? document.querySelector(TEAMS_MORE) : meetCcButton() || meetCcPanelButton())
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const menuItem = (re) =>
   [
@@ -919,7 +983,10 @@ timers.push(
       btn.click()
       ccClicks++
       console.log(TAG, 'auto-enabled captions, attempt', ccClicks)
+      return
     }
+    const panel = meetCcPanelButton()
+    if (panel) void meetEnableCcViaPanel(panel)
   }, 3000),
 )
 
