@@ -72,6 +72,18 @@ Then load it: `chrome://extensions` → Developer mode → **Load unpacked** →
 `apps/extension/dist/`. After every build, reload the extension and refresh the
 meeting tab.
 
+To hand someone a build to test, export it:
+
+```bash
+make export-ext      # both of the below
+make export-chrome   # companion-chrome-v<version>/ — Load unpacked in chrome://extensions
+make export-firefox  # companion-firefox-v<version>.zip — Load Temporary Add-on in about:debugging
+```
+
+They land in `exports/YYYY-MM-DD/`, one folder per day, so test builds never
+mix with the release zips that `make pack` writes at the root. `exports/` is
+gitignored; a second run on the same day overwrites that day's export.
+
 **For the desktop app:**
 
 ```bash

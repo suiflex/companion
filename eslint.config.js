@@ -11,6 +11,7 @@ export default tseslint.config(
     ignores: [
       '**/dist/**',
       '**/dist-firefox/**',
+      'exports/**',
       '**/node_modules/**',
       'web/.astro/**',
       '**/src-tauri/target/**',

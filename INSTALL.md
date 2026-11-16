@@ -138,7 +138,7 @@ addons.mozilla.org in the dedicated profile, and one click on **Add to Firefox**
 installs it. From then on Firefox keeps it up to date by itself — no
 `companion update`, no banner.
 
-In a repo checkout, load your own build instead: `npm run pack -- firefox`, then
+In a repo checkout, load your own build instead: `make export-firefox`, then
 `about:debugging` → **Load Temporary Add-on** → `apps/extension/dist-firefox`. A
 temporary add-on is gone on the next Firefox restart, which is fine for
 development and not fine for daily use.
