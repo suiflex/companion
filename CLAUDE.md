@@ -31,7 +31,15 @@ make smoke-sync     # built sync bin answers over HTTP
 make rust-check     # cargo check, with and without the wdio feature
 make rust-test      # cargo test for the desktop crate
 make tauri-dev      # run the desktop app with a window
+
+make export-ext     # test zips (chrome + firefox) into exports/YYYY-MM-DD/
+make export-chrome  # Chromium test zip only
+make export-firefox # Firefox test zip only
 ```
+
+Test zips go to `exports/YYYY-MM-DD/` (gitignored) through `PACK_OUT` in
+`scripts/pack.mjs`; `make pack` still writes release zips to the root, where
+CI and `companion update` expect them. Keep the two apart.
 
 `make ci` is `ci-js` plus `ci-rust`, split along the toolchain boundary so CI
 can run them on separate runners — only one half needs a Rust toolchain and

@@ -72,6 +72,18 @@ Then load it: `chrome://extensions` → Developer mode → **Load unpacked** →
 `apps/extension/dist/`. After every build, reload the extension and refresh the
 meeting tab.
 
+To hand someone a build to test, pack it as a zip:
+
+```bash
+make export-ext      # Chromium + Firefox zips
+make export-chrome   # Chromium zip only
+make export-firefox  # Firefox zip only (also refreshes apps/extension/dist-firefox/)
+```
+
+They land in `exports/YYYY-MM-DD/`, one folder per day, so test builds never
+mix with the release zips that `make pack` writes at the root. `exports/` is
+gitignored; a second run on the same day overwrites that day's zips.
+
 **For the desktop app:**
 
 ```bash
