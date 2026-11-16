@@ -671,6 +671,11 @@ export const en = {
   'ext.palette.askAi': 'Ask the AI about these results',
   'ext.provider.modelsFailed': 'The model list could not be fetched ({error}) — type it in instead.',
   'ext.settings.permissionFailed': 'Permission request failed: {error}',
+  'ext.settings.accessDenied':
+    "Companion has no access to {hosts}, so calls there will fail. If no permission prompt appeared, this browser may not show extension permission prompts — allow the site under the extension's Site access, or use Chrome.",
+  'ext.settings.accessUnanswered':
+    "The browser never answered the permission request for {hosts}. Some Chromium browsers (Dia, for one) do not show it — allow the site under the extension's Site access, or use Chrome.",
+  'ext.provider.modelsNeedAccess': 'The model list needs access to {hosts} — type the model in instead.',
   'ext.settings.retentionWarning':
     'Meetings inactive for more than {days} days will be deleted permanently, including their transcript and notes. Continue?',
   'ext.transcript.noOwner': 'no owner named yet',

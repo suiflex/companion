@@ -666,6 +666,11 @@ export const id: Record<keyof typeof en, string> = {
   'ext.palette.askAi': 'Tanya AI tentang hasil ini',
   'ext.provider.modelsFailed': 'Daftar model tidak bisa diambil ({error}) — ketik manual.',
   'ext.settings.permissionFailed': 'Gagal meminta izin: {error}',
+  'ext.settings.accessDenied':
+    'Companion tidak punya akses ke {hosts}, jadi panggilan ke sana akan gagal. Kalau tidak muncul dialog izin, browser ini mungkin tidak menampilkannya — izinkan situsnya di Site access ekstensi, atau pakai Chrome.',
+  'ext.settings.accessUnanswered':
+    'Browser tidak pernah menjawab permintaan izin untuk {hosts}. Beberapa browser Chromium (misalnya Dia) tidak menampilkannya — izinkan situsnya di Site access ekstensi, atau pakai Chrome.',
+  'ext.provider.modelsNeedAccess': 'Daftar model butuh akses ke {hosts} — ketik model manual.',
   'ext.settings.retentionWarning':
     'Meeting yang tidak aktif lebih dari {days} hari akan dihapus permanen, termasuk transcript dan notulennya. Lanjutkan?',
   'ext.transcript.noOwner': 'PIC belum disebut',
